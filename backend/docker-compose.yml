@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  gateway:
+    build: ./gateway
+    ports:
+      - "3010:3000"
+    environment:
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - auth-service
+      - core-service
+    networks:
+      - urbuzzi-network
+
+  auth-service:
+    build: ./auth-service
+    environment:
+      - DB_HOST=postgres-urbuzzi
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=auth_db
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - postgres-urbuzzi
+    networks:
+      - urbuzzi-network
+
+  core-service:
+    build: ./core-service
+    environment:
+      - DB_HOST=postgres-urbuzzi
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=core_db
+    depends_on:
+      - postgres-urbuzzi
+    networks:
+      - urbuzzi-network
+
+  postgres-urbuzzi:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    networks:
+      - urbuzzi-network
+
+volumes:
+  pgdata:
+
+networks:
+  urbuzzi-network:
+    driver: bridge
