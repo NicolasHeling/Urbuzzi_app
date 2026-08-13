@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Lotes | Urbuzzi</title>
+  <meta name="description" content="Tabela completa de lotes com busca, filtros de status e ações comerciais.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="main-content">
+    <div class="page-header">
+      <h1>Lista de Lotes</h1>
+      <p class="subtitle"><span id="lotDisplayCount">18</span> de <span id="lotTotalCount">18</span> lotes exibidos</p>
+    </div>
+
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Buscar por lote, quadra ou loteamento...">
+    </div>
+
+    <div class="filter-pills" id="filterPills"></div>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Lote</th>
+            <th>Quadra</th>
+            <th>Loteamento</th>
+            <th>Área</th>
+            <th>Valor</th>
+            <th>Status</th>
+            <th>Responsável</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="lotTableBody"></tbody>
+      </table>
+      <div class="table-empty" id="tableEmpty" style="display:none;">
+        Nenhum lote encontrado para os filtros selecionados.
+      </div>
+    </div>
+  </div>
+
+  <script src="js/shared.js"></script>
+  <script src="js/lotes.js"></script>
+</body>
+</html>
