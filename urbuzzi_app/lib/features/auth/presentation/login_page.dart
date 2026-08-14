@@ -20,7 +20,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
     
     if (success && mounted) {
-      Navigator.pushReplacementNamed(context, '/home'); // Roteia para o mapa
+      Navigator.pushReplacementNamed(context, '/app'); // Roteia para o AppShell
     }
   }
 

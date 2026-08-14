@@ -1,24 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../../features/home/presentation/home_page.dart';
-import '../../features/lots/presentation/lots_list_page.dart';
-import '../../features/proposals/presentation/proposals_page.dart';
-import '../../features/audit/presentation/audit_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
-import '../../features/crm/presentation/clients_page.dart';
 import '../../features/crm/presentation/client_form_page.dart';
+import '../widgets/app_shell.dart';
 
 class AppRoutes {
   AppRoutes._();
 
-  static const String home = '/home';
-  static const String lots = '/lots';
-  static const String proposals = '/proposals';
-  static const String audit = '/audit';
   static const String login = '/login';
   static const String register = '/register';
-  static const String clients = '/clients';
+  static const String app = '/app';
   static const String clientForm = '/clients/new';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
@@ -27,20 +19,12 @@ class AppRoutes {
         return _build(settings, const LoginPage());
       case register:
         return _build(settings, const RegisterPage());
-      case clients:
-        return _build(settings, const ClientsPage());
+      case app:
+        return _build(settings, const AppShell());
       case clientForm:
         return _build(settings, const ClientFormPage());
-      case home:
-        return _build(settings, const HomePage());
-      case lots:
-        return _build(settings, const LotsListPage());
-      case proposals:
-        return _build(settings, const ProposalsPage());
-      case audit:
-        return _build(settings, const AuditPage());
       default:
-        return _build(settings, const HomePage());
+        return _build(settings, const AppShell());
     }
   }
 

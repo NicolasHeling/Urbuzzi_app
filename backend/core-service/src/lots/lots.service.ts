@@ -17,7 +17,7 @@ export class LotsService {
   }
 
   async findPublic(): Promise<Lot[]> {
-    return this.lotRepository.find({ where: { status: 'AVAILABLE' } });
+    return this.lotRepository.find({ where: { status: 'Disponível' } });
   }
 
   async findOne(id: string): Promise<Lot> {

@@ -1,4 +1,4 @@
-import '../../../../core/network/dio_client.dart';
+import '../../../core/network/dio_client.dart';
 import '../domain/models/lot.dart';
 
 class LotsRepository {

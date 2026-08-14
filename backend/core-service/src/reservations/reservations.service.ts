@@ -21,12 +21,12 @@ export class ReservationsService {
     const lot = await this.lotRepository.findOne({ where: { id: createReservationDto.lotId } });
     if (!lot) throw new NotFoundException('Lot not found');
 
-    if (lot.status !== 'AVAILABLE') {
+    if (lot.status !== 'Disponível') {
       throw new BadRequestException('Lot is not available for reservation');
     }
 
     // Marca lote como RESERVED
-    lot.status = 'RESERVED';
+    lot.status = 'Reservado';
     await this.lotRepository.save(lot);
 
     const expiresAt = new Date();
@@ -53,7 +53,7 @@ export class ReservationsService {
     reservation.status = 'APPROVED';
     
     // Atualiza status do lote
-    reservation.lot.status = 'SOLD';
+    reservation.lot.status = 'Vendido';
     await this.lotRepository.save(reservation.lot);
 
     return this.reservationRepository.save(reservation);
@@ -66,7 +66,7 @@ export class ReservationsService {
     reservation.status = 'CANCELLED';
     
     // Libera o lote
-    reservation.lot.status = 'AVAILABLE';
+    reservation.lot.status = 'Disponível';
     await this.lotRepository.save(reservation.lot);
 
     return this.reservationRepository.save(reservation);
@@ -89,7 +89,7 @@ export class ReservationsService {
     if (expiredReservations.length > 0) {
       for (const res of expiredReservations) {
         res.status = 'EXPIRED';
-        res.lot.status = 'AVAILABLE';
+        res.lot.status = 'Disponível';
         
         await this.lotRepository.save(res.lot);
         await this.reservationRepository.save(res);

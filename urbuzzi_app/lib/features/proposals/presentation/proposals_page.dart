@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'proposals_provider.dart';
 import '../domain/models/proposal.dart';
 
@@ -12,7 +13,7 @@ class ProposalsPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quadro de Propostas (SLA)'),
+        title: const Text('Propostas (SLA 7 dias)'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -23,116 +24,138 @@ class ProposalsPage extends ConsumerWidget {
         ],
       ),
       body: proposalsState.when(
-        data: (proposals) => _buildKanbanList(context, ref, proposals),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Text('Erro ao carregar propostas:\n$error', textAlign: TextAlign.center),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildKanbanList(BuildContext context, WidgetRef ref, List<Proposal> proposals) {
-    if (proposals.isEmpty) {
-      return const Center(child: Text('Nenhuma proposta encontrada.'));
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: proposals.length,
-      itemBuilder: (context, index) {
-        final proposal = proposals[index];
-        final lotDesc = proposal.lot != null
-            ? 'Quadra ${proposal.lot!['block']} - Lote ${proposal.lot!['number']}'
-            : 'Lote não especificado';
-
-        return Card(
-          elevation: 3,
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            side: BorderSide(color: _getStatusColor(proposal.status), width: 2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: ExpansionTile(
-            leading: Icon(_getStatusIcon(proposal.status), color: _getStatusColor(proposal.status), size: 36),
-            title: Text(proposal.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('Status: ${proposal.status} | Oferta: R\$ ${proposal.offeredPrice?.toStringAsFixed(2) ?? '0.00'}'),
+        data: (proposals) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Documento do Cliente: ${proposal.customerDocument}'),
-                    const SizedBox(height: 4),
-                    Text('Lote de Interesse: $lotDesc'),
-                    const SizedBox(height: 4),
-                    Text('Data da Proposta: ${proposal.createdAt.toLocal().toString().split('.')[0]}'),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildStatusButton(ref, proposal.id, 'Nova', Colors.grey),
-                        _buildStatusButton(ref, proposal.id, 'Em Análise', Colors.blue),
-                        _buildStatusButton(ref, proposal.id, 'Aprovada', Colors.green),
-                        _buildStatusButton(ref, proposal.id, 'Rejeitada', Colors.red),
-                      ],
-                    ),
-                  ],
+                child: Text(
+                  '${proposals.length} negociações em andamento',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildKanbanColumn(context, 'Reserva Ativa', Colors.orange, proposals, 'Nova'),
+                      _buildKanbanColumn(context, 'Em Análise Interna', Colors.yellow.shade700, proposals, 'Em Análise'),
+                      _buildKanbanColumn(context, 'Aprovada', Colors.green, proposals, 'Aprovada'),
+                      _buildKanbanColumn(context, 'Rejeitada', Colors.red, proposals, 'Rejeitada'),
+                    ],
+                  ),
                 ),
               ),
             ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStatusButton(WidgetRef ref, String id, String statusLabel, Color color) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('Erro: $error')),
       ),
-      onPressed: () {
-        ref.read(proposalsControllerProvider.notifier).updateProposalStatus(id, statusLabel);
-      },
-      child: Text(statusLabel, style: const TextStyle(fontSize: 12)),
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Nova':
-        return Colors.grey.shade600;
-      case 'Em Análise':
-        return Colors.blue;
-      case 'Aprovada':
-        return Colors.green;
-      case 'Rejeitada':
-        return Colors.red;
-      case 'Concluída':
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
-  }
+  Widget _buildKanbanColumn(BuildContext context, String title, Color color, List<Proposal> allProposals, String filterStatus) {
+    final filtered = allProposals.where((p) => p.status == filterStatus).toList();
+    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
-  IconData _getStatusIcon(String status) {
-    switch (status) {
-      case 'Nova':
-        return Icons.inbox;
-      case 'Em Análise':
-        return Icons.analytics;
-      case 'Aprovada':
-        return Icons.thumb_up_alt;
-      case 'Rejeitada':
-        return Icons.cancel;
-      case 'Concluída':
-        return Icons.done_all;
-      default:
-        return Icons.receipt_long;
-    }
+    return Container(
+      width: 300,
+      margin: const EdgeInsets.only(left: 16, right: 8, bottom: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text('${filtered.length}'),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: filtered.length,
+              itemBuilder: (context, index) {
+                final proposal = filtered[index];
+                final lotDesc = proposal.lot != null
+                    ? 'Lote ${proposal.lot!['number']} · Quadra ${proposal.lot!['block']} · Loteamento'
+                    : 'Lote não especificado';
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              child: Text(proposal.customerName.isNotEmpty ? proposal.customerName[0] : '?'),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                proposal.customerName,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          lotDesc,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          currencyFormatter.format(proposal.offeredPrice ?? 0),
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

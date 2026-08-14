@@ -20,4 +20,8 @@ export class AuditService {
     });
     return this.auditRepository.save(audit);
   }
+
+  async findAll(): Promise<Audit[]> {
+    return this.auditRepository.find({ order: { createdAt: 'DESC' } });
+  }
 }
