@@ -16,7 +16,8 @@ class AuthRepository {
       final String token = response.data['accessToken'];
       final Map<String, dynamic> userData = response.data['user'];
 
-      // Armazena o token de forma segura
+      // Armazena o token de forma segura e na memória
+      DioClient().currentToken = token;
       await _storage.write(key: 'jwt_token', value: token);
 
       // (Em um cenário real, você configuraria o DioClient para ler esse token a partir de agora)
@@ -38,6 +39,7 @@ class AuthRepository {
       final String token = response.data['accessToken'];
       final Map<String, dynamic> userData = response.data['user'];
 
+      DioClient().currentToken = token;
       await _storage.write(key: 'jwt_token', value: token);
       return User.fromJson(userData);
     } catch (e) {
@@ -46,6 +48,7 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
+    DioClient().currentToken = null;
     await _storage.delete(key: 'jwt_token');
   }
 }

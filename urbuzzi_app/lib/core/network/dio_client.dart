@@ -5,6 +5,7 @@ class DioClient {
   static final DioClient _instance = DioClient._internal();
   late final Dio dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  String? currentToken;
 
   factory DioClient() {
     return _instance;
@@ -24,8 +25,8 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Lê o token armazenado de forma segura
-          final token = await _storage.read(key: 'jwt_token');
+          // Lê o token da memória ou do storage seguro
+          final token = currentToken ?? await _storage.read(key: 'jwt_token');
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -35,6 +36,7 @@ class DioClient {
           // Se receber 401, o token expirou — pode redirecionar para login
           if (error.response?.statusCode == 401) {
             // Limpa o token expirado
+            currentToken = null;
             _storage.delete(key: 'jwt_token');
           }
           return handler.next(error);
