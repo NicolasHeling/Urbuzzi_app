@@ -2,8 +2,7 @@
 
 Este projeto foi completamente reescrito para utilizar os padrões arquiteturais de nível corporativo aplicados no repositório **DoseCerta**. A aplicação original (Vanilla JS/HTML) foi movida para `legacy_html/` e agora o projeto é constituído por um ecossistema completo de microsserviços e um app mobile.
 
-## Padrões Adotados (Estilo DoseCerta)
-
+## Padrões Adotados 
 ### 1. Backend (NestJS + PostgreSQL)
 - **API Gateway:** Único ponto de entrada na porta `3000`. Centraliza a validação JWT e encaminha requisições.
 - **Auth Service:** Microsserviço independente (porta `3001`) responsável pela entidade `User` e autenticação (Login, Registro, Geração de JWT).
