@@ -3,9 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../lots/presentation/lots_provider.dart';
 import '../../lots/domain/models/lot.dart';
+import 'map_data.dart';
+import '../../reservations/presentation/reservation_dialog.dart';
 
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
+class MapPainter extends CustomPainter {
+  final List<Lot> lotsFromApi;
+  final LotPolygon? selectedPolygon;
+
+  MapPainter({required this.lotsFromApi, this.selectedPolygon});
 
   Color _getStatusColor(String status) {
     switch (status) {
@@ -19,13 +24,141 @@ class HomePage extends ConsumerWidget {
         return Colors.grey;
       case 'Vendido':
         return Colors.red;
+      case 'Cancelado':
+        return Colors.white;
       default:
         return Colors.grey.shade300;
     }
   }
 
-  void _showLotDetails(BuildContext context, Lot lot) {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Fundo quadriculado mockado
+    final bgPaint = Paint()..color = Colors.grey.withOpacity(0.1);
+    canvas.drawRect(Rect.fromLTWH(0, 0, 1200, 860), bgPaint);
+
+    for (var poly in MapData.lots) {
+      final path = Path();
+      if (poly.points.isNotEmpty) {
+        path.moveTo(poly.points.first.dx, poly.points.first.dy);
+        for (int i = 1; i < poly.points.length; i++) {
+          path.lineTo(poly.points[i].dx, poly.points[i].dy);
+        }
+        path.close();
+      }
+
+      // Encontrar lote na API
+      String blockStr = poly.block.replaceFirst(RegExp(r'^0+'), ''); // "01" -> "1"
+      String numberStr = poly.number.replaceFirst(RegExp(r'^0+'), ''); // "01" -> "1"
+
+      // Para manter a demonstração simples, assumimos quadras A,B,C.. 
+      // Mas o SVG tem quadras Q01 a Q15. Vamos tentar mapear se existir.
+      // Caso não exista, usamos cinza como "N/A"
+      String blockLetter = String.fromCharCode(64 + int.parse(poly.block)); // Q01 -> A, Q02 -> B
+      
+      Lot? matchingLot;
+      try {
+        matchingLot = lotsFromApi.firstWhere(
+            (l) => l.block == blockLetter && l.number == numberStr);
+      } catch (_) {}
+
+      final paint = Paint()
+        ..style = PaintingStyle.fill
+        ..color = matchingLot != null ? _getStatusColor(matchingLot.status) : Colors.grey.shade300;
+
+      // Desenha o fundo do lote
+      canvas.drawPath(path, paint);
+
+      // Desenha a borda
+      final borderPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0
+        ..color = selectedPolygon == poly ? Colors.blue : Colors.black45;
+      
+      if (selectedPolygon == poly) {
+        borderPaint.strokeWidth = 3.0;
+        borderPaint.color = Colors.blue;
+      }
+
+      canvas.drawPath(path, borderPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant MapPainter oldDelegate) {
+    return oldDelegate.lotsFromApi != lotsFromApi || oldDelegate.selectedPolygon != selectedPolygon;
+  }
+}
+
+class HomePage extends ConsumerStatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  LotPolygon? _selectedPolygon;
+  final TransformationController _transformationController = TransformationController();
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Disponível':
+        return Colors.green;
+      case 'Reservado':
+        return Colors.orange;
+      case 'Em aprovação':
+        return Colors.yellow.shade700;
+      case 'Bloqueado':
+        return Colors.grey;
+      case 'Vendido':
+        return Colors.red;
+      case 'Cancelado':
+        return Colors.white;
+      default:
+        return Colors.grey.shade300;
+    }
+  }
+
+  void _handleTapDown(TapDownDetails details, List<Lot> lots) {
+    final RenderBox referenceBox = context.findRenderObject() as RenderBox;
+    final Offset localPosition = _transformationController.toScene(details.localPosition);
+
+    for (var poly in MapData.lots) {
+      final path = Path();
+      if (poly.points.isNotEmpty) {
+        path.moveTo(poly.points.first.dx, poly.points.first.dy);
+        for (int i = 1; i < poly.points.length; i++) {
+          path.lineTo(poly.points[i].dx, poly.points[i].dy);
+        }
+        path.close();
+      }
+
+      if (path.contains(localPosition)) {
+        setState(() {
+          _selectedPolygon = poly;
+        });
+        _showLotDetails(poly, lots);
+        return;
+      }
+    }
+
+    setState(() {
+      _selectedPolygon = null;
+    });
+  }
+
+  void _showLotDetails(LotPolygon poly, List<Lot> lots) {
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    
+    String blockLetter = String.fromCharCode(64 + int.parse(poly.block));
+    String numberStr = poly.number.replaceFirst(RegExp(r'^0+'), '');
+    
+    Lot? lot;
+    try {
+      lot = lots.firstWhere((l) => l.block == blockLetter && l.number == numberStr);
+    } catch (_) {}
+
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -39,34 +172,47 @@ class HomePage extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Quadra ${lot.block} - Lote ${lot.number}',
+                    'Quadra ${blockLetter} - Lote ${poly.number}',
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  Chip(
-                    backgroundColor: _getStatusColor(lot.status).withOpacity(0.2),
-                    label: Text(lot.status),
-                    labelStyle: TextStyle(
-                      color: _getStatusColor(lot.status),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  if (lot != null)
+                    Chip(
+                      backgroundColor: _getStatusColor(lot.status).withOpacity(0.2),
+                      label: Text(lot.status),
+                      labelStyle: TextStyle(
+                        color: _getStatusColor(lot.status),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  else
+                    const Chip(label: Text('Não Mapeado no BD')),
                 ],
               ),
               const SizedBox(height: 16),
-              Text('Área: ${lot.area} m²'),
-              const SizedBox(height: 8),
-              Text(
-                'Valor: ${currencyFormatter.format(lot.price)}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Fechar'),
+              if (lot != null) ...[
+                Text('Área: ${lot.area} m²'),
+                const SizedBox(height: 8),
+                Text(
+                  'Valor: ${currencyFormatter.format(lot.price)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-              ),
+                const SizedBox(height: 24),
+                if (lot.status == 'Disponível')
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        Navigator.pop(context); // close bottom sheet
+                        final success = await showReservationDialog(context, lot!);
+                        if (success == true) {
+                          ref.read(lotsControllerProvider.notifier).fetchLots();
+                        }
+                      },
+                      icon: const Icon(Icons.bookmark_add),
+                      label: const Text('Reservar'),
+                    ),
+                  )
+              ],
             ],
           ),
         );
@@ -75,7 +221,7 @@ class HomePage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final lotsState = ref.watch(lotsControllerProvider);
 
     return Scaffold(
@@ -86,7 +232,7 @@ class HomePage extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Text(
-              'Loteamento Bela Vista', // Mock name
+              'Loteamento Morada do Sol',
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
@@ -100,6 +246,7 @@ class HomePage extends ConsumerWidget {
             'Em aprovação': 0,
             'Bloqueado': 0,
             'Vendido': 0,
+            'Cancelado': 0,
           };
           for (var lot in lots) {
             counts[lot.status] = (counts[lot.status] ?? 0) + 1;
@@ -109,39 +256,20 @@ class HomePage extends ConsumerWidget {
             children: [
               Expanded(
                 child: InteractiveViewer(
-                  minScale: 0.5,
+                  transformationController: _transformationController,
+                  minScale: 0.1,
                   maxScale: 4.0,
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(32),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 5,
-                      crossAxisSpacing: 4,
-                      mainAxisSpacing: 4,
+                  constrained: false,
+                  boundaryMargin: const EdgeInsets.all(500),
+                  child: GestureDetector(
+                    onTapDown: (details) => _handleTapDown(details, lots),
+                    child: CustomPaint(
+                      size: const Size(1200, 860),
+                      painter: MapPainter(
+                        lotsFromApi: lots,
+                        selectedPolygon: _selectedPolygon,
+                      ),
                     ),
-                    itemCount: lots.length,
-                    itemBuilder: (context, index) {
-                      final lot = lots[index];
-                      return GestureDetector(
-                        onTap: () => _showLotDetails(context, lot),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(lot.status),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.black12),
-                          ),
-                          child: Center(
-                            child: Text(
-                              lot.number,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
                   ),
                 ),
               ),
@@ -193,3 +321,4 @@ class HomePage extends ConsumerWidget {
     );
   }
 }
+
