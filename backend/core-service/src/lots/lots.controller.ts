@@ -13,6 +13,11 @@ export class LotsController {
     return this.lotsService.findAll();
   }
 
+  @Get('public')
+  findPublic() {
+    return this.lotsService.findPublic();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Lot> {
     return this.lotsService.findOne(id);

@@ -16,6 +16,10 @@ export class LotsService {
     return this.lotRepository.find();
   }
 
+  async findPublic(): Promise<Lot[]> {
+    return this.lotRepository.find({ where: { status: 'AVAILABLE' } });
+  }
+
   async findOne(id: string): Promise<Lot> {
     return this.lotRepository.findOne({ where: { id } });
   }

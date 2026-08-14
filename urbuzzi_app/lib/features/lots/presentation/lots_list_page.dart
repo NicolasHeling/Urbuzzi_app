@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'lots_provider.dart';
 import '../domain/models/lot.dart';
+import '../../reservations/presentation/reservation_dialog.dart';
 
 class LotsListPage extends ConsumerWidget {
   const LotsListPage({super.key});
@@ -53,13 +54,23 @@ class LotsListPage extends ConsumerWidget {
             title: Text('Quadra ${lot.block} - Lote ${lot.number}'),
             subtitle: Text('Área: ${lot.area}m² | Preço: R\$ ${lot.price.toStringAsFixed(2)}'),
             trailing: PopupMenuButton<String>(
-              onSelected: (newStatus) {
-                ref.read(lotsControllerProvider.notifier).updateLotStatus(lot.id, newStatus);
+              onSelected: (action) async {
+                if (action == 'Reservar') {
+                  final success = await showReservationDialog(context, lot);
+                  if (success == true) {
+                    ref.read(lotsControllerProvider.notifier).fetchLots(); // Atualiza a lista
+                  }
+                } else if (action == 'Disponível') {
+                  ref.read(lotsControllerProvider.notifier).updateLotStatus(lot.id, 'AVAILABLE');
+                } else if (action == 'Vendido') {
+                  ref.read(lotsControllerProvider.notifier).updateLotStatus(lot.id, 'SOLD');
+                }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(value: 'Disponível', child: Text('Marcar Disponível')),
-                const PopupMenuItem(value: 'Reservado', child: Text('Marcar Reservado')),
-                const PopupMenuItem(value: 'Vendido', child: Text('Marcar Vendido')),
+                if (lot.status == 'AVAILABLE' || lot.status == 'Disponível')
+                  const PopupMenuItem(value: 'Reservar', child: Text('Fazer Reserva (CRM)')),
+                const PopupMenuItem(value: 'Disponível', child: Text('Marcar como Disponível')),
+                const PopupMenuItem(value: 'Vendido', child: Text('Marcar como Vendido')),
               ],
             ),
           ),

@@ -6,6 +6,8 @@ import '../../features/proposals/presentation/proposals_page.dart';
 import '../../features/audit/presentation/audit_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
+import '../../features/crm/presentation/clients_page.dart';
+import '../../features/crm/presentation/client_form_page.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -16,6 +18,8 @@ class AppRoutes {
   static const String audit = '/audit';
   static const String login = '/login';
   static const String register = '/register';
+  static const String clients = '/clients';
+  static const String clientForm = '/clients/new';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -23,6 +27,10 @@ class AppRoutes {
         return _build(settings, const LoginPage());
       case register:
         return _build(settings, const RegisterPage());
+      case clients:
+        return _build(settings, const ClientsPage());
+      case clientForm:
+        return _build(settings, const ClientFormPage());
       case home:
         return _build(settings, const HomePage());
       case lots:

@@ -4,9 +4,13 @@ import { LotsModule } from './lots/lots.module';
 import { ProposalsModule } from './proposals/proposals.module';
 import { AuditModule } from './audit/audit.module';
 import { HealthModule } from './health/health.module';
+import { ClientsModule } from './clients/clients.module';
+import { ReservationsModule } from './reservations/reservations.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -21,6 +25,8 @@ import { HealthModule } from './health/health.module';
     ProposalsModule,
     AuditModule,
     HealthModule,
+    ClientsModule,
+    ReservationsModule,
   ],
 })
 export class AppModule {}

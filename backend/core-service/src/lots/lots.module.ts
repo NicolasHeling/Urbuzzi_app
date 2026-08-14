@@ -9,6 +9,6 @@ import { AuditModule } from '../audit/audit.module';
   imports: [TypeOrmModule.forFeature([Lot]), AuditModule],
   controllers: [LotsController],
   providers: [LotsService],
-  exports: [LotsService],
+  exports: [LotsService, TypeOrmModule],
 })
 export class LotsModule {}

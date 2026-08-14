@@ -33,6 +33,14 @@ class HomePage extends ConsumerWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.people),
+              title: const Text('CRM de Clientes'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/clients');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.landscape),
               title: const Text('Lista de Lotes'),
               onTap: () {
