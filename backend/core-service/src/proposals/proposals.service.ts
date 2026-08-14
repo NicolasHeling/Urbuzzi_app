@@ -19,9 +19,9 @@ export class ProposalsService {
   async create(proposalData: any): Promise<Proposal> {
     const proposal = this.proposalRepository.create({
       ...proposalData,
-      lot: { id: proposalData.lotId } as any
-    });
-    const savedProposal = await this.proposalRepository.save(proposal);
+      lot: { id: proposalData.lotId } as any,
+    } as Partial<Proposal>);
+    const savedProposal: Proposal = await this.proposalRepository.save(proposal as Proposal);
     await this.auditService.logAction('CREATE_PROPOSAL', 'Proposal', savedProposal.id, undefined, proposalData);
     return savedProposal;
   }
