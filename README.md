@@ -1,4 +1,4 @@
-﻿# Urbuzzi (Arquitetura Padrão DoseCerta)
+﻿# Urbuzzi 
 
 Este projeto foi completamente reescrito para utilizar os padrões arquiteturais de nível corporativo aplicados no repositório **DoseCerta**. A aplicação original (Vanilla JS/HTML) foi movida para `legacy_html/` e agora o projeto é constituído por um ecossistema completo de microsserviços e um app mobile.
 
