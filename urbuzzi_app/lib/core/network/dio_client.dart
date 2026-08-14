@@ -25,11 +25,30 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Lê o token da memória ou do storage seguro
-          final token = currentToken ?? await _storage.read(key: 'jwt_token');
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
+          // Tenta ler da memória primeiro
+          String? token = currentToken;
+
+          // Se não estiver na memória, tenta do storage seguro com try-catch
+          if (token == null || token.isEmpty) {
+            try {
+              token = await _storage.read(key: 'jwt_token');
+              if (token != null) currentToken = token; // Sincroniza
+            } catch (e) {
+              print('Erro ao ler token do SecureStorage: $e');
+            }
           }
+
+          print('=== INTERCEPTOR DIO ===');
+          print('URL: ${options.uri}');
+          print('Token em memoria: $currentToken');
+          print('Token que será enviado: $token');
+
+          if (token != null && token.isNotEmpty) {
+            options.headers['authorization'] = 'Bearer $token';
+          } else {
+            print('AVISO: Nenhum token encontrado! Requisição vai sem Auth.');
+          }
+
           return handler.next(options);
         },
         onError: (error, handler) {
