@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/models/lot.dart';
 
@@ -6,7 +8,14 @@ class LotsRepository {
 
   Future<List<Lot>> fetchLots() async {
     try {
-      final response = await _dio.get('/lots'); // O Gateway encaminhará para o core-service
+      final token = DioClient().currentToken ?? await const FlutterSecureStorage().read(key: 'jwt_token');
+      
+      final response = await _dio.get(
+        '/lots',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      ); 
       final List<dynamic> data = response.data;
       return data.map((json) => Lot.fromJson(json)).toList();
     } catch (e) {
