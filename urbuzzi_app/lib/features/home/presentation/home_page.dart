@@ -223,25 +223,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final lotsState = ref.watch(lotsControllerProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.9),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: const Text('Mapa Interativo', style: TextStyle(fontWeight: FontWeight.bold)),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(24),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Text(
-              'Loteamento Morada do Sol · 15 quadras · 192 lotes',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.grey.shade700,
-              ),
-            ),
-          ),
-        ),
-      ),
+      backgroundColor: const Color(0xFFF8FAFC), // Modern slate-50
       body: lotsState.when(
         data: (lots) {
           final Map<String, int> counts = {
@@ -258,13 +240,14 @@ class _HomePageState extends ConsumerState<HomePage> {
 
           return Stack(
             children: [
+              // MAPA INTERATIVO NO FUNDO
               Positioned.fill(
                 child: InteractiveViewer(
                   transformationController: _transformationController,
                   minScale: 0.1,
                   maxScale: 4.0,
                   constrained: false,
-                  boundaryMargin: const EdgeInsets.all(500),
+                  boundaryMargin: const EdgeInsets.all(1000),
                   child: Stack(
                     children: [
                       SizedBox(
@@ -286,64 +269,253 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ),
               ),
+
+              // HEADER FLOATING (Top Left)
               Positioned(
-                bottom: 24,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Resumo do loteamento',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 16,
-                          runSpacing: 8,
-                          alignment: WrapAlignment.center,
-                          children: counts.keys.map((status) {
-                            return Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: _getStatusColor(status),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text('$status (${counts[status]})', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
+                top: 24,
+                left: 24,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Mapa Interativo',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Loteamento Morada do Sol · 15 quadras · 192 lotes',
+                        style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Planta de parcelamento · Gleba 1',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                      ),
+                    ],
                   ),
                 ),
               ),
+
+              // LEGENDA FLOATING (Bottom Left)
+              Positioned(
+                bottom: 24,
+                left: 24,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Resumo do loteamento',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 16),
+                      ...counts.entries.map((e) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(e.key),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 100,
+                                child: Text(e.key, style: const TextStyle(fontSize: 13)),
+                              ),
+                              Text('${e.value}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+
+              // LOTE SELECIONADO FLOATING PANEL (Right Side)
+              if (_selectedPolygon != null)
+                Positioned(
+                  top: 24,
+                  right: 24,
+                  child: _buildSelectedLotPanel(lots),
+                ),
             ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Erro: $error')),
+      ),
+    );
+  }
+
+  Widget _buildSelectedLotPanel(List<Lot> lots) {
+    final poly = _selectedPolygon!;
+    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    String blockLetter = String.fromCharCode(64 + int.parse(poly.block));
+    String numberStr = poly.number.replaceFirst(RegExp(r'^0+'), '');
+    
+    Lot? lot;
+    try {
+      lot = lots.firstWhere((l) => l.block == blockLetter && l.number == numberStr);
+    } catch (_) {}
+
+    return Container(
+      width: 320,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Lote selecionado',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () => setState(() => _selectedPolygon = null),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Lote $numberStr · Quadra $blockLetter',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          ),
+          Text(
+            'Loteamento Morada do Sol',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 16),
+          if (lot != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: _getStatusColor(lot.status).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _getStatusColor(lot.status).withOpacity(0.3)),
+              ),
+              child: Text(
+                lot.status,
+                style: TextStyle(
+                  color: _getStatusColor(lot.status),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Área', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    Text('${lot.area} m²', style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Valor', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    Text(currencyFormatter.format(lot.price), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue)),
+                  ],
+                ),
+              ],
+            ),
+            const Divider(height: 32),
+            const Text('Alterar Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: lot.status,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              items: ['Disponível', 'Reservado', 'Em aprovação', 'Bloqueado', 'Vendido', 'Cancelado']
+                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                  .toList(),
+              onChanged: (newStatus) {
+                if (newStatus != null && newStatus != lot!.status) {
+                  ref.read(lotsControllerProvider.notifier).updateLotStatus(lot.id, newStatus);
+                }
+              },
+            ),
+          ] else ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(8)),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(child: Text('Lote não mapeado no BD.', style: TextStyle(color: Colors.orange, fontSize: 13))),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
