@@ -31,74 +31,101 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       body: Row(
         children: [
-          NavigationRail(
-            extended: MediaQuery.of(context).size.width > 800,
-            leading: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.maps_home_work, size: 32, color: AppColors.primary),
-                  if (MediaQuery.of(context).size.width > 800) ...[
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Urbuzzi',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ],
-              ),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(right: BorderSide(color: Colors.grey.shade200)),
             ),
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (int index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            destinations: const [
-              NavigationRailDestination(
-                icon: Icon(Icons.map_outlined),
-                selectedIcon: Icon(Icons.map),
-                label: Text('Mapa Interativo'),
+            child: NavigationRail(
+              backgroundColor: Colors.white,
+              extended: MediaQuery.of(context).size.width > 800,
+              minExtendedWidth: 240,
+              unselectedLabelTextStyle: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+              selectedLabelTextStyle: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+              unselectedIconTheme: IconThemeData(color: Colors.grey.shade500),
+              selectedIconTheme: const IconThemeData(color: Color(0xFF0F172A)),
+              useIndicator: true,
+              indicatorColor: Colors.grey.shade100,
+              leading: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 8.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.maps_home_work, size: 28, color: Colors.blue),
+                    ),
+                    if (MediaQuery.of(context).size.width > 800) ...[
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Urbuzzi',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              NavigationRailDestination(
-                icon: Icon(Icons.list_alt_outlined),
-                selectedIcon: Icon(Icons.list_alt),
-                label: Text('Lista de Lotes'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.assignment_outlined),
-                selectedIcon: Icon(Icons.assignment),
-                label: Text('Propostas'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.history_outlined),
-                selectedIcon: Icon(Icons.history),
-                label: Text('Histórico'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.storefront_outlined),
-                selectedIcon: Icon(Icons.storefront),
-                label: Text('Vitrine Pública'),
-              ),
-            ],
-            trailing: Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: IconButton(
-                icon: const Icon(Icons.logout),
-                tooltip: 'Sair',
-                onPressed: () async {
-                  await ref.read(authControllerProvider.notifier).logout();
-                  if (context.mounted) {
-                    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
-                  }
-                },
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (int index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+              destinations: const [
+                NavigationRailDestination(
+                  icon: Icon(Icons.map_outlined),
+                  selectedIcon: Icon(Icons.map),
+                  label: Text('Mapa Interativo'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.list_alt_outlined),
+                  selectedIcon: Icon(Icons.list_alt),
+                  label: Text('Lista de Lotes'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.assignment_outlined),
+                  selectedIcon: Icon(Icons.assignment),
+                  label: Text('Propostas'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.history_outlined),
+                  selectedIcon: Icon(Icons.history),
+                  label: Text('Histórico'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.storefront_outlined),
+                  selectedIcon: Icon(Icons.storefront),
+                  label: Text('Vitrine Pública'),
+                ),
+              ],
+              trailing: Expanded(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 24.0),
+                    child: IconButton(
+                      icon: const Icon(Icons.logout),
+                      color: Colors.grey.shade500,
+                      tooltip: 'Sair',
+                      onPressed: () async {
+                        await ref.read(authControllerProvider.notifier).logout();
+                        if (context.mounted) {
+                          Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+                        }
+                      },
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-          const VerticalDivider(thickness: 1, width: 1),
           Expanded(
             child: _pages[_selectedIndex],
           ),

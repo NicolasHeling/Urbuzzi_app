@@ -16,11 +16,14 @@ class AuthRepository {
       final String token = response.data['accessToken'];
       final Map<String, dynamic> userData = response.data['user'];
 
+      print('DEBUG LOGIN: Token recebido do backend: $token');
+
       // Armazena o token de forma segura e na memória
       DioClient().currentToken = token;
       await _storage.write(key: 'jwt_token', value: token);
 
-      // (Em um cenário real, você configuraria o DioClient para ler esse token a partir de agora)
+      final tokenSalvo = await _storage.read(key: 'jwt_token');
+      print('DEBUG LOGIN: Token salvo no SecureStorage e lido com sucesso? ${tokenSalvo == token}');
 
       return User.fromJson(userData);
     } catch (e) {

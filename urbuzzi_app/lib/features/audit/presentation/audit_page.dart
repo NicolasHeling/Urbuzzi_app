@@ -13,33 +13,44 @@ class AuditPage extends ConsumerWidget {
     final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Histórico/Auditoria'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        title: const Text('Histórico/Auditoria', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+        centerTitle: false,
+        elevation: 0,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(24),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: Text(
-              'Últimos 30 dias · registro imutável',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: Colors.grey.shade200, height: 1),
         ),
       ),
       body: auditState.when(
         data: (entries) {
           if (entries.isEmpty) {
-            return const Center(child: Text('Nenhum registro encontrado.'));
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history_rounded, size: 64, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  Text('Nenhum registro encontrado.', style: TextStyle(color: Colors.grey.shade600)),
+                ],
+              ),
+            );
           }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: entries.length,
-            itemBuilder: (context, index) {
-              final entry = entries[index];
-              return _buildTimelineItem(context, entry, dateFormatter, isLast: index == entries.length - 1);
-            },
+          return Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(32),
+                itemCount: entries.length,
+                itemBuilder: (context, index) {
+                  final entry = entries[index];
+                  return _buildTimelineItem(context, entry, dateFormatter, isLast: index == entries.length - 1);
+                },
+              ),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -65,56 +76,95 @@ class AuditPage extends ConsumerWidget {
           Column(
             children: [
               Container(
-                width: 16,
-                height: 16,
+                width: 12,
+                height: 12,
+                margin: const EdgeInsets.only(top: 8),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Colors.blue,
                   shape: BoxShape.circle,
+                  border: Border.all(color: Colors.blue.shade100, width: 2),
                 ),
               ),
               if (!isLast)
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: Theme.of(context).colorScheme.outlineVariant,
+                    color: Colors.grey.shade200,
                   ),
                 ),
             ],
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 24),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    formatter.format(entry.createdAt),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${entry.entityName} (${entry.entityId}) - $description',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  if (statusChange.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      statusChange,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+              padding: const EdgeInsets.only(bottom: 32.0),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
                   ],
-                  const SizedBox(height: 4),
-                  Text(
-                    'Usuário: ${entry.userId}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      formatter.format(entry.createdAt),
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${entry.entityName} (${entry.entityId})',
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 16),
+                    ),
+                    if (statusChange.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Text(
+                          statusChange,
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.person_outline, size: 14, color: Colors.grey.shade400),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Usuário: ${entry.userId}',
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/models/lot.dart';
 
@@ -6,12 +8,21 @@ class LotsRepository {
 
   Future<List<Lot>> fetchLots() async {
     try {
-      // O token já é injetado automaticamente pelo interceptor do DioClient.
-      // Não injetar aqui de novo — isso duplicava o header Authorization
-      // (um em maiúsculo vindo daqui, outro em minúsculo do interceptor),
-      // e em ambientes web o XHR concatenava os dois valores num único
-      // header corrompido, derrubando a verificação do JWT no gateway (401).
-      final response = await _dio.get('/lots');
+      final storage = const FlutterSecureStorage();
+      final token = await storage.read(key: 'jwt_token');
+
+      print('DEBUG MAPA: Iniciando requisição para buscar lotes...');
+      print('DEBUG MAPA: Token lido do SecureStorage: $token');
+      print('DEBUG MAPA: URL exata sendo chamada: ${_dio.options.baseUrl}/lots');
+
+      final response = await _dio.get(
+        '/lots',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
       final List<dynamic> data = response.data;
       return data.map((json) => Lot.fromJson(json)).toList();
     } catch (e) {
