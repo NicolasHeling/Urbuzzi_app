@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../lots/data/lots_repository.dart';
 import '../../lots/domain/models/lot.dart';
+import '../../home/presentation/map_data.dart';
 
 // Provider para injetar o Repositório
 final lotsRepositoryProvider = Provider<LotsRepository>((ref) {
@@ -12,6 +13,12 @@ final lotsControllerProvider =
     StateNotifierProvider<LotsController, AsyncValue<List<Lot>>>((ref) {
   final repository = ref.watch(lotsRepositoryProvider);
   return LotsController(repository);
+});
+
+// Provider simples para a Vitrine (dados públicos)
+final publicLotsProvider = FutureProvider<List<Lot>>((ref) async {
+  final repository = ref.watch(lotsRepositoryProvider);
+  return repository.fetchPublicLots();
 });
 
 class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
@@ -27,14 +34,8 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
       final lots = await _repository.fetchLots();
       state = AsyncValue.data(lots);
     } catch (e, stackTrace) {
-      print('Erro ao buscar lotes, usando MOCK para o mapa aparecer: $e');
-      // FALLBACK: Lotes mockados para que o usuário possa ver o mapa mesmo se der 401
-      state = AsyncValue.data([
-        Lot(id: '1', block: '01', number: '01', area: 360.0, price: 154000.0, status: 'Disponível'),
-        Lot(id: '2', block: '01', number: '02', area: 360.0, price: 154000.0, status: 'Reservado'),
-        Lot(id: '3', block: '01', number: '03', area: 360.0, price: 154000.0, status: 'Vendido'),
-        Lot(id: '4', block: '01', number: '04', area: 360.0, price: 154000.0, status: 'Em Análise'),
-      ]);
+      print('Erro ao carregar lotes: $e');
+      state = AsyncValue.error(e, stackTrace);
     }
   }
 

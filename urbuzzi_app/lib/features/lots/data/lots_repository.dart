@@ -23,6 +23,16 @@ class LotsRepository {
     }
   }
 
+  Future<List<Lot>> fetchPublicLots() async {
+    try {
+      final response = await _dio.get('/lots/public'); 
+      final List<dynamic> data = response.data;
+      return data.map((json) => Lot.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Falha ao buscar lotes públicos: $e');
+    }
+  }
+
   Future<Lot> fetchLotById(String id) async {
     try {
       final response = await _dio.get('/lots/$id');

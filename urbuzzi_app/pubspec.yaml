@@ -17,6 +17,7 @@ dependencies:
   dio: ^5.7.0
   flutter_secure_storage: ^9.2.2
   cupertino_icons: ^1.0.8
+  flutter_svg: ^2.0.10
 
 dev_dependencies:
   flutter_test:
@@ -25,3 +26,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/mapa.svg

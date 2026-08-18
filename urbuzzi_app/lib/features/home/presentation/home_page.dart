@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../../lots/presentation/lots_provider.dart';
 import '../../lots/domain/models/lot.dart';
@@ -33,10 +34,6 @@ class MapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Fundo quadriculado mockado
-    final bgPaint = Paint()..color = Colors.grey.withOpacity(0.1);
-    canvas.drawRect(Rect.fromLTWH(0, 0, 1200, 860), bgPaint);
-
     for (var poly in MapData.lots) {
       final path = Path();
       if (poly.points.isNotEmpty) {
@@ -51,9 +48,6 @@ class MapPainter extends CustomPainter {
       String blockStr = poly.block.replaceFirst(RegExp(r'^0+'), ''); // "01" -> "1"
       String numberStr = poly.number.replaceFirst(RegExp(r'^0+'), ''); // "01" -> "1"
 
-      // Para manter a demonstração simples, assumimos quadras A,B,C.. 
-      // Mas o SVG tem quadras Q01 a Q15. Vamos tentar mapear se existir.
-      // Caso não exista, usamos cinza como "N/A"
       String blockLetter = String.fromCharCode(64 + int.parse(poly.block)); // Q01 -> A, Q02 -> B
       
       Lot? matchingLot;
@@ -62,9 +56,10 @@ class MapPainter extends CustomPainter {
             (l) => l.block == blockLetter && l.number == numberStr);
       } catch (_) {}
 
+      final baseColor = matchingLot != null ? _getStatusColor(matchingLot.status) : Colors.grey.shade300;
       final paint = Paint()
         ..style = PaintingStyle.fill
-        ..color = matchingLot != null ? _getStatusColor(matchingLot.status) : Colors.grey.shade300;
+        ..color = baseColor.withOpacity(0.6); // Semi-transparente para ver o SVG de fundo
 
       // Desenha o fundo do lote
       canvas.drawPath(path, paint);
@@ -197,21 +192,24 @@ class _HomePageState extends ConsumerState<HomePage> {
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 24),
-                if (lot.status == 'Disponível')
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () async {
-                        Navigator.pop(context); // close bottom sheet
-                        final success = await showReservationDialog(context, lot!);
-                        if (success == true) {
-                          ref.read(lotsControllerProvider.notifier).fetchLots();
-                        }
-                      },
-                      icon: const Icon(Icons.bookmark_add),
-                      label: const Text('Reservar'),
-                    ),
-                  )
+                const Text('Alterar Status do Lote:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: lot.status,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  items: ['Disponível', 'Reservado', 'Em aprovação', 'Bloqueado', 'Vendido', 'Cancelado']
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                      .toList(),
+                  onChanged: (newStatus) {
+                    if (newStatus != null && newStatus != lot!.status) {
+                      ref.read(lotsControllerProvider.notifier).updateLotStatus(lot.id, newStatus);
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
               ],
             ],
           ),
@@ -225,15 +223,21 @@ class _HomePageState extends ConsumerState<HomePage> {
     final lotsState = ref.watch(lotsControllerProvider);
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Mapa Interativo'),
+        backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text('Mapa Interativo', style: TextStyle(fontWeight: FontWeight.bold)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(24),
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
+            padding: const EdgeInsets.only(bottom: 12.0),
             child: Text(
-              'Loteamento Morada do Sol',
-              style: Theme.of(context).textTheme.titleMedium,
+              'Loteamento Morada do Sol · 15 quadras · 192 lotes',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.grey.shade700,
+              ),
             ),
           ),
         ),
@@ -252,64 +256,87 @@ class _HomePageState extends ConsumerState<HomePage> {
             counts[lot.status] = (counts[lot.status] ?? 0) + 1;
           }
 
-          return Column(
+          return Stack(
             children: [
-              Expanded(
+              Positioned.fill(
                 child: InteractiveViewer(
                   transformationController: _transformationController,
                   minScale: 0.1,
                   maxScale: 4.0,
                   constrained: false,
                   boundaryMargin: const EdgeInsets.all(500),
-                  child: GestureDetector(
-                    onTapDown: (details) => _handleTapDown(details, lots),
-                    child: CustomPaint(
-                      size: const Size(1200, 860),
-                      painter: MapPainter(
-                        lotsFromApi: lots,
-                        selectedPolygon: _selectedPolygon,
+                  child: Stack(
+                    children: [
+                      SizedBox(
+                        width: 1200,
+                        height: 860,
+                        child: SvgPicture.asset('assets/mapa.svg', fit: BoxFit.fill),
                       ),
-                    ),
+                      GestureDetector(
+                        onTapDown: (details) => _handleTapDown(details, lots),
+                        child: CustomPaint(
+                          size: const Size(1200, 860),
+                          painter: MapPainter(
+                            lotsFromApi: lots,
+                            selectedPolygon: _selectedPolygon,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -5),
+              Positioned(
+                bottom: 24,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 8,
-                      alignment: WrapAlignment.center,
-                      children: counts.keys.map((status) {
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: _getStatusColor(status),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text('$status (${counts[status]})', style: const TextStyle(fontSize: 12)),
-                          ],
-                        );
-                      }).toList(),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Resumo do loteamento',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: counts.keys.map((status) {
+                            return Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: _getStatusColor(status),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text('$status (${counts[status]})', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],

@@ -8,7 +8,7 @@ class VitrinePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lotsState = ref.watch(lotsControllerProvider);
+    final lotsState = ref.watch(publicLotsProvider);
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     return Scaffold(

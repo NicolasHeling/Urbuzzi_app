@@ -94,6 +94,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 onPressed: () => Navigator.pushNamed(context, '/register'),
                 child: const Text('Não tem uma conta? Cadastre-se'),
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/vitrine'),
+                icon: const Icon(Icons.storefront),
+                label: const Text('Acessar Vitrine Pública'),
+              ),
             ],
           ),
         ),

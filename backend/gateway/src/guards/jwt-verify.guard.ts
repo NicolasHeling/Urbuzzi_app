@@ -5,6 +5,12 @@ import * as jwt from 'jsonwebtoken';
 export class JwtVerifyGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
+    
+    // Bypass authentication for public routes
+    if (request.url.includes('/public')) {
+      return true;
+    }
+
     const authHeader = request.headers['authorization'];
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

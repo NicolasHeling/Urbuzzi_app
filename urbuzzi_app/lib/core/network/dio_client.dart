@@ -1,5 +1,13 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+String getBaseUrl() {
+  if (kIsWeb) return 'http://localhost:3010';
+  if (Platform.isAndroid) return 'http://10.0.2.2:3010';
+  return 'http://localhost:3010';
+}
 
 class DioClient {
   static final DioClient _instance = DioClient._internal();
@@ -14,8 +22,8 @@ class DioClient {
   DioClient._internal() {
     dio = Dio(
       BaseOptions(
-        // URL do API Gateway (rodando no emulador usa 10.0.2.2, na web/desktop usa localhost)
-        baseUrl: 'http://localhost:3010',
+        // URL do API Gateway adaptada para emulador e web
+        baseUrl: getBaseUrl(),
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
       ),
