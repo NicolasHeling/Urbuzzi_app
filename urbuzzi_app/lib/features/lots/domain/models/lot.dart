@@ -7,6 +7,15 @@ class Lot {
   final String status;
   final String? svgCoordinates;
 
+  // Campos adicionais para paridade com o design de referência.
+  // Nullable/opcionais: o backend ainda não os expõe, então caem
+  // graciosamente em `null` até o core-service ser atualizado
+  // (ver TODO no README de backend).
+  final String? landName; // nome do loteamento, ex: "Loteamento Biopark"
+  final String? registration; // matrícula do imóvel
+  final double? frontMeasure; // "frente" em metros
+  final double? backMeasure; // "fundo" em metros
+
   Lot({
     required this.id,
     required this.block,
@@ -15,6 +24,10 @@ class Lot {
     required this.price,
     required this.status,
     this.svgCoordinates,
+    this.landName,
+    this.registration,
+    this.frontMeasure,
+    this.backMeasure,
   });
 
   // Factory Method para desserializar JSON
@@ -27,6 +40,14 @@ class Lot {
       price: double.tryParse(json['price'].toString()) ?? 0.0,
       status: json['status'],
       svgCoordinates: json['svgCoordinates'],
+      landName: json['landName'] ?? json['land_name'] ?? json['loteamento'],
+      registration: json['registration'] ?? json['matricula'],
+      frontMeasure: json['frontMeasure'] != null
+          ? double.tryParse(json['frontMeasure'].toString())
+          : (json['frente'] != null ? double.tryParse(json['frente'].toString()) : null),
+      backMeasure: json['backMeasure'] != null
+          ? double.tryParse(json['backMeasure'].toString())
+          : (json['fundo'] != null ? double.tryParse(json['fundo'].toString()) : null),
     );
   }
 
@@ -39,6 +60,26 @@ class Lot {
       'price': price,
       'status': status,
       'svgCoordinates': svgCoordinates,
+      'landName': landName,
+      'registration': registration,
+      'frontMeasure': frontMeasure,
+      'backMeasure': backMeasure,
     };
+  }
+
+  Lot copyWith({String? status}) {
+    return Lot(
+      id: id,
+      block: block,
+      number: number,
+      area: area,
+      price: price,
+      status: status ?? this.status,
+      svgCoordinates: svgCoordinates,
+      landName: landName,
+      registration: registration,
+      frontMeasure: frontMeasure,
+      backMeasure: backMeasure,
+    );
   }
 }

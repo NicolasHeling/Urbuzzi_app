@@ -4,8 +4,13 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../../lots/presentation/lots_provider.dart';
 import '../../lots/domain/models/lot.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/status_badge.dart';
 import 'map_data.dart';
 import '../../reservations/presentation/reservation_dialog.dart';
+
+const double _mapWidth = 1200;
+const double _mapHeight = 860;
 
 class MapPainter extends CustomPainter {
   final List<Lot> lotsFromApi;
@@ -13,22 +18,13 @@ class MapPainter extends CustomPainter {
 
   MapPainter({required this.lotsFromApi, this.selectedPolygon});
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Disponível':
-        return Colors.green;
-      case 'Reservado':
-        return Colors.orange;
-      case 'Em aprovação':
-        return Colors.yellow.shade700;
-      case 'Bloqueado':
-        return Colors.grey;
-      case 'Vendido':
-        return Colors.red;
-      case 'Cancelado':
-        return Colors.white;
-      default:
-        return Colors.grey.shade300;
+  Lot? _matchLot(LotPolygon poly) {
+    final blockLetter = String.fromCharCode(64 + int.parse(poly.block));
+    final numberStr = poly.number.replaceFirst(RegExp(r'^0+'), '');
+    try {
+      return lotsFromApi.firstWhere((l) => l.block == blockLetter && l.number == numberStr);
+    } catch (_) {
+      return null;
     }
   }
 
@@ -44,37 +40,22 @@ class MapPainter extends CustomPainter {
         path.close();
       }
 
-      // Encontrar lote na API
-      String blockStr = poly.block.replaceFirst(RegExp(r'^0+'), ''); // "01" -> "1"
-      String numberStr = poly.number.replaceFirst(RegExp(r'^0+'), ''); // "01" -> "1"
+      final matchingLot = _matchLot(poly);
+      final baseColor = matchingLot != null
+          ? AppColors.statusColor(matchingLot.status)
+          : AppColors.textMuted.withValues(alpha: 0.3);
 
-      String blockLetter = String.fromCharCode(64 + int.parse(poly.block)); // Q01 -> A, Q02 -> B
-      
-      Lot? matchingLot;
-      try {
-        matchingLot = lotsFromApi.firstWhere(
-            (l) => l.block == blockLetter && l.number == numberStr);
-      } catch (_) {}
+      final isSelected = selectedPolygon == poly;
 
-      final baseColor = matchingLot != null ? _getStatusColor(matchingLot.status) : Colors.grey.shade300;
       final paint = Paint()
         ..style = PaintingStyle.fill
-        ..color = baseColor.withOpacity(0.6); // Semi-transparente para ver o SVG de fundo
-
-      // Desenha o fundo do lote
+        ..color = baseColor.withValues(alpha: isSelected ? 0.75 : 0.55);
       canvas.drawPath(path, paint);
 
-      // Desenha a borda
       final borderPaint = Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0
-        ..color = selectedPolygon == poly ? Colors.blue : Colors.black45;
-      
-      if (selectedPolygon == poly) {
-        borderPaint.strokeWidth = 3.0;
-        borderPaint.color = Colors.blue;
-      }
-
+        ..strokeWidth = isSelected ? 2.5 : 1.0
+        ..color = isSelected ? AppColors.primary : Colors.black38;
       canvas.drawPath(path, borderPaint);
     }
   }
@@ -95,28 +76,49 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   LotPolygon? _selectedPolygon;
   final TransformationController _transformationController = TransformationController();
+  double _zoom = 1.0;
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Disponível':
-        return Colors.green;
-      case 'Reservado':
-        return Colors.orange;
-      case 'Em aprovação':
-        return Colors.yellow.shade700;
-      case 'Bloqueado':
-        return Colors.grey;
-      case 'Vendido':
-        return Colors.red;
-      case 'Cancelado':
-        return Colors.white;
-      default:
-        return Colors.grey.shade300;
+  @override
+  void initState() {
+    super.initState();
+    _transformationController.addListener(_onTransformChanged);
+  }
+
+  @override
+  void dispose() {
+    _transformationController.removeListener(_onTransformChanged);
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  void _onTransformChanged() {
+    final scale = _transformationController.value.getMaxScaleOnAxis();
+    if ((scale - _zoom).abs() > 0.001) {
+      setState(() => _zoom = scale);
     }
   }
 
-  void _handleTapDown(TapDownDetails details, List<Lot> lots) {
-    final RenderBox referenceBox = context.findRenderObject() as RenderBox;
+  void _zoomBy(double factor) {
+    final matrix = _transformationController.value.clone();
+    final double newScale = (_zoom * factor).clamp(0.1, 4.0);
+    final double currentScale = _zoom == 0 ? 1.0 : _zoom;
+    final double ratio = newScale / currentScale;
+    matrix.scaleByDouble(ratio, ratio, ratio, 1.0);
+    _transformationController.value = matrix;
+  }
+
+  Lot? _lotForPolygon(LotPolygon? poly, List<Lot> lots) {
+    if (poly == null) return null;
+    final blockLetter = String.fromCharCode(64 + int.parse(poly.block));
+    final numberStr = poly.number.replaceFirst(RegExp(r'^0+'), '');
+    try {
+      return lots.firstWhere((l) => l.block == blockLetter && l.number == numberStr);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _handleTapDown(TapDownDetails details, List<Lot> lots, bool isWide) {
     final Offset localPosition = _transformationController.toScene(details.localPosition);
 
     for (var poly in MapData.lots) {
@@ -130,88 +132,29 @@ class _HomePageState extends ConsumerState<HomePage> {
       }
 
       if (path.contains(localPosition)) {
-        setState(() {
-          _selectedPolygon = poly;
-        });
-        _showLotDetails(poly, lots);
+        setState(() => _selectedPolygon = poly);
+        if (!isWide) {
+          _showLotDetailsSheet(poly, lots);
+        }
         return;
       }
     }
 
-    setState(() {
-      _selectedPolygon = null;
-    });
+    setState(() => _selectedPolygon = null);
   }
 
-  void _showLotDetails(LotPolygon poly, List<Lot> lots) {
-    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    
-    String blockLetter = String.fromCharCode(64 + int.parse(poly.block));
-    String numberStr = poly.number.replaceFirst(RegExp(r'^0+'), '');
-    
-    Lot? lot;
-    try {
-      lot = lots.firstWhere((l) => l.block == blockLetter && l.number == numberStr);
-    } catch (_) {}
-
+  void _showLotDetailsSheet(LotPolygon poly, List<Lot> lots) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Quadra ${blockLetter} - Lote ${poly.number}',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  if (lot != null)
-                    Chip(
-                      backgroundColor: _getStatusColor(lot.status).withOpacity(0.2),
-                      label: Text(lot.status),
-                      labelStyle: TextStyle(
-                        color: _getStatusColor(lot.status),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                  else
-                    const Chip(label: Text('Não Mapeado no BD')),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (lot != null) ...[
-                Text('Área: ${lot.area} m²'),
-                const SizedBox(height: 8),
-                Text(
-                  'Valor: ${currencyFormatter.format(lot.price)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 24),
-                const Text('Alterar Status do Lote:', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: lot.status,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                  items: ['Disponível', 'Reservado', 'Em aprovação', 'Bloqueado', 'Vendido', 'Cancelado']
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                      .toList(),
-                  onChanged: (newStatus) {
-                    if (newStatus != null && newStatus != lot!.status) {
-                      ref.read(lotsControllerProvider.notifier).updateLotStatus(lot.id, newStatus);
-                      Navigator.pop(context);
-                    }
-                  },
-                ),
-              ],
-            ],
+          padding: const EdgeInsets.all(16.0),
+          child: _SelectedLotPanel(
+            poly: poly,
+            lot: _lotForPolygon(poly, lots),
+            onClose: () => Navigator.pop(context),
           ),
         );
       },
@@ -223,141 +166,203 @@ class _HomePageState extends ConsumerState<HomePage> {
     final lotsState = ref.watch(lotsControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Modern slate-50
-      body: lotsState.when(
-        data: (lots) {
-          final Map<String, int> counts = {
-            'Disponível': 0,
-            'Reservado': 0,
-            'Em aprovação': 0,
-            'Bloqueado': 0,
-            'Vendido': 0,
-            'Cancelado': 0,
-          };
-          for (var lot in lots) {
-            counts[lot.status] = (counts[lot.status] ?? 0) + 1;
-          }
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: lotsState.when(
+          data: (lots) => _buildContent(context, lots),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(child: Text('Erro: $error')),
+        ),
+      ),
+    );
+  }
 
-          return Stack(
-            children: [
-              // MAPA INTERATIVO NO FUNDO
-              Positioned.fill(
-                child: InteractiveViewer(
-                  transformationController: _transformationController,
-                  minScale: 0.1,
-                  maxScale: 4.0,
-                  constrained: false,
-                  boundaryMargin: const EdgeInsets.all(1000),
-                  child: Stack(
-                    children: [
-                      SizedBox(
-                        width: 1200,
-                        height: 860,
-                        child: SvgPicture.asset('assets/mapa.svg', fit: BoxFit.fill),
-                      ),
-                      GestureDetector(
-                        onTapDown: (details) => _handleTapDown(details, lots),
-                        child: CustomPaint(
-                          size: const Size(1200, 860),
-                          painter: MapPainter(
-                            lotsFromApi: lots,
+  Widget _buildContent(BuildContext context, List<Lot> lots) {
+    final Map<String, int> counts = {for (final s in AppColors.statusOrder) s: 0};
+    for (var lot in lots) {
+      counts[lot.status] = (counts[lot.status] ?? 0) + 1;
+    }
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final isWide = constraints.maxWidth > 900;
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _Header(lotCount: lots.length),
+            const SizedBox(height: 14),
+            StatusLegend(),
+            const SizedBox(height: 16),
+            Expanded(
+              child: isWide
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: _MapCard(
+                            zoom: _zoom,
+                            transformationController: _transformationController,
                             selectedPolygon: _selectedPolygon,
+                            lots: lots,
+                            onTapDown: (d) => _handleTapDown(d, lots, true),
+                            onZoomIn: () => _zoomBy(1.25),
+                            onZoomOut: () => _zoomBy(0.8),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                        const SizedBox(width: 16),
+                        SizedBox(
+                          width: 320,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                _SelectedLotPanel(
+                                  poly: _selectedPolygon,
+                                  lot: _lotForPolygon(_selectedPolygon, lots),
+                                ),
+                                const SizedBox(height: 16),
+                                _SummaryCard(counts: counts),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: _MapCard(
+                            zoom: _zoom,
+                            transformationController: _transformationController,
+                            selectedPolygon: _selectedPolygon,
+                            lots: lots,
+                            onTapDown: (d) => _handleTapDown(d, lots, false),
+                            onZoomIn: () => _zoomBy(1.25),
+                            onZoomOut: () => _zoomBy(0.8),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _SummaryCard(counts: counts),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
 
-              // HEADER FLOATING (Top Left)
-              Positioned(
-                top: 24,
-                left: 24,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Mapa Interativo',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Loteamento Morada do Sol · 15 quadras · 192 lotes',
-                        style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Planta de parcelamento · Gleba 1',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+class _Header extends StatelessWidget {
+  final int lotCount;
+  const _Header({required this.lotCount});
 
-              // LEGENDA FLOATING (Bottom Left)
-              Positioned(
-                bottom: 24,
-                left: 24,
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Mapa Interativo',
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Loteamento Morada do Sol · 15 quadras · $lotCount lotes',
+          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+}
+
+class _MapCard extends StatelessWidget {
+  final double zoom;
+  final TransformationController transformationController;
+  final LotPolygon? selectedPolygon;
+  final List<Lot> lots;
+  final void Function(TapDownDetails) onTapDown;
+  final VoidCallback onZoomIn;
+  final VoidCallback onZoomOut;
+
+  const _MapCard({
+    required this.zoom,
+    required this.transformationController,
+    required this.selectedPolygon,
+    required this.lots,
+    required this.onTapDown,
+    required this.onZoomIn,
+    required this.onZoomOut,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final blockCenters = MapData.blockCenters;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned(
+            top: 14,
+            left: 16,
+            child: Text(
+              'Planta de parcelamento · Gleba 1',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          Positioned.fill(
+            top: 44,
+            child: InteractiveViewer(
+              transformationController: transformationController,
+              minScale: 0.1,
+              maxScale: 4.0,
+              constrained: false,
+              boundaryMargin: const EdgeInsets.all(500),
+              child: GestureDetector(
+                onTapDown: onTapDown,
+                child: SizedBox(
+                  width: _mapWidth,
+                  height: _mapHeight,
+                  child: Stack(
                     children: [
-                      const Text(
-                        'Resumo do loteamento',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                      SvgPicture.asset('assets/mapa.svg', fit: BoxFit.fill),
+                      CustomPaint(
+                        size: const Size(_mapWidth, _mapHeight),
+                        painter: MapPainter(lotsFromApi: lots, selectedPolygon: selectedPolygon),
                       ),
-                      const SizedBox(height: 16),
-                      ...counts.entries.map((e) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: _getStatusColor(e.key),
-                                  shape: BoxShape.circle,
+                      ...blockCenters.entries.map((entry) {
+                        return Positioned(
+                          left: entry.value.dx - 18,
+                          top: entry.value.dy - 10,
+                          child: IgnorePointer(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Q${entry.key}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              SizedBox(
-                                width: 100,
-                                child: Text(e.key, style: const TextStyle(fontSize: 13)),
-                              ),
-                              Text('${e.value}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            ],
+                            ),
                           ),
                         );
                       }),
@@ -365,155 +370,192 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ),
               ),
-
-              // LOTE SELECIONADO FLOATING PANEL (Right Side)
-              if (_selectedPolygon != null)
-                Positioned(
-                  top: 24,
-                  right: 24,
-                  child: _buildSelectedLotPanel(lots),
+            ),
+          ),
+          // Bússola
+          Positioned(
+            top: 14,
+            right: 16,
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.border),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4)],
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'N',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textPrimary),
+              ),
+            ),
+          ),
+          // Escala
+          Positioned(
+            left: 16,
+            bottom: 14,
+            child: Text(
+              '0     50     100 m',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontFeatures: const [FontFeature.tabularFigures()]),
+            ),
+          ),
+          // Dica de interação + zoom %
+          Positioned(
+            bottom: 14,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: AppColors.border),
                 ),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Erro: $error')),
-      ),
-    );
-  }
-
-  Widget _buildSelectedLotPanel(List<Lot> lots) {
-    final poly = _selectedPolygon!;
-    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    String blockLetter = String.fromCharCode(64 + int.parse(poly.block));
-    String numberStr = poly.number.replaceFirst(RegExp(r'^0+'), '');
-    
-    Lot? lot;
-    try {
-      lot = lots.firstWhere((l) => l.block == blockLetter && l.number == numberStr);
-    } catch (_) {}
-
-    return Container(
-      width: 320,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+                child: Text(
+                  'Arraste para mover · role para dar zoom · ${(zoom * 100).round()}%',
+                  style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                ),
+              ),
+            ),
+          ),
+          // Controles de zoom
+          Positioned(
+            right: 16,
+            bottom: 14,
+            child: Column(
+              children: [
+                _ZoomButton(icon: Icons.add, onTap: onZoomIn),
+                const SizedBox(height: 6),
+                _ZoomButton(icon: Icons.remove, onTap: onZoomOut),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ZoomButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _ZoomButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: Icon(icon, size: 18, color: AppColors.textSecondary),
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectedLotPanel extends StatelessWidget {
+  final LotPolygon? poly;
+  final Lot? lot;
+  final VoidCallback? onClose;
+
+  const _SelectedLotPanel({required this.poly, required this.lot, this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'Lote selecionado',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary),
               ),
-              IconButton(
-                icon: const Icon(Icons.close, size: 18),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: () => setState(() => _selectedPolygon = null),
-              ),
+              if (onClose != null)
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: onClose,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Lote $numberStr · Quadra $blockLetter',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-          ),
-          Text(
-            'Loteamento Morada do Sol',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 16),
-          if (lot != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: _getStatusColor(lot.status).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _getStatusColor(lot.status).withOpacity(0.3)),
-              ),
-              child: Text(
-                lot.status,
-                style: TextStyle(
-                  color: _getStatusColor(lot.status),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-              ),
+          const SizedBox(height: 14),
+          if (poly == null)
+            const Text(
+              'Toque em um lote na planta para ver os detalhes.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            )
+          else ...[
+            Text(
+              'Lote ${poly!.number} · Quadra ${poly!.block}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: AppColors.textPrimary),
             ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Área', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                    Text('${lot.area} m²', style: const TextStyle(fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('Valor', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                    Text(currencyFormatter.format(lot.price), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue)),
-                  ],
-                ),
-              ],
+            const SizedBox(height: 2),
+            Text(
+              lot?.landName ?? 'Loteamento Morada do Sol',
+              style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
             ),
-            const Divider(height: 32),
-            const Text('Alterar Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: lot.status,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey.shade50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              items: ['Disponível', 'Reservado', 'Em aprovação', 'Bloqueado', 'Vendido', 'Cancelado']
-                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                  .toList(),
-              onChanged: (newStatus) {
-                if (newStatus != null && newStatus != lot!.status) {
-                  ref.read(lotsControllerProvider.notifier).updateLotStatus(lot.id, newStatus);
-                }
-              },
-            ),
-          ] else ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(8)),
-              child: const Row(
+            const SizedBox(height: 12),
+            if (lot == null)
+              const StatusBadge(status: 'Não mapeado no BD')
+            else ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(child: Text('Lote não mapeado no BD.', style: TextStyle(color: Colors.orange, fontSize: 13))),
+                  Text(
+                    currencyFormatter.format(lot!.price),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary),
+                  ),
+                  StatusBadge(status: lot!.status),
                 ],
               ),
-            ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  _MeasureStat(label: 'Área', value: '${lot!.area.toStringAsFixed(0)} m²'),
+                  _MeasureStat(label: 'Frente', value: lot!.frontMeasure != null ? '${lot!.frontMeasure} m' : '—'),
+                  _MeasureStat(label: 'Fundo', value: lot!.backMeasure != null ? '${lot!.backMeasure} m' : '—'),
+                ],
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () => showReservationDialog(context, lot!),
+                  child: const Text('Nova Reserva'),
+                ),
+              ),
+            ],
           ],
         ],
       ),
@@ -521,3 +563,72 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
+class _MeasureStat extends StatelessWidget {
+  final String label;
+  final String value;
+  const _MeasureStat({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  final Map<String, int> counts;
+  const _SummaryCard({required this.counts});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Resumo do loteamento',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 12),
+          ...AppColors.statusOrder.map((status) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(color: AppColors.statusColor(status), shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(status, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
+                  ),
+                  Text(
+                    '${counts[status] ?? 0}',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}

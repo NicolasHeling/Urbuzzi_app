@@ -207,4 +207,19 @@ class MapData {
     LotPolygon(block: '15', number: '11', points: [Offset(867.3, 695.0), Offset(905.7, 695.0), Offset(899.7, 760.0), Offset(861.3, 760.0)]),
     LotPolygon(block: '15', number: '12', points: [Offset(905.7, 695.0), Offset(944.0, 695.0), Offset(938.0, 760.0), Offset(899.7, 760.0)]),
   ];
+
+  /// Centro aproximado (bounding box) de cada quadra, usado para
+  /// posicionar os rótulos "Q01".."Q15" sobre a planta.
+  static Map<String, Offset> get blockCenters {
+    final Map<String, List<Offset>> grouped = {};
+    for (final poly in lots) {
+      grouped.putIfAbsent(poly.block, () => []).addAll(poly.points);
+    }
+    return grouped.map((block, points) {
+      final minX = points.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
+      final maxX = points.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
+      final minY = points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
+      return MapEntry(block, Offset((minX + maxX) / 2, minY - 14));
+    });
+  }
 }

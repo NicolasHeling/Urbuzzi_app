@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'lots_provider.dart';
-import '../domain/models/lot.dart';
 import '../../reservations/presentation/reservation_dialog.dart';
 
 class LotsListPage extends ConsumerStatefulWidget {

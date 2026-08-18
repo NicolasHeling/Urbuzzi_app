@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../lots/data/lots_repository.dart';
 import '../../lots/domain/models/lot.dart';
-import '../../home/presentation/map_data.dart';
 
 // Provider para injetar o Repositório
 final lotsRepositoryProvider = Provider<LotsRepository>((ref) {
@@ -46,15 +45,7 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
       state = state.whenData((lots) {
         return lots.map((lot) {
           if (lot.id == lotId) {
-            return Lot(
-              id: lot.id,
-              block: lot.block,
-              number: lot.number,
-              area: lot.area,
-              price: lot.price,
-              status: newStatus,
-              svgCoordinates: lot.svgCoordinates,
-            );
+            return lot.copyWith(status: newStatus);
           }
           return lot;
         }).toList();

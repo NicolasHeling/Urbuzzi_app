@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'core/network/dio_client.dart';
 import 'core/routing/app_routes.dart';
+import 'core/theme/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,8 +38,11 @@ class UrbuzziApp extends ConsumerWidget {
       title: 'Urbuzzi',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0F172A)), // Slate 900
-        textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          surface: AppColors.surface,
+        ),
+        scaffoldBackgroundColor: AppColors.background,
         useMaterial3: true,
       ),
       initialRoute: initialRoute,

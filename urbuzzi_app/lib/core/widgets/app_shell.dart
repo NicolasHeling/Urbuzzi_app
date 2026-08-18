@@ -8,6 +8,7 @@ import '../../features/audit/presentation/audit_page.dart';
 import '../../features/vitrine/presentation/vitrine_page.dart';
 import '../../features/auth/presentation/auth_provider.dart';
 import '../routing/app_routes.dart';
+import '../theme/app_colors.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -39,7 +40,7 @@ class _AppShellState extends ConsumerState<AppShell> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.maps_home_work, size: 32, color: Colors.blue),
+                  const Icon(Icons.maps_home_work, size: 32, color: AppColors.primary),
                   if (MediaQuery.of(context).size.width > 800) ...[
                     const SizedBox(width: 12),
                     const Text(
