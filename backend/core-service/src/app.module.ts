@@ -7,19 +7,14 @@ import { HealthModule } from './health/health.module';
 import { ClientsModule } from './clients/clients.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { dataSourceOptions } from './data-source';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT, 10) || 5432,
-      username: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASS || 'postgres',
-      database: process.env.DB_NAME || 'core_db',
+      ...dataSourceOptions,
       autoLoadEntities: true,
-      synchronize: true,
     }),
     LotsModule,
     ProposalsModule,

@@ -21,7 +21,11 @@ export class AuditService {
     return this.auditRepository.save(audit);
   }
 
-  async findAll(): Promise<Audit[]> {
-    return this.auditRepository.find({ order: { createdAt: 'DESC' } });
+  async findAll(limit: number = 50, offset: number = 0): Promise<Audit[]> {
+    return this.auditRepository.find({
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
   }
 }

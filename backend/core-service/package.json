@@ -5,7 +5,10 @@
   "scripts": {
     "build": "nest build",
     "start": "node dist/main",
-    "start:dev": "nest start --watch"
+    "start:dev": "nest start --watch",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "npm run typeorm migration:generate -- -d src/data-source.ts src/migrations/AutoMigration",
+    "migration:run": "npm run typeorm migration:run -- -d src/data-source.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
@@ -23,6 +26,7 @@
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.1.3"
   }
 }
