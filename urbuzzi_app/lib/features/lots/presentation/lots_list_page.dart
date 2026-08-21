@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import 'lots_provider.dart';
 import '../../reservations/presentation/reservation_dialog.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/status_badge.dart';
+
 class LotsListPage extends ConsumerStatefulWidget {
   const LotsListPage({super.key});
 
@@ -17,39 +20,8 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
 
   final List<String> _statuses = [
     'Todos',
-    'Disponível',
-    'Reservado',
-    'Em aprovação',
-    'Bloqueado',
-    'Vendido',
-    'Cancelado'
+    ...AppColors.statusOrder
   ];
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Disponível':
-        return Colors.green;
-      case 'Reservado':
-        return Colors.orange;
-      case 'Em aprovação':
-        return Colors.yellow.shade700;
-      case 'Bloqueado':
-        return Colors.grey;
-      case 'Vendido':
-        return Colors.red;
-      case 'Cancelado':
-        return Colors.white;
-      default:
-        return Colors.grey.shade300;
-    }
-  }
-
-  Color _getTextColor(String status) {
-    if (status == 'Cancelado' || status == 'Em aprovação') {
-      return Colors.black87;
-    }
-    return Colors.white;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,20 +29,20 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        title: const Text('Lista de Lotes', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: AppColors.surface,
+        title: const Text('Lista de Lotes', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         centerTitle: false,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: Colors.grey.shade200, height: 1),
+          child: Container(color: AppColors.border, height: 1),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF0F172A)),
+            icon: const Icon(Icons.refresh, color: AppColors.textPrimary),
             onPressed: () {
               ref.read(lotsControllerProvider.notifier).fetchLots();
             },
@@ -85,17 +57,17 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Buscar por quadra ou número...',
-                hintStyle: TextStyle(color: Colors.grey.shade400),
-                prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+                hintStyle: const TextStyle(color: AppColors.textMuted),
+                prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
+                  borderSide: const BorderSide(color: AppColors.border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
+                  borderSide: const BorderSide(color: AppColors.border),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
@@ -112,6 +84,9 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
             child: Row(
               children: _statuses.map((status) {
                 final isSelected = _selectedStatus == status;
+                final statusColor = status == 'Todos' ? AppColors.textPrimary : AppColors.statusColor(status);
+                final statusBgColor = status == 'Todos' ? AppColors.textPrimary.withOpacity(0.08) : AppColors.statusColor(status).withOpacity(0.08);
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: FilterChip(
@@ -123,17 +98,17 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                         _selectedStatus = status;
                       });
                     },
-                    backgroundColor: Colors.white,
-                    selectedColor: _getStatusColor(status).withOpacity(0.15),
+                    backgroundColor: AppColors.surface,
+                    selectedColor: statusBgColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                       side: BorderSide(
-                        color: isSelected ? _getStatusColor(status).withOpacity(0.5) : Colors.grey.shade200,
+                        color: isSelected ? statusColor.withOpacity(0.35) : AppColors.border,
                       ),
                     ),
                     labelStyle: TextStyle(
-                      color: isSelected ? _getStatusColor(status) : Colors.grey.shade600,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? statusColor : AppColors.textSecondary,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
                 );
@@ -157,8 +132,8 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
                       child: Text(
-                        '${filteredLots.length} lotes encontrados',
-                        style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontWeight: FontWeight.w500),
+                        '${filteredLots.length} de ${lots.length} lotes exibidos',
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
                       ),
                     ),
                     Expanded(
@@ -171,9 +146,9 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                             margin: const EdgeInsets.only(bottom: 16.0),
                             padding: const EdgeInsets.all(20.0),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.grey.shade200),
+                              border: Border.all(color: AppColors.border),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.02),
@@ -192,8 +167,8 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Loteamento Morada do Sol',
-                                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+                                          lot.landName ?? 'Loteamento',
+                                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
@@ -201,47 +176,32 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                                           style: const TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(0xFF0F172A),
+                                            color: AppColors.textPrimary,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: _getStatusColor(lot.status).withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(color: _getStatusColor(lot.status).withOpacity(0.3)),
-                                      ),
-                                      child: Text(
-                                        lot.status,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: _getStatusColor(lot.status),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
+                                    StatusBadge(status: lot.status),
                                   ],
                                 ),
                                 const Padding(
                                   padding: EdgeInsets.symmetric(vertical: 16),
-                                  child: Divider(height: 1),
+                                  child: Divider(color: AppColors.border, height: 1),
                                 ),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Row(
                                       children: [
-                                        Icon(Icons.straighten, size: 16, color: Colors.grey.shade400),
+                                        const Icon(Icons.straighten, size: 16, color: AppColors.textMuted),
                                         const SizedBox(width: 8),
-                                        Text('${lot.area} m²', style: const TextStyle(fontWeight: FontWeight.w500)),
+                                        Text('${lot.area} m²', style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
                                       ],
                                     ),
                                     Text(
                                       currencyFormatter.format(lot.price),
                                       style: const TextStyle(
-                                        color: Colors.blue,
+                                        color: AppColors.primary,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
                                       ),
@@ -263,7 +223,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                                               icon: const Icon(Icons.bookmark_add, size: 18),
                                               label: const Text('Reservar Lote', style: TextStyle(fontWeight: FontWeight.w600)),
                                               style: FilledButton.styleFrom(
-                                                backgroundColor: const Color(0xFF0F172A),
+                                                backgroundColor: AppColors.textPrimary,
                                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                               ),
@@ -274,9 +234,9 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                                               },
                                               style: OutlinedButton.styleFrom(
                                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                side: BorderSide(color: Colors.grey.shade300),
+                                                side: const BorderSide(color: AppColors.border),
                                                 padding: const EdgeInsets.symmetric(vertical: 14),
-                                                foregroundColor: const Color(0xFF0F172A),
+                                                foregroundColor: AppColors.textPrimary,
                                               ),
                                               child: const Text('Tornar Disponível', style: TextStyle(fontWeight: FontWeight.w600)),
                                             ),

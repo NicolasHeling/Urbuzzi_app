@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { LotsService } from './lots.service';
 import { Lot } from './lot.entity';
 import { CreateLotDto } from './dto/create-lot.dto';
@@ -24,15 +25,18 @@ export class LotsController {
   }
 
   @Post()
-  create(@Body() createLotDto: CreateLotDto): Promise<Lot> {
-    return this.lotsService.create(createLotDto);
+  create(@Body() createLotDto: CreateLotDto, @Req() req: Request): Promise<Lot> {
+    const userId = req.headers['x-user-id'] as string;
+    return this.lotsService.create(createLotDto, userId);
   }
 
   @Patch(':id/status')
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusDto: UpdateLotStatusDto,
+    @Req() req: Request,
   ): Promise<Lot> {
-    return this.lotsService.updateStatus(id, updateStatusDto.status);
+    const userId = req.headers['x-user-id'] as string;
+    return this.lotsService.updateStatus(id, updateStatusDto.status, userId);
   }
 }

@@ -33,3 +33,7 @@ npm-debug.log*
 
 # Docker
 *.pid
+.aider*
+
+# Python
+.venv/

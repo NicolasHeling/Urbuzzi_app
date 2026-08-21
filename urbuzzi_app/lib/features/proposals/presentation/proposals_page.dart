@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'proposals_provider.dart';
 import '../domain/models/proposal.dart';
+import '../../../core/theme/app_colors.dart';
 
 class ProposalsPage extends ConsumerWidget {
   const ProposalsPage({super.key});
@@ -53,7 +54,7 @@ class ProposalsPage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildKanbanColumn(context, 'Reserva Ativa', Colors.orange, proposals, 'Nova'),
-                      _buildKanbanColumn(context, 'Em Análise Interna', Colors.amber.shade600, proposals, 'Em Análise'),
+                      _buildKanbanColumn(context, 'Em Análise Interna (SLA 7 Dias)', Colors.amber.shade600, proposals, 'Em Análise'),
                       _buildKanbanColumn(context, 'Aprovada', Colors.green, proposals, 'Aprovada'),
                       _buildKanbanColumn(context, 'Rejeitada', Colors.red, proposals, 'Rejeitada'),
                     ],
@@ -65,6 +66,48 @@ class ProposalsPage extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Erro: $error')),
+      ),
+    );
+  }
+
+  /// Calcula e retorna um widget de badge SLA com cor baseada nos dias restantes
+  Widget? _buildSlaBadge(Proposal proposal) {
+    if (proposal.slaDeadline == null) return null;
+    
+    final now = DateTime.now();
+    final remaining = proposal.slaDeadline!.difference(now).inDays;
+    
+    Color bgColor;
+    Color textColor;
+    String label;
+    
+    if (remaining > 3) {
+      bgColor = Colors.green.shade50;
+      textColor = Colors.green.shade700;
+      label = '$remaining dias restantes';
+    } else if (remaining > 0) {
+      bgColor = Colors.amber.shade50;
+      textColor = Colors.amber.shade800;
+      label = '$remaining dia${remaining > 1 ? 's' : ''} restante${remaining > 1 ? 's' : ''}';
+    } else {
+      bgColor = Colors.red.shade50;
+      textColor = Colors.red.shade700;
+      label = 'SLA vencido';
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.schedule, size: 12, color: textColor),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }
@@ -121,9 +164,16 @@ class ProposalsPage extends ConsumerWidget {
               itemCount: filtered.length,
               itemBuilder: (context, index) {
                 final proposal = filtered[index];
-                final lotDesc = proposal.lot != null
-                    ? 'Lote ${proposal.lot!['number']} · Qd ${proposal.lot!['block']}'
-                    : 'Lote não especificado';
+                // Exibe Lote · Quadra · Nome do Loteamento (se disponível)
+                final lotNumber = proposal.lot?['number'] ?? '?';
+                final lotBlock = proposal.lot?['block'] ?? '?';
+                final landName = proposal.lot?['landName'];
+                final lotDesc = landName != null
+                    ? 'Lote $lotNumber · Quadra $lotBlock · $landName'
+                    : 'Lote $lotNumber · Quadra $lotBlock';
+
+                // Badge SLA para propostas "Em Análise"
+                final slaBadge = (filterStatus == 'Em Análise') ? _buildSlaBadge(proposal) : null;
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -169,12 +219,21 @@ class ProposalsPage extends ConsumerWidget {
                         children: [
                           Icon(Icons.landscape_rounded, size: 14, color: Colors.grey.shade400),
                           const SizedBox(width: 4),
-                          Text(
-                            lotDesc,
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                          Expanded(
+                            child: Text(
+                              lotDesc,
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
+                      // Badge SLA (apenas para "Em Análise")
+                      if (slaBadge != null) ...[
+                        const SizedBox(height: 8),
+                        slaBadge,
+                      ],
                       const SizedBox(height: 12),
                       const Divider(height: 1),
                       const SizedBox(height: 12),
@@ -188,6 +247,20 @@ class ProposalsPage extends ConsumerWidget {
                           ),
                         ],
                       ),
+                      // Corretor responsável
+                      if (proposal.responsibleUserName != null && proposal.responsibleUserName!.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Icon(Icons.person_outline_rounded, size: 13, color: Colors.grey.shade400),
+                            const SizedBox(width: 4),
+                            Text(
+                              proposal.responsibleUserName!,
+                              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 );

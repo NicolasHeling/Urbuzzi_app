@@ -4,7 +4,7 @@ class AuditEntry {
   final String entityName;
   final String entityId;
   final String userId;
-  final Map<String, dynamic> details;
+  final Map<String, dynamic>? details;
   final DateTime createdAt;
 
   AuditEntry({
@@ -13,7 +13,7 @@ class AuditEntry {
     required this.entityName,
     required this.entityId,
     required this.userId,
-    required this.details,
+    this.details,
     required this.createdAt,
   });
 
@@ -24,7 +24,9 @@ class AuditEntry {
       entityName: json['entityName'] ?? '',
       entityId: json['entityId'] ?? '',
       userId: json['userId'] ?? '',
-      details: json['details'] ?? {},
+      details: json['details'] is Map<String, dynamic> 
+          ? json['details'] as Map<String, dynamic> 
+          : null,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
     );
   }

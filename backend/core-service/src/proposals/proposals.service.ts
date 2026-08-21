@@ -16,20 +16,24 @@ export class ProposalsService {
     return this.proposalRepository.find({ relations: ['lot'] });
   }
 
-  async create(proposalData: any): Promise<Proposal> {
+  async create(proposalData: any, userId?: string): Promise<Proposal> {
+    const slaDeadline = new Date();
+    slaDeadline.setDate(slaDeadline.getDate() + 7);
+
     const proposal = this.proposalRepository.create({
       ...proposalData,
       lot: { id: proposalData.lotId } as any,
+      slaDeadline,
     } as Partial<Proposal>);
     const savedProposal: Proposal = await this.proposalRepository.save(proposal as Proposal);
-    await this.auditService.logAction('CREATE_PROPOSAL', 'Proposal', savedProposal.id, undefined, proposalData);
+    await this.auditService.logAction('CREATE_PROPOSAL', 'Proposal', savedProposal.id, userId, proposalData);
     return savedProposal;
   }
 
-  async updateStatus(id: string, status: string): Promise<Proposal> {
+  async updateStatus(id: string, status: string, userId?: string): Promise<Proposal> {
     await this.proposalRepository.update(id, { status });
     const updatedProposal = await this.proposalRepository.findOne({ where: { id }, relations: ['lot'] });
-    await this.auditService.logAction('UPDATE_PROPOSAL_STATUS', 'Proposal', id, undefined, { status });
+    await this.auditService.logAction('UPDATE_PROPOSAL_STATUS', 'Proposal', id, userId, { status });
     return updatedProposal;
   }
 }

@@ -6,6 +6,8 @@ class Proposal {
   final double? offeredPrice;
   final DateTime createdAt;
   final Map<String, dynamic>? lot; // Relacionamento com Lote
+  final String? responsibleUserName; // Corretor responsável
+  final DateTime? slaDeadline; // Prazo SLA (7 dias)
 
   Proposal({
     required this.id,
@@ -15,6 +17,8 @@ class Proposal {
     this.offeredPrice,
     required this.createdAt,
     this.lot,
+    this.responsibleUserName,
+    this.slaDeadline,
   });
 
   factory Proposal.fromJson(Map<String, dynamic> json) {
@@ -28,6 +32,10 @@ class Proposal {
           : null,
       createdAt: DateTime.parse(json['createdAt']),
       lot: json['lot'],
+      responsibleUserName: json['responsibleUserName'],
+      slaDeadline: json['slaDeadline'] != null 
+          ? DateTime.tryParse(json['slaDeadline'].toString()) 
+          : null,
     );
   }
 }

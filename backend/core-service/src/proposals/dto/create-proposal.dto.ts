@@ -16,4 +16,9 @@ export class CreateProposalDto {
 
   @IsUUID()
   lotId: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  responsibleUserName?: string;
 }

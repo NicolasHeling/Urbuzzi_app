@@ -22,6 +22,12 @@ export class Proposal {
   @JoinColumn({ name: 'lot_id' })
   lot: Lot;
 
+  @Column({ nullable: true })
+  responsibleUserName: string; // Corretor responsável pela negociação
+
+  @Column({ type: 'timestamp', nullable: true })
+  slaDeadline: Date; // Prazo SLA (7 dias a partir da criação)
+
   @CreateDateColumn()
   createdAt: Date;
 

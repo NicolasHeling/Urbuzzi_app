@@ -51,24 +51,44 @@ class _AppShellState extends ConsumerState<AppShell> {
               indicatorColor: Colors.grey.shade100,
               leading: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 8.0),
-                child: Row(
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.maps_home_work, size: 28, color: Colors.blue),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.maps_home_work, size: 28, color: Colors.blue),
+                        ),
+                        if (MediaQuery.of(context).size.width > 800) ...[
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Urbuzzi',
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                        ],
+                      ],
                     ),
-                    if (MediaQuery.of(context).size.width > 800) ...[
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Urbuzzi',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    const SizedBox(height: 24),
+                    if (MediaQuery.of(context).size.width > 800)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4.0),
+                        child: Text(
+                          'Gestão',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade400,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
                       ),
-                    ],
                   ],
                 ),
               ),

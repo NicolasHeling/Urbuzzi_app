@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../lots/presentation/lots_provider.dart';
 
 class VitrinePage extends ConsumerWidget {
@@ -14,15 +15,26 @@ class VitrinePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lotes disponíveis para você construir'),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              Navigator.of(context).pushReplacementNamed('/login');
+            },
+            icon: const Icon(Icons.login, size: 18),
+            label: const Text('Área do corretor'),
+          ),
+          const SizedBox(width: 8),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(24),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Text(
-              'Consulte área, valor e disponibilidade atualizados.',
+              'Consulte área, valor e disponibilidade atualizados. Fale direto com nosso time comercial pelo WhatsApp e garanta a sua reserva.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -74,7 +86,7 @@ class VitrinePage extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Loteamento', // Placeholder for loteamento name
+                                  lot.landName ?? 'Loteamento',
                                   style: Theme.of(context).textTheme.labelSmall,
                                 ),
                                 Text(
@@ -100,19 +112,20 @@ class VitrinePage extends ConsumerWidget {
                                 const SizedBox(height: 8),
                                 SizedBox(
                                   width: double.infinity,
-                                  child: FilledButton(
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Contato: (11) 99999-9999'),
-                                        ),
-                                      );
+                                  child: FilledButton.icon(
+                                    onPressed: () async {
+                                      final uri = Uri.parse('https://wa.me/5545999990000');
+                                      if (await canLaunchUrl(uri)) {
+                                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                      }
                                     },
+                                    icon: const Icon(Icons.chat, size: 16),
+                                    label: const Text('Falar com o Comercial'),
                                     style: FilledButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(horizontal: 8),
                                       textStyle: const TextStyle(fontSize: 12),
+                                      backgroundColor: const Color(0xFF25D366),
                                     ),
-                                    child: const Text('Falar com Comercial'),
                                   ),
                                 ),
                               ],

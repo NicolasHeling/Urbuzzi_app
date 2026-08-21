@@ -24,4 +24,9 @@ export class CreateLotDto {
   @IsOptional()
   @IsString()
   svgCoordinates?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  landName?: string;
 }

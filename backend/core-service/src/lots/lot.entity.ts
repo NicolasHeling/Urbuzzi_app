@@ -24,6 +24,9 @@ export class Lot {
   @Column({ nullable: true })
   svgCoordinates: string; // Para renderizar no mapa interativo
 
+  @Column({ nullable: true })
+  landName: string; // Nome do loteamento (ex: Biopark, Vista Verde)
+
   @OneToMany(() => Proposal, proposal => proposal.lot)
   proposals: Proposal[];
 

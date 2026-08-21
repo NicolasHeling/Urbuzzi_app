@@ -24,17 +24,25 @@ export class LotsService {
     return this.lotRepository.findOne({ where: { id } });
   }
 
-  async create(lotData: Partial<Lot>): Promise<Lot> {
+  async create(lotData: Partial<Lot>, userId?: string): Promise<Lot> {
     const lot = this.lotRepository.create(lotData);
     const savedLot = await this.lotRepository.save(lot);
-    await this.auditService.logAction('CREATE_LOT', 'Lot', savedLot.id, undefined, lotData);
+    await this.auditService.logAction('CREATE_LOT', 'Lot', savedLot.id, userId, lotData);
     return savedLot;
   }
 
-  async updateStatus(id: string, status: string): Promise<Lot> {
+  async updateStatus(id: string, status: string, userId?: string): Promise<Lot> {
+    const currentLot = await this.findOne(id);
+    const oldStatus = currentLot?.status;
     await this.lotRepository.update(id, { status });
     const updatedLot = await this.findOne(id);
-    await this.auditService.logAction('UPDATE_LOT_STATUS', 'Lot', id, undefined, { status });
+    await this.auditService.logAction('UPDATE_LOT_STATUS', 'Lot', id, userId, { 
+      oldStatus, 
+      newStatus: status,
+      lotNumber: updatedLot?.number,
+      lotBlock: updatedLot?.block,
+      landName: updatedLot?.landName,
+    });
     return updatedLot;
   }
 }
