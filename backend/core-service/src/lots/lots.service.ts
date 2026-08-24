@@ -31,7 +31,7 @@ export class LotsService {
     return savedLot;
   }
 
-  async updateStatus(id: string, status: string, userId?: string): Promise<Lot> {
+  async updateStatus(id: string, status: string, userId?: string, justification?: string): Promise<Lot> {
     const currentLot = await this.findOne(id);
     const oldStatus = currentLot?.status;
     await this.lotRepository.update(id, { status });
@@ -42,6 +42,7 @@ export class LotsService {
       lotNumber: updatedLot?.number,
       lotBlock: updatedLot?.block,
       landName: updatedLot?.landName,
+      justification,
     });
     return updatedLot;
   }

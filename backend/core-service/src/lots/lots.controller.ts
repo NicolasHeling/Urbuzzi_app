@@ -40,6 +40,6 @@ export class LotsController {
     @Req() req: Request,
   ): Promise<Lot> {
     const userId = req.headers['x-user-id'] as string;
-    return this.lotsService.updateStatus(id, updateStatusDto.status, userId);
+    return this.lotsService.updateStatus(id, updateStatusDto.status, userId, updateStatusDto.justification);
   }
 }

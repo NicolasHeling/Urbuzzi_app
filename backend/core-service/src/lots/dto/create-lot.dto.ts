@@ -23,6 +23,21 @@ export class CreateLotDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(50)
+  registration?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  frontMeasure?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  backMeasure?: number;
+
+  @IsOptional()
+  @IsString()
   svgCoordinates?: string;
 
   @IsOptional()

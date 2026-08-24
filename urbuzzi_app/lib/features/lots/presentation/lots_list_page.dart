@@ -6,6 +6,7 @@ import '../../reservations/presentation/reservation_dialog.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/status_badge.dart';
+import '../../../core/widgets/justification_dialog.dart';
 import '../../auth/presentation/auth_provider.dart';
 
 class LotsListPage extends ConsumerStatefulWidget {
@@ -216,8 +217,15 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                                       if (userRole.canApprove)
                                         Expanded(
                                           child: OutlinedButton(
-                                            onPressed: () {
-                                              ref.read(lotsControllerProvider.notifier).updateLotStatus(lot.id, 'Disponível');
+                                            onPressed: () async {
+                                              final justification = await showJustificationDialog(context, 'Tornar Disponível');
+                                              if (justification != null) {
+                                                ref.read(lotsControllerProvider.notifier).updateLotStatus(
+                                                  lot.id, 
+                                                  'Disponível',
+                                                  justification: justification,
+                                                );
+                                              }
                                             },
                                             style: OutlinedButton.styleFrom(
                                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

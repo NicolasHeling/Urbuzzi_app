@@ -22,6 +22,15 @@ export class Lot {
   status: string; // Disponível, Reservado, Vendido
 
   @Column({ nullable: true })
+  registration: string; // Matrícula
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  frontMeasure: number; // Frente (m)
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  backMeasure: number; // Fundo (m)
+
+  @Column({ nullable: true })
   svgCoordinates: string; // Para renderizar no mapa interativo
 
   @Column({ nullable: true })

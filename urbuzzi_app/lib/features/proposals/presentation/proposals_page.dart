@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import 'proposals_provider.dart';
 import '../domain/models/proposal.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../auth/presentation/auth_provider.dart';
+import '../../../core/auth/user_role.dart';
+import '../../../core/widgets/justification_dialog.dart';
 
 class ProposalsPage extends ConsumerWidget {
   const ProposalsPage({super.key});
@@ -11,6 +14,7 @@ class ProposalsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final proposalsState = ref.watch(proposalsControllerProvider);
+    final userRole = ref.watch(currentUserRoleProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -33,10 +37,11 @@ class ProposalsPage extends ConsumerWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildKanbanColumn(context, 'Reserva Ativa', Colors.orange, proposals, 'Nova'),
-                      _buildKanbanColumn(context, 'Em Análise Interna (SLA 7 Dias)', Colors.amber.shade600, proposals, 'Em Análise'),
-                      _buildKanbanColumn(context, 'Aprovada', Colors.green, proposals, 'Aprovada'),
-                      _buildKanbanColumn(context, 'Rejeitada', Colors.red, proposals, 'Rejeitada'),
+                      _buildKanbanColumn(context, ref, userRole, 'Reserva Ativa', Colors.orange, proposals, 'Nova'),
+                      _buildKanbanColumn(context, ref, userRole, 'Em Análise Interna (SLA 7 Dias)', Colors.amber.shade600, proposals, 'Em Análise'),
+                      _buildKanbanColumn(context, ref, userRole, 'Aprovada', Colors.green, proposals, 'Aprovada'),
+                      _buildKanbanColumn(context, ref, userRole, 'Rejeitada', Colors.red, proposals, 'Rejeitada'),
+                      _buildKanbanColumn(context, ref, userRole, 'Concluída', Colors.blue, proposals, 'Concluída'),
                     ],
                   ),
                 ),
@@ -92,7 +97,7 @@ class ProposalsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildKanbanColumn(BuildContext context, String title, Color color, List<Proposal> allProposals, String filterStatus) {
+  Widget _buildKanbanColumn(BuildContext context, WidgetRef ref, UserRole userRole, String title, Color color, List<Proposal> allProposals, String filterStatus) {
     final filtered = allProposals.where((p) => p.status == filterStatus).toList();
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
@@ -237,6 +242,46 @@ class ProposalsPage extends ConsumerWidget {
                             Text(
                               proposal.responsibleUserName!,
                               style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ],
+                      // Botões de Ação
+                      if ((filterStatus == 'Nova' || filterStatus == 'Em Análise') && userRole.canApprove) ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () async {
+                                  final justification = await showJustificationDialog(context, 'Rejeitar Proposta');
+                                  if (justification != null) {
+                                    ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Rejeitada');
+                                  }
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                  side: const BorderSide(color: Colors.red),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                ),
+                                child: const Text('Rejeitar'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: FilledButton(
+                                onPressed: () async {
+                                  final justification = await showJustificationDialog(context, 'Aprovar Proposta');
+                                  if (justification != null) {
+                                    ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Aprovada');
+                                  }
+                                },
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                ),
+                                child: const Text('Aprovar'),
+                              ),
                             ),
                           ],
                         ),

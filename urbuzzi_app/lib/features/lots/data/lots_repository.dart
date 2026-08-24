@@ -49,9 +49,13 @@ class LotsRepository {
     }
   }
 
-  Future<void> updateLotStatus(String id, String newStatus) async {
+  Future<void> updateLotStatus(String id, String newStatus, {String? justification}) async {
     try {
-      await _dio.patch('/lots/$id/status', data: {'status': newStatus});
+      final payload = <String, dynamic>{'status': newStatus};
+      if (justification != null) {
+        payload['justification'] = justification;
+      }
+      await _dio.patch('/lots/$id/status', data: payload);
     } catch (e) {
       throw Exception('Falha ao atualizar o status do lote: $e');
     }

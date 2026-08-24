@@ -38,9 +38,9 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
     }
   }
 
-  Future<void> updateLotStatus(String lotId, String newStatus) async {
+  Future<void> updateLotStatus(String lotId, String newStatus, {String? justification}) async {
     try {
-      await _repository.updateLotStatus(lotId, newStatus);
+      await _repository.updateLotStatus(lotId, newStatus, justification: justification);
       // Atualiza a lista localmente para refletir na UI instantaneamente
       state = state.whenData((lots) {
         return lots.map((lot) {
