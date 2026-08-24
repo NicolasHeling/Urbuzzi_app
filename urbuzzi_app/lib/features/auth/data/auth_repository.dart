@@ -50,6 +50,15 @@ class AuthRepository {
     }
   }
 
+  Future<User?> fetchMe() async {
+    try {
+      final response = await _dio.get('/auth/me');
+      return User.fromJson(response.data);
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<void> logout() async {
     DioClient().currentToken = null;
     await _storage.delete(key: 'jwt_token');

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/auth/user_role.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/models/user.dart';
 
@@ -8,10 +9,22 @@ final authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<
   return AuthController(ref.watch(authRepositoryProvider));
 });
 
+final currentUserRoleProvider = Provider<UserRole>((ref) {
+  final userState = ref.watch(authControllerProvider);
+  return userState.value?.role ?? UserRole.consulta;
+});
+
 class AuthController extends StateNotifier<AsyncValue<User?>> {
   final AuthRepository _repository;
 
-  AuthController(this._repository) : super(const AsyncValue.data(null));
+  AuthController(this._repository) : super(const AsyncValue.loading()) {
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final user = await _repository.fetchMe();
+    state = AsyncValue.data(user);
+  }
 
   Future<bool> login(String email, String password) async {
     try {

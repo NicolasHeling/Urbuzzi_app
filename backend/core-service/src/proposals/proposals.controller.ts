@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req, ForbiddenException } from '@nestjs/common';
 import { Request } from 'express';
 import { ProposalsService } from './proposals.service';
 import { Proposal } from './proposal.entity';
@@ -27,6 +27,15 @@ export class ProposalsController {
     @Req() req: Request,
   ): Promise<Proposal> {
     const userId = req.headers['x-user-id'] as string;
+    const userRole = (req.headers['x-user-role'] as string) || '';
+
+    const restrictedStatuses = ['Aprovada', 'Rejeitada', 'Concluída'];
+    if (restrictedStatuses.includes(updateStatusDto.status)) {
+      if (userRole !== 'gestor' && userRole !== 'administrador') {
+        throw new ForbiddenException(`O papel '${userRole}' não tem permissão para mover a proposta para o status '${updateStatusDto.status}'.`);
+      }
+    }
+
     return this.proposalsService.updateStatus(id, updateStatusDto.status, userId);
   }
 }

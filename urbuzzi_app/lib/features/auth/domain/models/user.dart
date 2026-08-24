@@ -1,14 +1,18 @@
+import '../../../../core/auth/user_role.dart';
+
 class User {
   final String id;
   final String name;
   final String email;
-  final String role;
+  final String roleStr;
+
+  UserRole get role => UserRole.fromString(roleStr);
 
   User({
     required this.id,
     required this.name,
     required this.email,
-    required this.role,
+    required this.roleStr,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -16,7 +20,7 @@ class User {
       id: json['id'],
       name: json['name'],
       email: json['email'],
-      role: json['role'] ?? 'user',
+      roleStr: json['role'] ?? 'consulta',
     );
   }
 }

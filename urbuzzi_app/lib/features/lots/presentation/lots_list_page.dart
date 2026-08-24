@@ -6,6 +6,7 @@ import '../../reservations/presentation/reservation_dialog.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/status_badge.dart';
+import '../../auth/presentation/auth_provider.dart';
 
 class LotsListPage extends ConsumerStatefulWidget {
   const LotsListPage({super.key});
@@ -26,6 +27,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
   @override
   Widget build(BuildContext context) {
     final lotsState = ref.watch(lotsControllerProvider);
+    final userRole = ref.watch(currentUserRoleProvider);
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     return Scaffold(
@@ -191,36 +193,42 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                                 const SizedBox(height: 20),
                                 Row(
                                   children: [
-                                    Expanded(
-                                      child: lot.status == 'Disponível'
-                                          ? FilledButton.icon(
-                                              onPressed: () async {
-                                                final success = await showReservationDialog(context, lot);
-                                                if (success == true) {
-                                                  ref.read(lotsControllerProvider.notifier).fetchLots();
-                                                }
-                                              },
-                                              icon: const Icon(Icons.bookmark_add, size: 18),
-                                              label: const Text('Reservar Lote', style: TextStyle(fontWeight: FontWeight.w600)),
-                                              style: FilledButton.styleFrom(
-                                                backgroundColor: AppColors.textPrimary,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                              ),
-                                            )
-                                          : OutlinedButton(
-                                              onPressed: () {
-                                                ref.read(lotsControllerProvider.notifier).updateLotStatus(lot.id, 'Disponível');
-                                              },
-                                              style: OutlinedButton.styleFrom(
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                side: const BorderSide(color: AppColors.border),
-                                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                                foregroundColor: AppColors.textPrimary,
-                                              ),
-                                              child: const Text('Tornar Disponível', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    if (lot.status == 'Disponível') ...[
+                                      if (userRole.canWrite)
+                                        Expanded(
+                                          child: FilledButton.icon(
+                                            onPressed: () async {
+                                              final success = await showReservationDialog(context, lot);
+                                              if (success == true) {
+                                                ref.read(lotsControllerProvider.notifier).fetchLots();
+                                              }
+                                            },
+                                            icon: const Icon(Icons.bookmark_add, size: 18),
+                                            label: const Text('Reservar Lote', style: TextStyle(fontWeight: FontWeight.w600)),
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: AppColors.textPrimary,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
                                             ),
-                                    ),
+                                          ),
+                                        ),
+                                    ] else ...[
+                                      if (userRole.canApprove)
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            onPressed: () {
+                                              ref.read(lotsControllerProvider.notifier).updateLotStatus(lot.id, 'Disponível');
+                                            },
+                                            style: OutlinedButton.styleFrom(
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                              side: const BorderSide(color: AppColors.border),
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
+                                              foregroundColor: AppColors.textPrimary,
+                                            ),
+                                            child: const Text('Tornar Disponível', style: TextStyle(fontWeight: FontWeight.w600)),
+                                          ),
+                                        ),
+                                    ],
                                   ],
                                 ),
                               ],

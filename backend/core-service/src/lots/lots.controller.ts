@@ -4,6 +4,7 @@ import { LotsService } from './lots.service';
 import { Lot } from './lot.entity';
 import { CreateLotDto } from './dto/create-lot.dto';
 import { UpdateLotStatusDto } from './dto/update-lot-status.dto';
+import { Roles } from '../guards/roles.guard';
 
 @Controller('lots')
 export class LotsController {
@@ -25,12 +26,14 @@ export class LotsController {
   }
 
   @Post()
+  @Roles('gestor', 'administrador')
   create(@Body() createLotDto: CreateLotDto, @Req() req: Request): Promise<Lot> {
     const userId = req.headers['x-user-id'] as string;
     return this.lotsService.create(createLotDto, userId);
   }
 
   @Patch(':id/status')
+  @Roles('gestor', 'administrador')
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusDto: UpdateLotStatusDto,
