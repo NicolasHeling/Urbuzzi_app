@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-/// Badge padronizado de status, usado no Mapa, Lista de Lotes,
-/// Kanban de Propostas, Auditoria e Vitrine.
+/// Badge padronizado de status com ponto colorido — idêntico ao protótipo Lovable.
+/// Usado no Mapa, Lista de Lotes, Kanban de Propostas, Auditoria e Vitrine.
 class StatusBadge extends StatelessWidget {
   final String status;
   final bool dense;
@@ -16,21 +16,32 @@ class StatusBadge extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: dense ? 8 : 12,
+        horizontal: dense ? 8 : 10,
         vertical: dense ? 3 : 5,
       ),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w600,
-          fontSize: dense ? 11 : 12.5,
-          height: 1,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            status,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: dense ? 11 : 12,
+              height: 1,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -47,41 +58,43 @@ class StatusLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: 6,
+      runSpacing: 6,
       children: AppColors.statusOrder.map((status) {
         final active = highlight == null || highlight!.contains(status);
         final color = AppColors.statusColor(status);
+        final bg = AppColors.statusBgColor(status);
         return InkWell(
           onTap: onTap == null ? null : () => onTap!(status),
           borderRadius: BorderRadius.circular(999),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: active ? color.withValues(alpha: 0.08) : Colors.transparent,
+              color: active ? bg : Colors.transparent,
               borderRadius: BorderRadius.circular(999),
               border: Border.all(
-                color: active ? color.withValues(alpha: 0.35) : AppColors.border,
+                color: active ? color.withValues(alpha: 0.25) : AppColors.border,
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 8,
-                  height: 8,
+                  width: 6,
+                  height: 6,
                   decoration: BoxDecoration(
                     color: active ? color : AppColors.textMuted,
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 5),
                 Text(
                   status,
                   style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
-                    color: active ? AppColors.textPrimary : AppColors.textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: active ? color : AppColors.textMuted,
+                    height: 1,
                   ),
                 ),
               ],

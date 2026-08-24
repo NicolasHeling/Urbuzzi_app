@@ -35,17 +35,38 @@ class UrbuzziApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Inter como fonte base, Plus Jakarta Sans como fonte de display
+    final baseTextTheme = GoogleFonts.interTextTheme(Theme.of(context).textTheme);
+    final displayTextTheme = GoogleFonts.plusJakartaSansTextTheme(baseTextTheme).copyWith(
+      displayLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+      displayMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+      displaySmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+      headlineLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+      headlineMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+      headlineSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+      titleLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+      titleMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+    );
+
     return MaterialApp(
-      title: 'Urbuzzi',
+      title: 'Urbizzi',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
+        textTheme: displayTextTheme,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           surface: AppColors.surface,
+          primary: AppColors.primary,
         ),
         scaffoldBackgroundColor: AppColors.background,
         useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.surface,
+          surfaceTintColor: AppColors.surface,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
       ),
       initialRoute: initialRoute,
       onGenerateRoute: AppRoutes.onGenerateRoute,

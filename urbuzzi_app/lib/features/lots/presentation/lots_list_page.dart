@@ -30,26 +30,6 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        surfaceTintColor: AppColors.surface,
-        title: const Text('Lista de Lotes', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-        centerTitle: false,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.border, height: 1),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.textPrimary),
-            onPressed: () {
-              ref.read(lotsControllerProvider.notifier).fetchLots();
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: Column(
         children: [
           Padding(
@@ -85,7 +65,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
               children: _statuses.map((status) {
                 final isSelected = _selectedStatus == status;
                 final statusColor = status == 'Todos' ? AppColors.textPrimary : AppColors.statusColor(status);
-                final statusBgColor = status == 'Todos' ? AppColors.textPrimary.withOpacity(0.08) : AppColors.statusColor(status).withOpacity(0.08);
+                final statusBgColor = status == 'Todos' ? AppColors.textPrimary.withValues(alpha: 0.08) : AppColors.statusColor(status).withValues(alpha: 0.08);
 
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
@@ -103,7 +83,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                       side: BorderSide(
-                        color: isSelected ? statusColor.withOpacity(0.35) : AppColors.border,
+                        color: isSelected ? statusColor.withValues(alpha: 0.35) : AppColors.border,
                       ),
                     ),
                     labelStyle: TextStyle(
@@ -151,7 +131,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                               border: Border.all(color: AppColors.border),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.02),
+                                  color: Colors.black.withValues(alpha: 0.02),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),

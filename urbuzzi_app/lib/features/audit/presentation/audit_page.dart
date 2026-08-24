@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'audit_provider.dart';
 import '../domain/models/audit_entry.dart';
 import '../../../core/widgets/status_badge.dart';
+import '../../../core/theme/app_colors.dart';
 
 class AuditPage extends ConsumerWidget {
   const AuditPage({super.key});
@@ -40,18 +41,7 @@ class AuditPage extends ConsumerWidget {
     final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        title: const Text('Histórico/Auditoria', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-        centerTitle: false,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: Colors.grey.shade200, height: 1),
-        ),
-      ),
+      backgroundColor: AppColors.background,
       body: auditState.when(
         data: (entries) {
           if (entries.isEmpty) {
@@ -181,7 +171,7 @@ class AuditPage extends ConsumerWidget {
                   border: Border.all(color: Colors.grey.shade200),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
+                      color: Colors.black.withValues(alpha: 0.02),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),

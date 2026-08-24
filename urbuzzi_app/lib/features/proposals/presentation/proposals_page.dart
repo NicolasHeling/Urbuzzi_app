@@ -13,27 +13,7 @@ class ProposalsPage extends ConsumerWidget {
     final proposalsState = ref.watch(proposalsControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        title: const Text('Propostas (SLA 7 dias)', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-        centerTitle: false,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: Colors.grey.shade200, height: 1),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF0F172A)),
-            onPressed: () {
-              ref.read(proposalsControllerProvider.notifier).fetchProposals();
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      backgroundColor: AppColors.background,
       body: proposalsState.when(
         data: (proposals) {
           return Column(
@@ -120,7 +100,7 @@ class ProposalsPage extends ConsumerWidget {
       width: 320,
       margin: const EdgeInsets.only(left: 8, right: 16, bottom: 24),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100.withOpacity(0.5),
+        color: Colors.grey.shade100.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -184,7 +164,7 @@ class ProposalsPage extends ConsumerWidget {
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
+                        color: Colors.black.withValues(alpha: 0.02),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                     )],
