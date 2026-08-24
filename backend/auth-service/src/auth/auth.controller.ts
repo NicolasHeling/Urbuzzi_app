@@ -1,12 +1,18 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UsersService } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
@@ -21,5 +27,26 @@ export class AuthController {
   @Post('refresh')
   refresh(@Body() refreshDto: RefreshDto) {
     return this.authService.refreshTokens(refreshDto.refreshToken);
+  }
+
+  /**
+   * GET /auth/me — retorna os dados do usuário logado.
+   * Requer Authorization: Bearer <token>.
+   * Usado pelo app Flutter no boot para restaurar o papel do usuário após F5.
+   */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async me(@Req() req: Request & { user: any }) {
+    const userId = req.user?.sub;
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      return { id: null, name: null, email: null, role: 'consulta' };
+    }
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
   }
 }

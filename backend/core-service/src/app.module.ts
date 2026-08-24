@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LotsModule } from './lots/lots.module';
 import { ProposalsModule } from './proposals/proposals.module';
@@ -8,6 +9,7 @@ import { ClientsModule } from './clients/clients.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { dataSourceOptions } from './data-source';
+import { RolesGuard } from './guards/roles.guard';
 
 @Module({
   imports: [
@@ -22,6 +24,12 @@ import { dataSourceOptions } from './data-source';
     HealthModule,
     ClientsModule,
     ReservationsModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
   ],
 })
 export class AppModule {}

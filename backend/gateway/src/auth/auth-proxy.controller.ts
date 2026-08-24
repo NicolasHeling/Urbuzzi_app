@@ -11,11 +11,16 @@ export class AuthProxyController {
     try {
       const targetUrl = `${this.authServiceUrl}/${req.params['0'] || ''}`;
 
-      // Filtra headers — envia apenas os necessários
+      // Repassa headers necessários, incluindo Authorization para rotas protegidas como /auth/me
       const safeHeaders: Record<string, string> = {
         'content-type': req.headers['content-type'] || 'application/json',
         'host': 'auth-service',
       };
+
+      // Repassar o token JWT para que o auth-service possa autenticar /auth/me
+      if (req.headers['authorization']) {
+        safeHeaders['authorization'] = req.headers['authorization'] as string;
+      }
 
       const response = await axios({
         method: req.method,
