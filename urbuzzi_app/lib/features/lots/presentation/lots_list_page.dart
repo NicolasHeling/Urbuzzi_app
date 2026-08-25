@@ -120,7 +120,18 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                       ),
                     ),
                     Expanded(
-                      child: ListView.builder(
+                      child: filteredLots.isEmpty 
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.inbox_rounded, size: 64, color: Colors.grey.shade400),
+                                const SizedBox(height: 16),
+                                Text('Nenhum registro encontrado ainda', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
                         itemCount: filteredLots.length,
                         itemBuilder: (context, index) {
@@ -248,7 +259,10 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                   ],
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Align(
+                alignment: Alignment.topCenter,
+                child: LinearProgressIndicator(color: AppColors.primary),
+              ),
               error: (error, stack) => Center(child: Text('Erro: $error')),
             ),
           ),

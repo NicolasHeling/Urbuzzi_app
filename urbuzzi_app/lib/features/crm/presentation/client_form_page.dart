@@ -57,12 +57,22 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
         await repo.createClient(newClient);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cliente criado com sucesso!')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: const Text('Cliente criado com sucesso!'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            backgroundColor: Colors.green.shade800,
+          ));
           Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro: $e'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            backgroundColor: Colors.red.shade800,
+          ));
         }
       } finally {
         if (mounted) setState(() => _isLoading = false);
@@ -82,20 +92,38 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
             child: Column(
               children: [
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Nome Completo', 
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    prefixIcon: const Icon(Icons.person_outline),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
                   ),
                   validator: (val) => val == null || val.isEmpty ? 'Campo obrigatório' : null,
                   onSaved: (val) => _name = val!,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'CPF', 
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.badge_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    prefixIcon: const Icon(Icons.badge_outlined),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
                   ),
                   keyboardType: TextInputType.number,
                   inputFormatters: [_cpfCnpjFormatter],
@@ -103,10 +131,19 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'E-mail', 
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (val) => val == null || !val.contains('@') ? 'E-mail inválido' : null,
@@ -114,10 +151,19 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Telefone (WhatsApp)', 
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.phone_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
                   ),
                   keyboardType: TextInputType.phone,
                   inputFormatters: [_phoneFormatter],
@@ -125,10 +171,19 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Endereço Completo', 
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.location_on_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    prefixIcon: const Icon(Icons.location_on_outlined),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
                   ),
                   onSaved: (val) => _address = val ?? '',
                 ),

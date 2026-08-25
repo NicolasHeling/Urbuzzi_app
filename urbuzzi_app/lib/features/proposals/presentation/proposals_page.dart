@@ -20,6 +20,18 @@ class ProposalsPage extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: proposalsState.when(
         data: (proposals) {
+          if (proposals.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox_rounded, size: 64, color: Colors.grey.shade400),
+                  const SizedBox(height: 16),
+                  Text('Nenhum registro encontrado ainda', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+                ],
+              ),
+            );
+          }
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -49,7 +61,10 @@ class ProposalsPage extends ConsumerWidget {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Align(
+          alignment: Alignment.topCenter,
+          child: LinearProgressIndicator(),
+        ),
         error: (error, stack) => Center(child: Text('Erro: $error')),
       ),
     );

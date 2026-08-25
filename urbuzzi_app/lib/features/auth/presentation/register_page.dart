@@ -22,6 +22,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     );
     
     if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Cadastro realizado com sucesso!'),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        backgroundColor: Colors.green.shade800,
+      ));
       Navigator.pushReplacementNamed(context, '/app'); // Roteia para o AppShell
     }
   }
@@ -48,35 +54,56 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               const SizedBox(height: 32),
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Nome Completo',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  prefixIcon: const Icon(Icons.person),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Colors.grey.shade50,
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'E-mail',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  prefixIcon: const Icon(Icons.email),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Colors.grey.shade50,
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Senha',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  prefixIcon: const Icon(Icons.lock),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Colors.grey.shade50,
                 ),
                 obscureText: true,
               ),

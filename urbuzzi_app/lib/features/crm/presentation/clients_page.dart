@@ -14,7 +14,16 @@ class ClientsPage extends ConsumerWidget {
       body: clientsAsync.when(
         data: (clients) {
           if (clients.isEmpty) {
-            return const Center(child: Text('Nenhum cliente cadastrado.'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.folder_open, size: 64, color: Colors.grey.shade400),
+                  const SizedBox(height: 16),
+                  Text('Nenhum registro encontrado ainda', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+                ],
+              ),
+            );
           }
           return ListView.builder(
             itemCount: clients.length,
@@ -32,7 +41,10 @@ class ClientsPage extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Align(
+          alignment: Alignment.topCenter,
+          child: LinearProgressIndicator(),
+        ),
         error: (err, stack) => Center(child: Text('Erro: $err')),
       ),
       floatingActionButton: FloatingActionButton(

@@ -22,6 +22,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
     
     if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Login realizado com sucesso!'),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        backgroundColor: Colors.green.shade800,
+      ));
       Navigator.pushReplacementNamed(context, '/app'); // Roteia para o AppShell
     }
   }
@@ -78,15 +84,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     labelText: 'E-mail',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                     prefixIcon: const Icon(Icons.email_outlined),
                     filled: true,
-                    fillColor: AppColors.background,
+                    fillColor: Colors.grey.shade50,
                   ),
                   keyboardType: TextInputType.emailAddress,
                 ),
@@ -97,15 +103,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     labelText: 'Senha',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                     prefixIcon: const Icon(Icons.lock_outline),
                     filled: true,
-                    fillColor: AppColors.background,
+                    fillColor: Colors.grey.shade50,
                   ),
                   obscureText: true,
                 ),

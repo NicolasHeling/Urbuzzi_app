@@ -29,13 +29,23 @@ class _ReservationDialogState extends ConsumerState<ReservationDialog> {
       if (mounted) {
         Navigator.pop(context, true); // Retorna sucesso
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Reserva criada com sucesso para o Lote ${widget.lot.number}!')),
+          SnackBar(
+            content: Text('Reserva criada com sucesso para o Lote ${widget.lot.number}!'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            backgroundColor: Colors.green.shade800,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao reservar lote: $e')),
+          SnackBar(
+            content: Text('Erro ao reservar lote: $e'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            backgroundColor: Colors.red.shade800,
+          ),
         );
       }
     } finally {
@@ -60,7 +70,18 @@ class _ReservationDialogState extends ConsumerState<ReservationDialog> {
               const Text('Selecione o cliente para a reserva (válida por 48h):'),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                decoration: const InputDecoration(border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
                 hint: const Text('Escolha o Cliente'),
                 value: _selectedClientId,
                 items: clients.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
