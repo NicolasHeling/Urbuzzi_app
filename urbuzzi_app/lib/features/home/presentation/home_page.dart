@@ -190,68 +190,179 @@ class _HomePageState extends ConsumerState<HomePage> {
     return LayoutBuilder(builder: (context, constraints) {
       final isWide = constraints.maxWidth > 900;
 
-      return Padding(
-        padding: const EdgeInsets.all(20),
-        child: isWide
-            ? Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // ── Mapa (flex 3) ──
-                  Expanded(
-                    flex: 3,
-                    child: _MapCard(
-                      zoom: _zoom,
-                      lotCount: lots.length,
-                      transformationController: _transformationController,
-                      selectedPolygon: _selectedPolygon,
-                      lots: lots,
-                      onTapDown: (d) => _handleTapDown(d, lots, true),
-                      onZoomIn: () => _zoomBy(1.25),
-                      onZoomOut: () => _zoomBy(0.8),
-                      onReset: _resetZoom,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // ── Painel lateral ──
-                  SizedBox(
-                    width: 320,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          _SelectedLotPanel(
-                            poly: _selectedPolygon,
-                            lot: _lotForPolygon(_selectedPolygon, lots),
+      return Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: _OverviewDashboard(counts: counts, total: lots.length),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: isWide
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ── Mapa (flex 3) ──
+                        Expanded(
+                          flex: 3,
+                          child: _MapCard(
+                            zoom: _zoom,
+                            lotCount: lots.length,
+                            transformationController: _transformationController,
+                            selectedPolygon: _selectedPolygon,
+                            lots: lots,
+                            onTapDown: (d) => _handleTapDown(d, lots, true),
+                            onZoomIn: () => _zoomBy(1.25),
+                            onZoomOut: () => _zoomBy(0.8),
+                            onReset: _resetZoom,
                           ),
-                          const SizedBox(height: 16),
-                          _SummaryCard(counts: counts),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 16),
+                        // ── Painel lateral ──
+                        SizedBox(
+                          width: 320,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                _SelectedLotPanel(
+                                  poly: _selectedPolygon,
+                                  lot: _lotForPolygon(_selectedPolygon, lots),
+                                ),
+                                const SizedBox(height: 16),
+                                _SummaryCard(counts: counts),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: _MapCard(
+                            zoom: _zoom,
+                            lotCount: lots.length,
+                            transformationController: _transformationController,
+                            selectedPolygon: _selectedPolygon,
+                            lots: lots,
+                            onTapDown: (d) => _handleTapDown(d, lots, false),
+                            onZoomIn: () => _zoomBy(1.25),
+                            onZoomOut: () => _zoomBy(0.8),
+                            onReset: _resetZoom,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _SummaryCard(counts: counts),
+                      ],
                     ),
-                  ),
-                ],
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: _MapCard(
-                      zoom: _zoom,
-                      lotCount: lots.length,
-                      transformationController: _transformationController,
-                      selectedPolygon: _selectedPolygon,
-                      lots: lots,
-                      onTapDown: (d) => _handleTapDown(d, lots, false),
-                      onZoomIn: () => _zoomBy(1.25),
-                      onZoomOut: () => _zoomBy(0.8),
-                      onReset: _resetZoom,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _SummaryCard(counts: counts),
-                ],
-              ),
+            ),
+          ),
+        ],
       );
     });
+  }
+}
+
+// ─── Overview Dashboard ────────────────────────────────────────────────────
+
+class _OverviewDashboard extends StatelessWidget {
+  final Map<String, int> counts;
+  final int total;
+
+  const _OverviewDashboard({required this.counts, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      children: [
+        _OverviewCard(
+          title: 'Total de Lotes',
+          value: total.toString(),
+          icon: Icons.landscape_outlined,
+          color: AppColors.primary,
+        ),
+        _OverviewCard(
+          title: 'Lotes Disponíveis',
+          value: (counts['Disponível'] ?? 0).toString(),
+          icon: Icons.check_circle_outline,
+          color: AppColors.disponivel,
+        ),
+        _OverviewCard(
+          title: 'Reservas Ativas',
+          value: (counts['Reservado'] ?? 0).toString(),
+          icon: Icons.bookmark_outline,
+          color: AppColors.reservado,
+        ),
+        _OverviewCard(
+          title: 'Em Aprovação',
+          value: (counts['Em Aprovação'] ?? 0).toString(),
+          icon: Icons.pending_actions_outlined,
+          color: AppColors.emAprovacao,
+        ),
+      ],
+    );
+  }
+}
+
+class _OverviewCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _OverviewCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 240,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Stack(
+        children: [
+          Align(
+            alignment: Alignment.topRight,
+            child: Icon(icon, size: 28, color: color.withValues(alpha: 0.2)),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: TextStyle(
+                  color: AppColors.textPrimary, // Changed to textPrimary per instructions, could be primary or textPrimary
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

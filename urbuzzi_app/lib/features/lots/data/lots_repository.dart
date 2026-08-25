@@ -8,21 +8,7 @@ class LotsRepository {
 
   Future<List<Lot>> fetchLots() async {
     try {
-      final storage = const FlutterSecureStorage();
-      final token = await storage.read(key: 'jwt_token');
-
-      print('DEBUG MAPA: Iniciando requisição para buscar lotes...');
-      print('DEBUG MAPA: Token lido do SecureStorage: $token');
-      print('DEBUG MAPA: URL exata sendo chamada: ${_dio.options.baseUrl}/lots');
-
-      final response = await _dio.get(
-        '/lots',
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
+      final response = await _dio.get('/lots');
       final List<dynamic> data = response.data;
       return data.map((json) => Lot.fromJson(json)).toList();
     } catch (e) {

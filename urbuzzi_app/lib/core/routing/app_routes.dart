@@ -4,6 +4,7 @@ import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/crm/presentation/client_form_page.dart';
 import '../../features/vitrine/presentation/vitrine_page.dart';
+import '../network/dio_client.dart';
 import '../widgets/app_shell.dart';
 
 class AppRoutes {
@@ -16,6 +17,12 @@ class AppRoutes {
   static const String vitrine = '/vitrine';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    final isAuthenticated = DioClient().currentToken != null && DioClient().currentToken!.isNotEmpty;
+
+    if (!isAuthenticated && (settings.name == app || settings.name == clientForm)) {
+      return _build(settings, const LoginPage());
+    }
+
     switch (settings.name) {
       case login:
         return _build(settings, const LoginPage());

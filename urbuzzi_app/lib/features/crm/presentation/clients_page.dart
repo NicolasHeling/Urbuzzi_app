@@ -10,7 +10,7 @@ class ClientsPage extends ConsumerWidget {
     final clientsAsync = ref.watch(clientsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Gestão de Clientes')),
+      backgroundColor: const Color(0xFFF8FAFC), // AppColors.background (fallback)
       body: clientsAsync.when(
         data: (clients) {
           if (clients.isEmpty) {
@@ -27,17 +27,58 @@ class ClientsPage extends ConsumerWidget {
               ),
             );
           }
-          return ListView.builder(
-            itemCount: clients.length,
-            itemBuilder: (context, index) {
-              final client = clients[index];
-              return ListTile(
-                leading: const CircleAvatar(child: Icon(Icons.person)),
-                title: Text(client.name),
-                subtitle: Text('${client.email} \n${client.phone}'),
-                isThreeLine: true,
-                onTap: () {
-                  // Pode abrir detalhes do cliente futuramente
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth > 800) {
+                return Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Card(
+                    color: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SizedBox(
+                        width: constraints.maxWidth - 48,
+                        child: DataTable(
+                          headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                          columns: const [
+                            DataColumn(label: Text('Nome')),
+                            DataColumn(label: Text('E-mail')),
+                            DataColumn(label: Text('Telefone')),
+                          ],
+                          rows: clients.map((client) {
+                            return DataRow(
+                              cells: [
+                                DataCell(Text(client.name)),
+                                DataCell(Text(client.email)),
+                                DataCell(Text(client.phone)),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
+              
+              return ListView.builder(
+                itemCount: clients.length,
+                itemBuilder: (context, index) {
+                  final client = clients[index];
+                  return ListTile(
+                    leading: const CircleAvatar(child: Icon(Icons.person)),
+                    title: Text(client.name),
+                    subtitle: Text('${client.email} \n${client.phone}'),
+                    isThreeLine: true,
+                    onTap: () {
+                      // Pode abrir detalhes do cliente futuramente
+                    },
+                  );
                 },
               );
             },

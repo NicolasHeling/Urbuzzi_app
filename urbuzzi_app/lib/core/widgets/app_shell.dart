@@ -150,9 +150,7 @@ class _Sidebar extends StatelessWidget {
           Container(
             height: 64,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.sidebarBorder, width: 1)),
-            ),
+            // Removed bottom border from logo container
             child: Row(
               children: [
                 // Logo "U"
@@ -267,7 +265,7 @@ class _SidebarItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: Material(
-        color: selected ? AppColors.sidebarAccent : Colors.transparent,
+        color: selected ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: onTap,
@@ -280,7 +278,7 @@ class _SidebarItem extends StatelessWidget {
                 Icon(
                   item.icon,
                   size: 18,
-                  color: selected ? AppColors.sidebarPrimary : AppColors.sidebarFg.withValues(alpha: 0.75),
+                  color: selected ? AppColors.primary : AppColors.sidebarFg.withValues(alpha: 0.75),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -288,8 +286,8 @@ class _SidebarItem extends StatelessWidget {
                     item.badge != null ? item.label : item.label,
                     style: TextStyle(
                       fontSize: 13.5,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                      color: selected ? Colors.white : AppColors.sidebarFg.withValues(alpha: 0.75),
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected ? AppColors.primary : AppColors.sidebarFg.withValues(alpha: 0.75),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),

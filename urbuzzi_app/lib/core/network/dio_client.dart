@@ -4,9 +4,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 String getBaseUrl() {
-  if (kIsWeb) return 'http://localhost:3010';
-  if (Platform.isAndroid) return 'http://10.0.2.2:3010';
-  return 'http://localhost:3010';
+  if (kIsWeb) return 'http://localhost:3000';
+  if (Platform.isAndroid) return 'http://10.0.2.2:3000';
+  return 'http://localhost:3000';
 }
 
 class DioClient {
@@ -33,6 +33,8 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          if (options.path.contains('/auth/login') || options.path.contains('/auth/register')) return handler.next(options);
+
           // Tenta ler da memória primeiro
           String? token = currentToken;
 

@@ -45,20 +45,7 @@ class ProposalsPage extends ConsumerWidget {
                 ),
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildKanbanColumn(context, ref, userRole, 'Reserva Ativa', AppColors.reservado, proposals, 'Nova'),
-                      _buildKanbanColumn(context, ref, userRole, 'Em Análise Interna (SLA 7 Dias)', AppColors.emAprovacao, proposals, 'Em Análise'),
-                      _buildKanbanColumn(context, ref, userRole, 'Aprovada', AppColors.disponivel, proposals, 'Aprovada'),
-                      _buildKanbanColumn(context, ref, userRole, 'Rejeitada', AppColors.cancelado, proposals, 'Rejeitada'),
-                      _buildKanbanColumn(context, ref, userRole, 'Concluída', AppColors.primary, proposals, 'Concluída'),
-                    ],
-                  ),
-                ),
+                child: _buildResponsiveProposals(context, ref, userRole, proposals),
               ),
             ],
           );
@@ -114,203 +101,173 @@ class ProposalsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildKanbanColumn(BuildContext context, WidgetRef ref, UserRole userRole, String title, Color color, List<Proposal> allProposals, String filterStatus) {
-    final filtered = allProposals.where((p) => p.status == filterStatus).toList();
+  Widget _buildResponsiveProposals(BuildContext context, WidgetRef ref, UserRole userRole, List<Proposal> proposals) {
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
-    return Container(
-      width: 320,
-      margin: const EdgeInsets.only(left: 8, right: 16, bottom: 24),
-      decoration: BoxDecoration(
-        color: AppColors.muted.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth > 800) {
+          // Desktop: DataTable
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+            child: Card(
+              color: AppColors.surface,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: AppColors.border),
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: constraints.maxWidth - 48,
+                  child: DataTable(
+                    headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    columns: const [
+                      DataColumn(label: Text('Cliente')),
+                      DataColumn(label: Text('Lote')),
+                      DataColumn(label: Text('Valor')),
+                      DataColumn(label: Text('Status')),
+                      DataColumn(label: Text('SLA')),
+                      DataColumn(label: Text('Ações')),
+                    ],
+                    rows: proposals.map((proposal) {
+                      final lotNumber = proposal.lot?['number'] ?? '?';
+                      final lotBlock = proposal.lot?['block'] ?? '?';
+                      final slaBadge = proposal.status == 'Em Análise' ? _buildSlaBadge(proposal) : null;
+                      
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(proposal.customerName)),
+                          DataCell(Text('Q$lotBlock - Lote $lotNumber')),
+                          DataCell(Text(currencyFormatter.format(proposal.offeredPrice ?? 0))),
+                          DataCell(StatusBadge(status: proposal.status)),
+                          DataCell(slaBadge ?? const Text('-')),
+                          DataCell(Row(
+                            children: [
+                              if ((proposal.status == 'Nova' || proposal.status == 'Em Análise') && userRole.canApprove) ...[
+                                TextButton(
+                                  onPressed: () async {
+                                    final justification = await showJustificationDialog(context, 'Rejeitar Proposta');
+                                    if (justification != null) {
+                                      ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Rejeitada');
+                                    }
+                                  },
+                                  style: TextButton.styleFrom(foregroundColor: AppColors.cancelado),
+                                  child: const Text('Rejeitar'),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    final justification = await showJustificationDialog(context, 'Aprovar Proposta');
+                                    if (justification != null) {
+                                      ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Aprovada');
+                                    }
+                                  },
+                                  style: TextButton.styleFrom(foregroundColor: AppColors.disponivel),
+                                  child: const Text('Aprovar'),
+                                ),
+                              ] else
+                                const Text('-'),
+                            ],
+                          )),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Text('${filtered.length}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: filtered.length,
-              itemBuilder: (context, index) {
-                final proposal = filtered[index];
-                // Exibe Lote · Quadra · Nome do Loteamento (se disponível)
-                final lotNumber = proposal.lot?['number'] ?? '?';
-                final lotBlock = proposal.lot?['block'] ?? '?';
-                final landName = proposal.lot?['landName'];
-                final lotDesc = landName != null
-                    ? 'Lote $lotNumber · Quadra $lotBlock · $landName'
-                    : 'Lote $lotNumber · Quadra $lotBlock';
+          );
+        }
 
-                // Badge SLA para propostas "Em Análise"
-                final slaBadge = (filterStatus == 'Em Análise') ? _buildSlaBadge(proposal) : null;
+        // Mobile: ListView
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          itemCount: proposals.length,
+          itemBuilder: (context, index) {
+            final proposal = proposals[index];
+            final lotNumber = proposal.lot?['number'] ?? '?';
+            final lotBlock = proposal.lot?['block'] ?? '?';
+            final slaBadge = proposal.status == 'Em Análise' ? _buildSlaBadge(proposal) : null;
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                    )],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+            return Card(
+              color: AppColors.surface,
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: AppColors.border),
+              ),
+              elevation: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            proposal.customerName,
+                            style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary, fontSize: 16),
+                          ),
+                        ),
+                        StatusBadge(status: proposal.status),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Quadra $lotBlock · Lote $lotNumber', style: const TextStyle(color: AppColors.textSecondary)),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(currencyFormatter.format(proposal.offeredPrice ?? 0),
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        if (slaBadge != null) slaBadge,
+                      ],
+                    ),
+                    if ((proposal.status == 'Nova' || proposal.status == 'Em Análise') && userRole.canApprove) ...[
+                      const SizedBox(height: 16),
                       Row(
                         children: [
-                          CircleAvatar(
-                            radius: 14,
-                            backgroundColor: AppColors.accent,
-                            foregroundColor: AppColors.primary,
-                            child: Text(
-                              proposal.customerName.isNotEmpty ? proposal.customerName[0].toUpperCase() : '?',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () async {
+                                final justification = await showJustificationDialog(context, 'Rejeitar Proposta');
+                                if (justification != null) {
+                                  ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Rejeitada');
+                                }
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.cancelado,
+                                side: const BorderSide(color: AppColors.cancelado),
+                              ),
+                              child: const Text('Rejeitar'),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              proposal.customerName,
-                              style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            child: FilledButton(
+                              onPressed: () async {
+                                final justification = await showJustificationDialog(context, 'Aprovar Proposta');
+                                if (justification != null) {
+                                  ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Aprovada');
+                                }
+                              },
+                              style: FilledButton.styleFrom(backgroundColor: AppColors.disponivel),
+                              child: const Text('Aprovar'),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Icon(Icons.landscape_rounded, size: 14, color: AppColors.textMuted),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              lotDesc,
-                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Badge SLA (apenas para "Em Análise")
-                      if (slaBadge != null) ...[
-                        const SizedBox(height: 8),
-                        slaBadge,
-                      ],
-                      const SizedBox(height: 12),
-                      const Divider(height: 1),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Valor da Proposta', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                          Text(
-                            currencyFormatter.format(proposal.offeredPrice ?? 0),
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
-                          ),
-                        ],
-                      ),
-                      // Corretor responsável
-                      if (proposal.responsibleUserName != null && proposal.responsibleUserName!.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            const Icon(Icons.person_outline_rounded, size: 13, color: AppColors.textMuted),
-                            const SizedBox(width: 4),
-                            Text(
-                              proposal.responsibleUserName!,
-                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ],
-                      // Botões de Ação
-                      if ((filterStatus == 'Nova' || filterStatus == 'Em Análise') && userRole.canApprove) ...[
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () async {
-                                  final justification = await showJustificationDialog(context, 'Rejeitar Proposta');
-                                  if (justification != null) {
-                                    ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Rejeitada');
-                                  }
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.cancelado,
-                                  side: const BorderSide(color: AppColors.cancelado),
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                ),
-                                child: const Text('Rejeitar'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: FilledButton(
-                                onPressed: () async {
-                                  final justification = await showJustificationDialog(context, 'Aprovar Proposta');
-                                  if (justification != null) {
-                                    ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Aprovada');
-                                  }
-                                },
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.disponivel,
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                ),
-                                child: const Text('Aprovar'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
                     ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

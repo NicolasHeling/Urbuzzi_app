@@ -133,131 +133,204 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                               ],
                             ),
                           )
-                        : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                        itemCount: filteredLots.length,
-                        itemBuilder: (context, index) {
-                          final lot = filteredLots[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 16.0),
-                            padding: const EdgeInsets.all(20.0),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppColors.border),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.02),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          lot.landName ?? 'Loteamento',
-                                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Lote ${lot.number} · Quadra ${lot.block}',
-                                          style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.textPrimary,
-                                          ),
-                                        ),
-                                      ],
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              if (constraints.maxWidth > 800) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                                  child: Card(
+                                    color: AppColors.surface,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: const BorderSide(color: AppColors.border),
                                     ),
-                                    StatusBadge(status: lot.status),
-                                  ],
-                                ),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  child: Divider(color: AppColors.border, height: 1),
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.straighten, size: 16, color: AppColors.textMuted),
-                                        const SizedBox(width: 8),
-                                        Text('${lot.area} m²', style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
-                                      ],
-                                    ),
-                                    Text(
-                                      currencyFormatter.format(lot.price),
-                                      style: const TextStyle(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: SizedBox(
+                                        width: constraints.maxWidth - 48,
+                                        child: DataTable(
+                                          headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                          columns: const [
+                                            DataColumn(label: Text('Quadra/Lote')),
+                                            DataColumn(label: Text('Área')),
+                                            DataColumn(label: Text('Preço')),
+                                            DataColumn(label: Text('Status')),
+                                            DataColumn(label: Text('Ações')),
+                                          ],
+                                          rows: filteredLots.map((lot) {
+                                            return DataRow(
+                                              cells: [
+                                                DataCell(Text('Q${lot.block} - Lote ${lot.number}')),
+                                                DataCell(Text('${lot.area} m²')),
+                                                DataCell(Text(currencyFormatter.format(lot.price))),
+                                                DataCell(StatusBadge(status: lot.status)),
+                                                DataCell(Row(
+                                                  children: [
+                                                    if (lot.status == 'Disponível' && userRole.canWrite)
+                                                      TextButton.icon(
+                                                        onPressed: () async {
+                                                          final success = await showReservationDialog(context, lot);
+                                                          if (success == true) {
+                                                            ref.read(lotsControllerProvider.notifier).fetchLots();
+                                                          }
+                                                        },
+                                                        icon: const Icon(Icons.bookmark_add, size: 16),
+                                                        label: const Text('Reservar'),
+                                                      )
+                                                    else if (lot.status != 'Disponível' && userRole.canApprove)
+                                                      TextButton(
+                                                        onPressed: () async {
+                                                          final justification = await showJustificationDialog(context, 'Tornar Disponível');
+                                                          if (justification != null) {
+                                                            ref.read(lotsControllerProvider.notifier).updateLotStatus(
+                                                              lot.id, 
+                                                              'Disponível',
+                                                              justification: justification,
+                                                            );
+                                                          }
+                                                        },
+                                                        child: const Text('Tornar Disponível'),
+                                                      ),
+                                                  ],
+                                                )),
+                                              ],
+                                            );
+                                          }).toList(),
+                                        ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 20),
-                                Row(
-                                  children: [
-                                    if (lot.status == 'Disponível') ...[
-                                      if (userRole.canWrite)
-                                        Expanded(
-                                          child: FilledButton.icon(
-                                            onPressed: () async {
-                                              final success = await showReservationDialog(context, lot);
-                                              if (success == true) {
-                                                ref.read(lotsControllerProvider.notifier).fetchLots();
-                                              }
-                                            },
-                                            icon: const Icon(Icons.bookmark_add, size: 18),
-                                            label: const Text('Reservar Lote', style: TextStyle(fontWeight: FontWeight.w600)),
-                                            style: FilledButton.styleFrom(
-                                              backgroundColor: AppColors.primary,
-                                              foregroundColor: AppColors.primaryForeground,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                              padding: const EdgeInsets.symmetric(vertical: 14),
-                                            ),
-                                          ),
+                                  ),
+                                );
+                              }
+
+                              return ListView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                                itemCount: filteredLots.length,
+                                itemBuilder: (context, index) {
+                                  final lot = filteredLots[index];
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 16.0),
+                                    padding: const EdgeInsets.all(20.0),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: AppColors.border),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.02),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
                                         ),
-                                    ] else ...[
-                                      if (userRole.canApprove)
-                                        Expanded(
-                                          child: OutlinedButton(
-                                            onPressed: () async {
-                                              final justification = await showJustificationDialog(context, 'Tornar Disponível');
-                                              if (justification != null) {
-                                                ref.read(lotsControllerProvider.notifier).updateLotStatus(
-                                                  lot.id, 
-                                                  'Disponível',
-                                                  justification: justification,
-                                                );
-                                              }
-                                            },
-                                            style: OutlinedButton.styleFrom(
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                              side: const BorderSide(color: AppColors.border),
-                                              padding: const EdgeInsets.symmetric(vertical: 14),
-                                              foregroundColor: AppColors.textPrimary,
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  lot.landName ?? 'Loteamento',
+                                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'Lote ${lot.number} · Quadra ${lot.block}',
+                                                  style: const TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            child: const Text('Tornar Disponível', style: TextStyle(fontWeight: FontWeight.w600)),
-                                          ),
+                                            StatusBadge(status: lot.status),
+                                          ],
                                         ),
-                                    ],
-                                  ],
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                                        const Padding(
+                                          padding: EdgeInsets.symmetric(vertical: 16),
+                                          child: Divider(color: AppColors.border, height: 1),
+                                        ),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.straighten, size: 16, color: AppColors.textMuted),
+                                                const SizedBox(width: 8),
+                                                Text('${lot.area} m²', style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+                                              ],
+                                            ),
+                                            Text(
+                                              currencyFormatter.format(lot.price),
+                                              style: const TextStyle(
+                                                color: AppColors.primary,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 20),
+                                        Row(
+                                          children: [
+                                            if (lot.status == 'Disponível') ...[
+                                              if (userRole.canWrite)
+                                                Expanded(
+                                                  child: FilledButton.icon(
+                                                    onPressed: () async {
+                                                      final success = await showReservationDialog(context, lot);
+                                                      if (success == true) {
+                                                        ref.read(lotsControllerProvider.notifier).fetchLots();
+                                                      }
+                                                    },
+                                                    icon: const Icon(Icons.bookmark_add, size: 18),
+                                                    label: const Text('Reservar Lote', style: TextStyle(fontWeight: FontWeight.w600)),
+                                                    style: FilledButton.styleFrom(
+                                                      backgroundColor: AppColors.primary,
+                                                      foregroundColor: AppColors.primaryForeground,
+                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ] else ...[
+                                              if (userRole.canApprove)
+                                                Expanded(
+                                                  child: OutlinedButton(
+                                                    onPressed: () async {
+                                                      final justification = await showJustificationDialog(context, 'Tornar Disponível');
+                                                      if (justification != null) {
+                                                        ref.read(lotsControllerProvider.notifier).updateLotStatus(
+                                                          lot.id, 
+                                                          'Disponível',
+                                                          justification: justification,
+                                                        );
+                                                      }
+                                                    },
+                                                    style: OutlinedButton.styleFrom(
+                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                      side: const BorderSide(color: AppColors.border),
+                                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                                      foregroundColor: AppColors.textPrimary,
+                                                    ),
+                                                    child: const Text('Tornar Disponível', style: TextStyle(fontWeight: FontWeight.w600)),
+                                                  ),
+                                                ),
+                                            ],
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                     ),
                   ],
                 );
