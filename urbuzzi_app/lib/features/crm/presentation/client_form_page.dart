@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../models/client.dart';
 import 'clients_provider.dart';
+import '../../../core/theme/app_colors.dart';
 
 class ClientFormPage extends ConsumerStatefulWidget {
   const ClientFormPage({super.key});
@@ -38,13 +39,11 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
       setState(() => _isLoading = true);
 
       try {
-        // Pegamos o valor com ou sem máscara dependendo do que o backend espera.
-        // Geralmente salvamos formatado ou apenas números. Aqui vamos salvar formatado para exibição.
         final cpfOrCnpj = _cpfCnpjFormatter.getMaskedText();
         final phone = _phoneFormatter.getMaskedText();
 
         final newClient = Client(
-          id: '', // Backend gera o UUID
+          id: '',
           name: _name,
           cpfOrCnpj: cpfOrCnpj,
           email: _email,
@@ -61,7 +60,7 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
             content: const Text('Cliente criado com sucesso!'),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            backgroundColor: Colors.green.shade800,
+            backgroundColor: AppColors.disponivel,
           ));
           Navigator.pop(context);
         }
@@ -71,7 +70,7 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
             content: Text('Erro: $e'),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            backgroundColor: Colors.red.shade800,
+            backgroundColor: AppColors.vendido,
           ));
         }
       } finally {
@@ -96,15 +95,16 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                     labelText: 'Nome Completo', 
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     prefixIcon: const Icon(Icons.person_outline),
                     filled: true,
-                    fillColor: Colors.grey.shade50,
+                    fillColor: AppColors.muted,
+                    contentPadding: const EdgeInsets.all(16),
                   ),
                   validator: (val) => val == null || val.isEmpty ? 'Campo obrigatório' : null,
                   onSaved: (val) => _name = val!,
@@ -115,15 +115,16 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                     labelText: 'CPF', 
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     prefixIcon: const Icon(Icons.badge_outlined),
                     filled: true,
-                    fillColor: Colors.grey.shade50,
+                    fillColor: AppColors.muted,
+                    contentPadding: const EdgeInsets.all(16),
                   ),
                   keyboardType: TextInputType.number,
                   inputFormatters: [_cpfCnpjFormatter],
@@ -135,15 +136,16 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                     labelText: 'E-mail', 
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     prefixIcon: const Icon(Icons.email_outlined),
                     filled: true,
-                    fillColor: Colors.grey.shade50,
+                    fillColor: AppColors.muted,
+                    contentPadding: const EdgeInsets.all(16),
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (val) => val == null || !val.contains('@') ? 'E-mail inválido' : null,
@@ -155,15 +157,16 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                     labelText: 'Telefone (WhatsApp)', 
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     prefixIcon: const Icon(Icons.phone_outlined),
                     filled: true,
-                    fillColor: Colors.grey.shade50,
+                    fillColor: AppColors.muted,
+                    contentPadding: const EdgeInsets.all(16),
                   ),
                   keyboardType: TextInputType.phone,
                   inputFormatters: [_phoneFormatter],
@@ -175,15 +178,16 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                     labelText: 'Endereço Completo', 
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     prefixIcon: const Icon(Icons.location_on_outlined),
                     filled: true,
-                    fillColor: Colors.grey.shade50,
+                    fillColor: AppColors.muted,
+                    contentPadding: const EdgeInsets.all(16),
                   ),
                   onSaved: (val) => _address = val ?? '',
                 ),
@@ -193,7 +197,7 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                     child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Salvar Cliente'),
                   ),
                 ),

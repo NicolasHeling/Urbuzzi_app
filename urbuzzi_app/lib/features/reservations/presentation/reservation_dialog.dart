@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../crm/presentation/clients_provider.dart';
 import '../../lots/domain/models/lot.dart';
 import 'reservations_provider.dart';
+import '../../../core/theme/app_colors.dart';
 
 class ReservationDialog extends ConsumerStatefulWidget {
   final Lot lot;
@@ -33,7 +34,7 @@ class _ReservationDialogState extends ConsumerState<ReservationDialog> {
             content: Text('Reserva criada com sucesso para o Lote ${widget.lot.number}!'),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            backgroundColor: Colors.green.shade800,
+            backgroundColor: AppColors.disponivel,
           ),
         );
       }
@@ -44,7 +45,7 @@ class _ReservationDialogState extends ConsumerState<ReservationDialog> {
             content: Text('Erro ao reservar lote: $e'),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            backgroundColor: Colors.red.shade800,
+            backgroundColor: AppColors.vendido,
           ),
         );
       }
@@ -73,14 +74,14 @@ class _ReservationDialogState extends ConsumerState<ReservationDialog> {
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: const BorderSide(color: AppColors.border),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: const BorderSide(color: AppColors.border),
                   ),
                   filled: true,
-                  fillColor: Colors.grey.shade50,
+                  fillColor: AppColors.muted,
                 ),
                 hint: const Text('Escolha o Cliente'),
                 value: _selectedClientId,
@@ -102,7 +103,7 @@ class _ReservationDialogState extends ConsumerState<ReservationDialog> {
         ),
         ElevatedButton(
           onPressed: (_selectedClientId == null || _isLoading) ? null : _submit,
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
           child: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Confirmar Reserva'),
         ),
       ],

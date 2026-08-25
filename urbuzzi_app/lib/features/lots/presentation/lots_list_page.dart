@@ -125,9 +125,11 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.inbox_rounded, size: 64, color: Colors.grey.shade400),
+                                const Icon(Icons.inbox_outlined, size: 72, color: AppColors.border),
                                 const SizedBox(height: 16),
-                                Text('Nenhum registro encontrado ainda', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+                                const Text('Nenhum item encontrado', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 8),
+                                const Text('Não há lotes que correspondam aos filtros atuais.', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
                               ],
                             ),
                           )
@@ -218,7 +220,8 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                                             icon: const Icon(Icons.bookmark_add, size: 18),
                                             label: const Text('Reservar Lote', style: TextStyle(fontWeight: FontWeight.w600)),
                                             style: FilledButton.styleFrom(
-                                              backgroundColor: AppColors.textPrimary,
+                                              backgroundColor: AppColors.primary,
+                                              foregroundColor: AppColors.primaryForeground,
                                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                               padding: const EdgeInsets.symmetric(vertical: 14),
                                             ),

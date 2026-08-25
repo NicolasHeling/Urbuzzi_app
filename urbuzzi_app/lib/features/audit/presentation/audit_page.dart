@@ -49,9 +49,9 @@ class AuditPage extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.history_rounded, size: 64, color: Colors.grey.shade300),
+                  Icon(Icons.history_rounded, size: 64, color: AppColors.border),
                   const SizedBox(height: 16),
-                  Text('Nenhum registro encontrado.', style: TextStyle(color: Colors.grey.shade600)),
+                  Text('Nenhum registro encontrado.', style: TextStyle(color: AppColors.textSecondary)),
                 ],
               ),
             );
@@ -66,7 +66,7 @@ class AuditPage extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
                     child: Text(
                       'Últimos 30 dias · registro imutável',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
                     ),
                   ),
                   Expanded(
@@ -145,16 +145,16 @@ class AuditPage extends ConsumerWidget {
                 height: 12,
                 margin: const EdgeInsets.only(top: 8),
                 decoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.blue.shade100, width: 2),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 2),
                 ),
               ),
               if (!isLast)
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: Colors.grey.shade200,
+                    color: AppColors.border,
                   ),
                 ),
             ],
@@ -166,9 +166,9 @@ class AuditPage extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.02),
@@ -184,7 +184,7 @@ class AuditPage extends ConsumerWidget {
                     Text(
                       formatter.format(entry.createdAt),
                       style: const TextStyle(
-                        color: Colors.blue,
+                        color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
@@ -193,12 +193,12 @@ class AuditPage extends ConsumerWidget {
                     // Nome + Cargo do responsável
                     Row(
                       children: [
-                        Icon(Icons.person_outline, size: 14, color: Colors.grey.shade400),
+                        Icon(Icons.person_outline, size: 14, color: AppColors.textMuted),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             userDisplay,
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w500),
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
                           ),
                         ),
                       ],
@@ -207,18 +207,18 @@ class AuditPage extends ConsumerWidget {
                     // Descrição da ação (traduzida)
                     Text(
                       description,
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 16),
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 16),
                     ),
                     // Localização do lote
                     if (locationInfo != null) ...[
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(Icons.location_on_outlined, size: 14, color: Colors.grey.shade400),
+                          Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
                           const SizedBox(width: 4),
                           Text(
                             locationInfo,
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                           ),
                         ],
                       ),
@@ -231,7 +231,7 @@ class AuditPage extends ConsumerWidget {
                           StatusBadge(status: oldStatus.toString()),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Icon(Icons.arrow_forward, size: 14, color: Colors.grey.shade400),
+                            child: Icon(Icons.arrow_forward, size: 14, color: AppColors.textMuted),
                           ),
                           StatusBadge(status: newStatus.toString()),
                         ],
@@ -243,14 +243,14 @@ class AuditPage extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
+                          color: AppColors.muted,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade200),
+                          border: Border.all(color: AppColors.border),
                         ),
                         child: Text(
                           priceChange,
                           style: TextStyle(
-                            color: Colors.grey.shade700,
+                            color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
                             fontSize: 13,
                           ),

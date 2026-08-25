@@ -1,54 +1,59 @@
 import 'package:flutter/material.dart';
 
-/// Paleta central do app, inspirada num visual clean de SaaS
-/// (tons neutros de slate + acentos de status bem distintos entre si).
+/// Paleta central do app, espelhando o design system Lovable (OKLCH → HEX).
 class AppColors {
   AppColors._();
 
-  // Marca / ação primária
-  static const Color primary = Color(0xFF2563EB); // blue-600
-  static const Color primaryDark = Color(0xFF1D4ED8);
+  // Marca / ação primária (warm amber/burnt-orange — Lovable primary)
+  static const Color primary = Color(0xFFC2650A);
+  static const Color primaryDark = Color(0xFFA85508);
+  static const Color primaryForeground = Color(0xFFFFFFFF);
 
-  // Neutros (slate)
-  static const Color background = Color(0xFFF1F5F9); // slate-100
+  // Neutros (warm off-white tones — Lovable uses oklch warm neutrals)
+  static const Color background = Color(0xFFFAF9F6); // warm off-white
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color border = Color(0xFFE2E8F0); // slate-200
-  static const Color textPrimary = Color(0xFF0F172A); // slate-900
-  static const Color textSecondary = Color(0xFF64748B); // slate-500
-  static const Color textMuted = Color(0xFF94A3B8); // slate-400
+  static const Color border = Color(0xFFE0DDD8); // warm light gray
+  static const Color textPrimary = Color(0xFF1A1A2E); // near-black
+  static const Color textSecondary = Color(0xFF7C7C72); // muted foreground
+  static const Color textMuted = Color(0xFFA3A39A); // lighter muted
 
-  // Sidebar (dark) — alinhado com o protótipo Lovable
-  static const Color sidebarBg = Color(0xFF0F172A);           // slate-900
-  static const Color sidebarFg = Color(0xFFCBD5E1);           // slate-300
-  static const Color sidebarFgMuted = Color(0xFF475569);      // slate-600
-  static const Color sidebarPrimary = Color(0xFF3B82F6);      // blue-500
+  // Muted / Accent
+  static const Color muted = Color(0xFFF3F2EF);
+  static const Color accent = Color(0xFFF5EDE3); // warm peach accent
+  static const Color accentForeground = Color(0xFF8B4513);
+
+  // Sidebar (dark warm) — alinhado com o Lovable
+  static const Color sidebarBg = Color(0xFF2D2D3D);
+  static const Color sidebarFg = Color(0xFFEDECEA);
+  static const Color sidebarFgMuted = Color(0xFF8A8A94);
+  static const Color sidebarPrimary = Color(0xFFC2650A); // same warm amber
   static const Color sidebarPrimaryFg = Color(0xFFFFFFFF);
-  static const Color sidebarAccent = Color(0xFF1E293B);       // slate-800
-  static const Color sidebarAccentFg = Color(0xFFFFFFFF);
-  static const Color sidebarBorder = Color(0xFF1E293B);       // slate-800
+  static const Color sidebarAccent = Color(0xFF3D3D4D);
+  static const Color sidebarAccentFg = Color(0xFFFAF9F6);
+  static const Color sidebarBorder = Color(0xFF454555);
 
   // Card / header
   static const Color cardBg = Color(0xFFFFFFFF);
   static const Color headerBg = Color(0xFFFFFFFF);
 
-  // Status dos lotes — cada um com tom "forte" (texto/ícone) e tom "suave" (fundo de chip)
-  static const Color disponivel = Color(0xFF16A34A); // green-600
-  static const Color disponivelBg = Color(0xFFDCFCE7); // green-100
+  // Status dos lotes — Lovable OKLCH palette (bg + foreground pairs)
+  static const Color disponivel = Color(0xFF1B7A3D); // dark green (foreground)
+  static const Color disponivelBg = Color(0xFFD4F5E0); // light green
 
-  static const Color reservado = Color(0xFFD97706); // amber-600
-  static const Color reservadoBg = Color(0xFFFEF3C7); // amber-100
+  static const Color reservado = Color(0xFF9A6B28); // dark amber
+  static const Color reservadoBg = Color(0xFFF5E6C8); // light amber
 
-  static const Color emAprovacao = Color(0xFF2563EB); // blue-600
-  static const Color emAprovacaoBg = Color(0xFFDBEAFE); // blue-100
+  static const Color emAprovacao = Color(0xFF2952A3); // dark blue
+  static const Color emAprovacaoBg = Color(0xFFD4E4FA); // light blue
 
-  static const Color bloqueado = Color(0xFF64748B); // slate-500
-  static const Color bloqueadoBg = Color(0xFFF1F5F9); // slate-100
+  static const Color bloqueado = Color(0xFF6B6B73); // medium gray
+  static const Color bloqueadoBg = Color(0xFFE5E5E5); // light gray
 
-  static const Color vendido = Color(0xFF7C3AED); // violet-600
-  static const Color vendidoBg = Color(0xFFEDE9FE); // violet-100
+  static const Color vendido = Color(0xFFC62828); // red
+  static const Color vendidoBg = Color(0xFFFAD4D4); // light red/rose
 
-  static const Color cancelado = Color(0xFFDC2626); // red-600
-  static const Color canceladoBg = Color(0xFFFEE2E2); // red-100
+  static const Color cancelado = Color(0xFF3A3A42); // dark gray
+  static const Color canceladoBg = Color(0xFFD5D5D8); // grayish
 
   static const List<String> statusOrder = [
     'Disponível',

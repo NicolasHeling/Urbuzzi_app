@@ -158,11 +158,12 @@ class _HomePageState extends ConsumerState<HomePage> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: _SelectedLotPanel(
             poly: poly,
             lot: _lotForPolygon(poly, lots),
             onClose: () => Navigator.pop(context),
+            isBottomSheet: true,
           ),
         );
       },
@@ -512,8 +513,9 @@ class _SelectedLotPanel extends StatelessWidget {
   final LotPolygon? poly;
   final Lot? lot;
   final VoidCallback? onClose;
+  final bool isBottomSheet;
 
-  const _SelectedLotPanel({required this.poly, required this.lot, this.onClose});
+  const _SelectedLotPanel({required this.poly, required this.lot, this.onClose, this.isBottomSheet = false});
 
   @override
   Widget build(BuildContext context) {
@@ -521,15 +523,16 @@ class _SelectedLotPanel extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: isBottomSheet ? const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 40) : const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 2))],
+        borderRadius: isBottomSheet ? const BorderRadius.vertical(top: Radius.circular(24)) : BorderRadius.circular(16),
+        border: isBottomSheet ? null : Border.all(color: AppColors.border),
+        boxShadow: isBottomSheet ? [] : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -598,12 +601,12 @@ class _SelectedLotPanel extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: lot!.status == 'Disponível' ? AppColors.primary : AppColors.border,
                     foregroundColor: lot!.status == 'Disponível' ? Colors.white : AppColors.textMuted,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
                   onPressed: lot!.status == 'Disponível' ? () => showReservationDialog(context, lot!) : null,
-                  child: const Text('Nova Reserva', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: const Text('Fazer Reserva', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
             ],

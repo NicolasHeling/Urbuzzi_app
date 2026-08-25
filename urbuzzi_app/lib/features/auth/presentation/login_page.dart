@@ -50,7 +50,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               border: Border.all(color: AppColors.border),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -62,7 +62,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.maps_home_work, size: 48, color: AppColors.primary),
@@ -84,15 +84,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     labelText: 'E-mail',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: AppColors.border),
                     ),
                     prefixIcon: const Icon(Icons.email_outlined),
                     filled: true,
-                    fillColor: Colors.grey.shade50,
+                    fillColor: AppColors.muted,
+                    contentPadding: const EdgeInsets.all(16),
                   ),
                   keyboardType: TextInputType.emailAddress,
                 ),
@@ -103,15 +104,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     labelText: 'Senha',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: AppColors.border),
                     ),
                     prefixIcon: const Icon(Icons.lock_outline),
                     filled: true,
-                    fillColor: Colors.grey.shade50,
+                    fillColor: AppColors.muted,
+                    contentPadding: const EdgeInsets.all(16),
                   ),
                   obscureText: true,
                 ),

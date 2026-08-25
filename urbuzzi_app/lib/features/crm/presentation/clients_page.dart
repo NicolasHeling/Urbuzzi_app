@@ -18,9 +18,11 @@ class ClientsPage extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.folder_open, size: 64, color: Colors.grey.shade400),
+                  Icon(Icons.people_outline, size: 72, color: Colors.grey.shade300),
                   const SizedBox(height: 16),
-                  Text('Nenhum registro encontrado ainda', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+                  const Text('Nenhum item encontrado', style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('Você ainda não cadastrou nenhum cliente.', style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
                 ],
               ),
             );

@@ -25,9 +25,11 @@ class ProposalsPage extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.inbox_rounded, size: 64, color: Colors.grey.shade400),
+                  Icon(Icons.insert_drive_file_outlined, size: 72, color: AppColors.border),
                   const SizedBox(height: 16),
-                  Text('Nenhum registro encontrado ainda', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+                  const Text('Nenhum item encontrado', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('Ainda não há propostas ou negociações.', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
                 ],
               ),
             );
@@ -39,7 +41,7 @@ class ProposalsPage extends ConsumerWidget {
                 padding: const EdgeInsets.all(24.0),
                 child: Text(
                   '${proposals.length} negociações em andamento',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 16),
                 ),
               ),
               Expanded(
@@ -49,11 +51,11 @@ class ProposalsPage extends ConsumerWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildKanbanColumn(context, ref, userRole, 'Reserva Ativa', Colors.orange, proposals, 'Nova'),
-                      _buildKanbanColumn(context, ref, userRole, 'Em Análise Interna (SLA 7 Dias)', Colors.amber.shade600, proposals, 'Em Análise'),
-                      _buildKanbanColumn(context, ref, userRole, 'Aprovada', Colors.green, proposals, 'Aprovada'),
-                      _buildKanbanColumn(context, ref, userRole, 'Rejeitada', Colors.red, proposals, 'Rejeitada'),
-                      _buildKanbanColumn(context, ref, userRole, 'Concluída', Colors.blue, proposals, 'Concluída'),
+                      _buildKanbanColumn(context, ref, userRole, 'Reserva Ativa', AppColors.reservado, proposals, 'Nova'),
+                      _buildKanbanColumn(context, ref, userRole, 'Em Análise Interna (SLA 7 Dias)', AppColors.emAprovacao, proposals, 'Em Análise'),
+                      _buildKanbanColumn(context, ref, userRole, 'Aprovada', AppColors.disponivel, proposals, 'Aprovada'),
+                      _buildKanbanColumn(context, ref, userRole, 'Rejeitada', AppColors.cancelado, proposals, 'Rejeitada'),
+                      _buildKanbanColumn(context, ref, userRole, 'Concluída', AppColors.primary, proposals, 'Concluída'),
                     ],
                   ),
                 ),
@@ -82,16 +84,16 @@ class ProposalsPage extends ConsumerWidget {
     String label;
     
     if (remaining > 3) {
-      bgColor = Colors.green.shade50;
-      textColor = Colors.green.shade700;
+      bgColor = AppColors.disponivelBg;
+      textColor = AppColors.disponivel;
       label = '$remaining dias restantes';
     } else if (remaining > 0) {
-      bgColor = Colors.amber.shade50;
-      textColor = Colors.amber.shade800;
+      bgColor = AppColors.reservadoBg;
+      textColor = AppColors.reservado;
       label = '$remaining dia${remaining > 1 ? 's' : ''} restante${remaining > 1 ? 's' : ''}';
     } else {
-      bgColor = Colors.red.shade50;
-      textColor = Colors.red.shade700;
+      bgColor = AppColors.canceladoBg;
+      textColor = AppColors.cancelado;
       label = 'SLA vencido';
     }
     
@@ -120,9 +122,9 @@ class ProposalsPage extends ConsumerWidget {
       width: 320,
       margin: const EdgeInsets.only(left: 8, right: 16, bottom: 24),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100.withValues(alpha: 0.5),
+        color: AppColors.muted.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,15 +145,15 @@ class ProposalsPage extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14),
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: Text('${filtered.length}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
                 ),
@@ -179,9 +181,9 @@ class ProposalsPage extends ConsumerWidget {
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: AppColors.border),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.02),
@@ -196,8 +198,8 @@ class ProposalsPage extends ConsumerWidget {
                         children: [
                           CircleAvatar(
                             radius: 14,
-                            backgroundColor: Colors.blue.shade50,
-                            foregroundColor: Colors.blue,
+                            backgroundColor: AppColors.accent,
+                            foregroundColor: AppColors.primary,
                             child: Text(
                               proposal.customerName.isNotEmpty ? proposal.customerName[0].toUpperCase() : '?',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
@@ -207,7 +209,7 @@ class ProposalsPage extends ConsumerWidget {
                           Expanded(
                             child: Text(
                               proposal.customerName,
-                              style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                              style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -217,12 +219,12 @@ class ProposalsPage extends ConsumerWidget {
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.landscape_rounded, size: 14, color: Colors.grey.shade400),
+                          Icon(Icons.landscape_rounded, size: 14, color: AppColors.textMuted),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               lotDesc,
-                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -240,10 +242,10 @@ class ProposalsPage extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Valor da Proposta', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                          const Text('Valor da Proposta', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                           Text(
                             currencyFormatter.format(proposal.offeredPrice ?? 0),
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
                           ),
                         ],
                       ),
@@ -252,11 +254,11 @@ class ProposalsPage extends ConsumerWidget {
                         const SizedBox(height: 10),
                         Row(
                           children: [
-                            Icon(Icons.person_outline_rounded, size: 13, color: Colors.grey.shade400),
+                            const Icon(Icons.person_outline_rounded, size: 13, color: AppColors.textMuted),
                             const SizedBox(width: 4),
                             Text(
                               proposal.responsibleUserName!,
-                              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                             ),
                           ],
                         ),
@@ -275,8 +277,8 @@ class ProposalsPage extends ConsumerWidget {
                                   }
                                 },
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.red,
-                                  side: const BorderSide(color: Colors.red),
+                                  foregroundColor: AppColors.cancelado,
+                                  side: const BorderSide(color: AppColors.cancelado),
                                   padding: const EdgeInsets.symmetric(vertical: 8),
                                 ),
                                 child: const Text('Rejeitar'),
@@ -292,7 +294,7 @@ class ProposalsPage extends ConsumerWidget {
                                   }
                                 },
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.green,
+                                  backgroundColor: AppColors.disponivel,
                                   padding: const EdgeInsets.symmetric(vertical: 8),
                                 ),
                                 child: const Text('Aprovar'),
