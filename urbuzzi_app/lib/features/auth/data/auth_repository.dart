@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/models/user.dart';
@@ -27,7 +28,16 @@ class AuthRepository {
 
       return User.fromJson(userData);
     } catch (e) {
-      throw Exception('Email ou senha inválidos.');
+      if (e is DioException) {
+        if (e.type == DioExceptionType.connectionError || 
+            e.type == DioExceptionType.connectionTimeout || 
+            (e.type == DioExceptionType.unknown && e.response == null)) {
+          throw Exception('Não foi possível conectar ao servidor local. Verifique se a API está rodando na porta 3000!');
+        }
+        final msg = e.response?.data['message'] ?? 'Email ou senha inválidos.';
+        throw Exception(msg);
+      }
+      throw Exception('Erro inesperado: $e');
     }
   }
 
@@ -46,7 +56,16 @@ class AuthRepository {
       await _storage.write(key: 'jwt_token', value: token);
       return User.fromJson(userData);
     } catch (e) {
-      throw Exception('Erro ao registrar. Email pode já estar em uso.');
+      if (e is DioException) {
+        if (e.type == DioExceptionType.connectionError || 
+            e.type == DioExceptionType.connectionTimeout || 
+            (e.type == DioExceptionType.unknown && e.response == null)) {
+          throw Exception('Não foi possível conectar ao servidor local. Verifique se a API está rodando na porta 3000!');
+        }
+        final msg = e.response?.data['message'] ?? 'Erro ao registrar. Verifique os dados.';
+        throw Exception(msg);
+      }
+      throw Exception('Erro inesperado: $e');
     }
   }
 

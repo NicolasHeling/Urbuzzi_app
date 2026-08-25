@@ -22,9 +22,12 @@ class MapPainter extends CustomPainter {
 
   Lot? _matchLot(LotPolygon poly) {
     final blockLetter = String.fromCharCode(64 + int.parse(poly.block));
-    final numberStr = poly.number.replaceFirst(RegExp(r'^0+'), '');
+    final numberStr = poly.number;
     try {
-      return lotsFromApi.firstWhere((l) => l.block == blockLetter && l.number == numberStr);
+      return lotsFromApi.firstWhere((l) =>
+          l.block == blockLetter &&
+          (l.number == numberStr ||
+              l.number == poly.number.replaceFirst(RegExp(r'^0+'), '')));
     } catch (_) {
       return null;
     }
@@ -118,9 +121,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   Lot? _lotForPolygon(LotPolygon? poly, List<Lot> lots) {
     if (poly == null) return null;
     final blockLetter = String.fromCharCode(64 + int.parse(poly.block));
-    final numberStr = poly.number.replaceFirst(RegExp(r'^0+'), '');
+    final numberStr = poly.number;
     try {
-      return lots.firstWhere((l) => l.block == blockLetter && l.number == numberStr);
+      return lots.firstWhere((l) =>
+          l.block == blockLetter &&
+          (l.number == numberStr ||
+              l.number == poly.number.replaceFirst(RegExp(r'^0+'), '')));
     } catch (_) {
       return null;
     }
@@ -173,15 +179,17 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final lotsState = ref.watch(lotsControllerProvider);
+    final isLoading = lotsState.isLoading;
+    final lots = lotsState.valueOrNull ?? [];
+    
+    if (lotsState.hasError) {
+      return Center(child: Text('Erro: ${lotsState.error}'));
+    }
 
-    return lotsState.when(
-      data: (lots) => _buildContent(context, lots),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Erro: $error')),
-    );
+    return _buildContent(context, lots, isLoading);
   }
 
-  Widget _buildContent(BuildContext context, List<Lot> lots) {
+  Widget _buildContent(BuildContext context, List<Lot> lots, bool isLoading) {
     final Map<String, int> counts = {for (final s in AppColors.statusOrder) s: 0};
     for (var lot in lots) {
       counts[lot.status] = (counts[lot.status] ?? 0) + 1;
@@ -194,7 +202,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: _OverviewDashboard(counts: counts, total: lots.length),
+            child: _OverviewDashboard(counts: counts, total: lots.length, isLoading: isLoading),
           ),
           Expanded(
             child: Padding(
@@ -230,7 +238,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   lot: _lotForPolygon(_selectedPolygon, lots),
                                 ),
                                 const SizedBox(height: 16),
-                                _SummaryCard(counts: counts),
+                                _SummaryCard(counts: counts, isLoading: isLoading),
                               ],
                             ),
                           ),
@@ -254,7 +262,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _SummaryCard(counts: counts),
+                        _SummaryCard(counts: counts, isLoading: isLoading),
                       ],
                     ),
             ),
@@ -270,8 +278,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 class _OverviewDashboard extends StatelessWidget {
   final Map<String, int> counts;
   final int total;
+  final bool isLoading;
 
-  const _OverviewDashboard({required this.counts, required this.total});
+  const _OverviewDashboard({required this.counts, required this.total, required this.isLoading});
 
   @override
   Widget build(BuildContext context) {
@@ -284,24 +293,28 @@ class _OverviewDashboard extends StatelessWidget {
           value: total.toString(),
           icon: Icons.landscape_outlined,
           color: AppColors.primary,
+          isLoading: isLoading,
         ),
         _OverviewCard(
           title: 'Lotes Disponíveis',
           value: (counts['Disponível'] ?? 0).toString(),
           icon: Icons.check_circle_outline,
           color: AppColors.disponivel,
+          isLoading: isLoading,
         ),
         _OverviewCard(
           title: 'Reservas Ativas',
           value: (counts['Reservado'] ?? 0).toString(),
           icon: Icons.bookmark_outline,
           color: AppColors.reservado,
+          isLoading: isLoading,
         ),
         _OverviewCard(
           title: 'Em Aprovação',
-          value: (counts['Em Aprovação'] ?? 0).toString(),
+          value: (counts['Em aprovação'] ?? 0).toString(),
           icon: Icons.pending_actions_outlined,
           color: AppColors.emAprovacao,
+          isLoading: isLoading,
         ),
       ],
     );
@@ -313,12 +326,14 @@ class _OverviewCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final bool isLoading;
 
   const _OverviewCard({
     required this.title,
     required this.value,
     required this.icon,
     required this.color,
+    this.isLoading = false,
   });
 
   @override
@@ -350,14 +365,25 @@ class _OverviewCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                value,
-                style: TextStyle(
-                  color: AppColors.textPrimary, // Changed to textPrimary per instructions, could be primary or textPrimary
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+              if (isLoading)
+                const SizedBox(
+                  height: 38,
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
             ],
           ),
         ],
@@ -759,7 +785,8 @@ class _MeasureTile extends StatelessWidget {
 
 class _SummaryCard extends StatelessWidget {
   final Map<String, int> counts;
-  const _SummaryCard({required this.counts});
+  final bool isLoading;
+  const _SummaryCard({required this.counts, this.isLoading = false});
 
   @override
   Widget build(BuildContext context) {
@@ -805,10 +832,17 @@ class _SummaryCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  Text(
-                    '${counts[status] ?? 0}',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                  ),
+                  if (isLoading)
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Text(
+                      '${counts[status] ?? 0}',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                    ),
                 ],
               ),
             );
