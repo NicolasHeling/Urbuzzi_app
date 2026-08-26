@@ -368,11 +368,13 @@ class _OverviewCard extends StatelessWidget {
               if (isLoading)
                 const SizedBox(
                   height: 38,
-                  alignment: Alignment.centerLeft,
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ),
                 )
               else
@@ -427,11 +429,8 @@ class _MapCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), offset: const Offset(0, 1), blurRadius: 2),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.08), offset: const Offset(0, 12), blurRadius: 32, spreadRadius: -8),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -797,7 +796,10 @@ class _SummaryCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), offset: const Offset(0, 1), blurRadius: 2),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.08), offset: const Offset(0, 12), blurRadius: 32, spreadRadius: -8),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -813,24 +815,11 @@ class _SummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ...AppColors.statusOrder.map((status) {
-            final color = AppColors.statusColor(status);
-            final bg = AppColors.statusBgColor(status);
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 5),
+              padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-                        const SizedBox(width: 5),
-                        Text(status, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: color, height: 1)),
-                      ],
-                    ),
-                  ),
+                  Text(status, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
                   const Spacer(),
                   if (isLoading)
                     const SizedBox(

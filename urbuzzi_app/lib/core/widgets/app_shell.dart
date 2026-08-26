@@ -21,15 +21,15 @@ class _NavItem {
 
 const _navItems = [
   _NavItem(icon: Icons.map_outlined, label: 'Mapa Interativo'),
-  _NavItem(icon: Icons.view_list_rounded, label: 'Lista de Lotes'),
-  _NavItem(icon: Icons.space_dashboard_outlined, label: 'Propostas', badge: 'SLA 7 dias'),
-  _NavItem(icon: Icons.history_rounded, label: 'Histórico/Auditoria'),
-  _NavItem(icon: Icons.language_rounded, label: 'Vitrine Pública'),
+  _NavItem(icon: Icons.format_list_bulleted_outlined, label: 'Lista de Lotes'),
+  _NavItem(icon: Icons.view_kanban_outlined, label: 'Propostas', badge: 'SLA 7 dias'),
+  _NavItem(icon: Icons.history_outlined, label: 'Histórico/Auditoria'),
+  _NavItem(icon: Icons.public_outlined, label: 'Vitrine Pública'),
 ];
 
 // Títulos e subtítulos de cada seção para o header
 const _pageTitles = [
-  ('Mapa Interativo', 'Loteamento Morada do Sol · 15 quadras'),
+  ('Mapa Interativo', 'Loteamento Morada do Sol · 15 quadras · 192 lotes'),
   ('Lista de Lotes', 'Loteamento Morada do Sol'),
   ('Propostas', 'SLA de 7 dias por proposta'),
   ('Histórico / Auditoria', 'Registro completo de eventos'),
@@ -383,22 +383,23 @@ class _AppHeader extends StatelessWidget {
                     height: 1.2,
                   ),
                 ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                    height: 1.2,
+                if (MediaQuery.of(context).size.width >= 600)
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      height: 1.2,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
               ],
             ),
           ),
 
           // Notificações
           _HeaderIconBtn(
-            icon: Icons.notifications_none_rounded,
+            icon: Icons.notifications_none,
             hasDot: true,
             tooltip: 'Notificações',
             onTap: () {},
@@ -453,7 +454,7 @@ class _HeaderIconBtn extends StatelessWidget {
                     width: 6,
                     height: 6,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFDC2626),
+                      color: AppColors.vendido,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -499,7 +500,7 @@ class _UserMenu extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: const Text(
-                'U',
+                'AF',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -514,7 +515,7 @@ class _UserMenu extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
-                  'Usuário',
+                  'Ana Ferrarezi',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary, height: 1.2),
                 ),
                 Text(
@@ -524,7 +525,7 @@ class _UserMenu extends StatelessWidget {
               ],
             ),
             const SizedBox(width: 6),
-            const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: AppColors.textSecondary),
+            const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
           ],
         ),
       ),

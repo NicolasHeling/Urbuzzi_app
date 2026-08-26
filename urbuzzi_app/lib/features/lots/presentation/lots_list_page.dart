@@ -33,316 +33,179 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Buscar por quadra ou número...',
-                hintStyle: const TextStyle(color: AppColors.textMuted),
-                prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
-                filled: true,
-                fillColor: AppColors.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 32,
+                offset: const Offset(0, 12),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
-              },
-            ),
+            ],
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Row(
-              children: _statuses.map((status) {
-                final isSelected = _selectedStatus == status;
-                final statusColor = status == 'Todos' ? AppColors.textPrimary : AppColors.statusColor(status);
-                final statusBgColor = status == 'Todos' ? AppColors.textPrimary.withValues(alpha: 0.08) : AppColors.statusColor(status).withValues(alpha: 0.08);
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: FilterChip(
-                    label: Text(status),
-                    selected: isSelected,
-                    showCheckmark: false,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedStatus = status;
-                      });
-                    },
-                    backgroundColor: AppColors.surface,
-                    selectedColor: statusBgColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: isSelected ? statusColor.withValues(alpha: 0.35) : AppColors.border,
+          child: Column(
+            children: [
+              // Search Header
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isMobile = constraints.maxWidth < 600;
+                    final searchField = TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Buscar lotes...',
+                        hintStyle: const TextStyle(color: AppColors.textMuted),
+                        prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
-                    ),
-                    labelStyle: TextStyle(
-                      color: isSelected ? statusColor : AppColors.textSecondary,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: lotsState.when(
-              data: (lots) {
-                final filteredLots = lots.where((lot) {
-                  final matchesSearch = lot.block.toLowerCase().contains(_searchQuery) ||
-                      lot.number.toLowerCase().contains(_searchQuery);
-                  final matchesStatus = _selectedStatus == 'Todos' || lot.status == _selectedStatus;
-                  return matchesSearch && matchesStatus;
-                }).toList();
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value.toLowerCase();
+                        });
+                      },
+                    );
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                      child: Text(
-                        '${filteredLots.length} de ${lots.length} lotes exibidos',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+                    final filterButton = OutlinedButton.icon(
+                      onPressed: () {
+                        // TODO: Implement Status Filter Dialog or Dropdown
+                      },
+                      icon: const Icon(Icons.tune, size: 20),
+                      label: const Text('Status'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textPrimary,
+                        side: const BorderSide(color: AppColors.border),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
-                    ),
-                    Expanded(
-                      child: filteredLots.isEmpty 
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.inbox_outlined, size: 72, color: AppColors.border),
-                                const SizedBox(height: 16),
-                                const Text('Nenhum item encontrado', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 8),
-                                const Text('Não há lotes que correspondam aos filtros atuais.', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-                              ],
-                            ),
-                          )
-                        : LayoutBuilder(
-                            builder: (context, constraints) {
-                              if (constraints.maxWidth > 800) {
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                                  child: Card(
-                                    color: AppColors.surface,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      side: const BorderSide(color: AppColors.border),
-                                    ),
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: SizedBox(
-                                        width: constraints.maxWidth - 48,
-                                        child: DataTable(
-                                          headingTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                          columns: const [
-                                            DataColumn(label: Text('Quadra/Lote')),
-                                            DataColumn(label: Text('Área')),
-                                            DataColumn(label: Text('Preço')),
-                                            DataColumn(label: Text('Status')),
-                                            DataColumn(label: Text('Ações')),
-                                          ],
-                                          rows: filteredLots.map((lot) {
-                                            return DataRow(
-                                              cells: [
-                                                DataCell(Text('Q${lot.block} - Lote ${lot.number}')),
-                                                DataCell(Text('${lot.area} m²')),
-                                                DataCell(Text(currencyFormatter.format(lot.price))),
-                                                DataCell(StatusBadge(status: lot.status)),
-                                                DataCell(Row(
-                                                  children: [
-                                                    if (lot.status == 'Disponível' && userRole.canWrite)
-                                                      TextButton.icon(
-                                                        onPressed: () async {
-                                                          final success = await showReservationDialog(context, lot);
-                                                          if (success == true) {
-                                                            ref.read(lotsControllerProvider.notifier).fetchLots();
-                                                          }
-                                                        },
-                                                        icon: const Icon(Icons.bookmark_add, size: 16),
-                                                        label: const Text('Reservar'),
-                                                      )
-                                                    else if (lot.status != 'Disponível' && userRole.canApprove)
-                                                      TextButton(
-                                                        onPressed: () async {
-                                                          final justification = await showJustificationDialog(context, 'Tornar Disponível');
-                                                          if (justification != null) {
-                                                            ref.read(lotsControllerProvider.notifier).updateLotStatus(
-                                                              lot.id, 
-                                                              'Disponível',
-                                                              justification: justification,
-                                                            );
-                                                          }
-                                                        },
-                                                        child: const Text('Tornar Disponível'),
-                                                      ),
-                                                  ],
-                                                )),
-                                              ],
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
+                    );
 
-                              return ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                                itemCount: filteredLots.length,
-                                itemBuilder: (context, index) {
-                                  final lot = filteredLots[index];
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 16.0),
-                                    padding: const EdgeInsets.all(20.0),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.surface,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: AppColors.border),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.02),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  lot.landName ?? 'Loteamento',
-                                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  'Lote ${lot.number} · Quadra ${lot.block}',
-                                                  style: const TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: AppColors.textPrimary,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            StatusBadge(status: lot.status),
-                                          ],
-                                        ),
-                                        const Padding(
-                                          padding: EdgeInsets.symmetric(vertical: 16),
-                                          child: Divider(color: AppColors.border, height: 1),
-                                        ),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                const Icon(Icons.straighten, size: 16, color: AppColors.textMuted),
-                                                const SizedBox(width: 8),
-                                                Text('${lot.area} m²', style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
-                                              ],
-                                            ),
-                                            Text(
-                                              currencyFormatter.format(lot.price),
-                                              style: const TextStyle(
-                                                color: AppColors.primary,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 20),
-                                        Row(
-                                          children: [
-                                            if (lot.status == 'Disponível') ...[
-                                              if (userRole.canWrite)
-                                                Expanded(
-                                                  child: FilledButton.icon(
-                                                    onPressed: () async {
-                                                      final success = await showReservationDialog(context, lot);
-                                                      if (success == true) {
-                                                        ref.read(lotsControllerProvider.notifier).fetchLots();
-                                                      }
-                                                    },
-                                                    icon: const Icon(Icons.bookmark_add, size: 18),
-                                                    label: const Text('Reservar Lote', style: TextStyle(fontWeight: FontWeight.w600)),
-                                                    style: FilledButton.styleFrom(
-                                                      backgroundColor: AppColors.primary,
-                                                      foregroundColor: AppColors.primaryForeground,
-                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                                    ),
-                                                  ),
-                                                ),
-                                            ] else ...[
-                                              if (userRole.canApprove)
-                                                Expanded(
-                                                  child: OutlinedButton(
-                                                    onPressed: () async {
-                                                      final justification = await showJustificationDialog(context, 'Tornar Disponível');
-                                                      if (justification != null) {
-                                                        ref.read(lotsControllerProvider.notifier).updateLotStatus(
-                                                          lot.id, 
-                                                          'Disponível',
-                                                          justification: justification,
-                                                        );
-                                                      }
-                                                    },
-                                                    style: OutlinedButton.styleFrom(
-                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                      side: const BorderSide(color: AppColors.border),
-                                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                                      foregroundColor: AppColors.textPrimary,
-                                                    ),
-                                                    child: const Text('Tornar Disponível', style: TextStyle(fontWeight: FontWeight.w600)),
-                                                  ),
-                                                ),
-                                            ],
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                    if (isMobile) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          searchField,
+                          const SizedBox(height: 12),
+                          filterButton,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: searchField),
+                        const SizedBox(width: 16),
+                        filterButton,
+                      ],
+                    );
+                  },
+                ),
+              ),
+              const Divider(color: AppColors.border, height: 1),
+              
+              // Table Body
+              Expanded(
+                child: lotsState.when(
+                  data: (lots) {
+                    final filteredLots = lots.where((lot) {
+                      final matchesSearch = lot.block.toLowerCase().contains(_searchQuery) ||
+                          lot.number.toLowerCase().contains(_searchQuery);
+                      final matchesStatus = _selectedStatus == 'Todos' || lot.status == _selectedStatus;
+                      return matchesSearch && matchesStatus;
+                    }).toList();
+
+                    if (filteredLots.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.inbox_outlined, size: 72, color: AppColors.border),
+                            SizedBox(height: 16),
+                            Text('Nenhum item encontrado', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 8),
+                            Text('Não há lotes que correspondam aos filtros atuais.', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SingleChildScrollView(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                              child: DataTable(
+                                headingRowColor: WidgetStateProperty.all(AppColors.muted.withValues(alpha: 0.6)),
+                                dataRowColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+                                  if (states.contains(WidgetState.hovered)) {
+                                    return AppColors.muted.withValues(alpha: 0.3);
+                                  }
+                                  return null; 
+                                }),
+                                dividerThickness: 1,
+                                horizontalMargin: 24,
+                                columnSpacing: 24,
+                                headingTextStyle: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 1.2,
+                                  color: AppColors.textSecondary,
+                                ),
+                                columns: const [
+                                  DataColumn(label: Text('LOTEAMENTO')),
+                                  DataColumn(label: Text('QUADRA')),
+                                  DataColumn(label: Text('LOTE')),
+                                  DataColumn(label: Text('ÁREA')),
+                                  DataColumn(label: Text('VALOR')),
+                                  DataColumn(label: Text('STATUS')),
+                                ],
+                                rows: filteredLots.map((lot) {
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(Text(lot.landName ?? '-', style: const TextStyle(fontWeight: FontWeight.w500))),
+                                      DataCell(Text(lot.block)),
+                                      DataCell(Text(lot.number)),
+                                      DataCell(Text('${lot.area} m²')),
+                                      DataCell(Text(currencyFormatter.format(lot.price))),
+                                      DataCell(StatusBadge(status: lot.status)),
+                                    ],
                                   );
-                                },
-                              );
-                            },
+                                }).toList(),
+                              ),
+                            ),
                           ),
-                    ),
-                  ],
-                );
-              },
-              loading: () => const Align(
-                alignment: Alignment.topCenter,
-                child: LinearProgressIndicator(color: AppColors.primary),
+                        );
+                      }
+                    );
+                  },
+                  loading: () => const Align(
+                    alignment: Alignment.topCenter,
+                    child: LinearProgressIndicator(color: AppColors.primary),
+                  ),
+                  error: (error, stack) => Center(child: Text('Erro: $error')),
+                ),
               ),
-              error: (error, stack) => Center(child: Text('Erro: $error')),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
