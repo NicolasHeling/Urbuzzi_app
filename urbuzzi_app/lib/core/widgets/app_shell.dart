@@ -398,12 +398,7 @@ class _AppHeader extends StatelessWidget {
           ),
 
           // Notificações
-          _HeaderIconBtn(
-            icon: Icons.notifications_none,
-            hasDot: true,
-            tooltip: 'Notificações',
-            onTap: () {},
-          ),
+          const _NotificationMenu(),
           const SizedBox(width: 8),
 
           // Avatar / usuário
@@ -467,12 +462,28 @@ class _HeaderIconBtn extends StatelessWidget {
   }
 }
 
-class _UserMenu extends StatelessWidget {
+class _UserMenu extends ConsumerWidget {
   final VoidCallback onLogout;
   const _UserMenu({required this.onLogout});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userState = ref.watch(authControllerProvider);
+    final user = userState.value;
+
+    final name = user?.name ?? 'Usuário Local';
+    final role = user?.roleStr.toUpperCase() ?? 'ADMINISTRADOR';
+    
+    // Calcula as iniciais
+    final parts = name.split(' ').where((p) => p.isNotEmpty).toList();
+    String initials = 'U';
+    if (parts.isNotEmpty) {
+      initials = parts.first[0].toUpperCase();
+      if (parts.length > 1) {
+        initials += parts.last[0].toUpperCase();
+      }
+    }
+
     return PopupMenuButton<String>(
       tooltip: 'Menu do usuário',
       offset: const Offset(0, 8),
@@ -499,9 +510,9 @@ class _UserMenu extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: const Text(
-                'AF',
-                style: TextStyle(
+              child: Text(
+                initials,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -513,14 +524,14 @@ class _UserMenu extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'Ana Ferrarezi',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary, height: 1.2),
+                  name,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary, height: 1.2),
                 ),
                 Text(
-                  'Administrador',
-                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.2),
+                  role,
+                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.2),
                 ),
               ],
             ),
@@ -541,6 +552,162 @@ class _UserMenu extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+class _NotificationMenu extends StatefulWidget {
+  const _NotificationMenu();
+
+  @override
+  State<_NotificationMenu> createState() => _NotificationMenuState();
+}
+
+class _NotificationMenuState extends State<_NotificationMenu> {
+  final List<Map<String, dynamic>> _notifications = [
+    {
+      'id': 1,
+      'title': 'SLA Perto do Fim',
+      'body': 'A proposta de Ricardo Bomfim expira em 2 dias.',
+      'read': false,
+      'time': 'Há 2 horas',
+      'icon': Icons.warning_amber_rounded,
+      'color': AppColors.vendido,
+    },
+    {
+      'id': 2,
+      'title': 'Nova Proposta',
+      'body': 'Nova proposta recebida no Lote 13 da Quadra A.',
+      'read': false,
+      'time': 'Há 5 horas',
+      'icon': Icons.description_outlined,
+      'color': AppColors.primary,
+    },
+    {
+      'id': 3,
+      'title': 'Venda Concluída',
+      'body': 'Lote 07 (Quadra C) foi assinado e finalizado.',
+      'read': true,
+      'time': 'Ontem',
+      'icon': Icons.check_circle_outline,
+      'color': AppColors.disponivel,
+    },
+  ];
+
+  void _markAllAsRead() {
+    setState(() {
+      for (var n in _notifications) {
+        n['read'] = true;
+      }
+    });
+  }
+
+  void _markAsRead(int id) {
+    setState(() {
+      final index = _notifications.indexWhere((n) => n['id'] == id);
+      if (index != -1) _notifications[index]['read'] = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final unreadCount = _notifications.where((n) => !n['read']).length;
+
+    return PopupMenuButton<int>(
+      tooltip: 'Notificações',
+      offset: const Offset(0, 48),
+      padding: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      icon: _HeaderIconBtn(
+        icon: Icons.notifications_none,
+        hasDot: unreadCount > 0,
+        tooltip: 'Notificações',
+        onTap: () {}, // Let the popup menu handle the tap
+      ), // Render the container visually
+      itemBuilder: (context) {
+        return [
+          // Header
+          PopupMenuItem<int>(
+            enabled: false,
+            child: Container(
+              width: 320,
+              padding: const EdgeInsets.only(bottom: 8),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.border)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Notificações', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  if (unreadCount > 0)
+                    InkWell(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _markAllAsRead();
+                      },
+                      child: const Text('Ler todas', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          // Itens
+          ..._notifications.map((n) {
+            final bool isRead = n['read'];
+            return PopupMenuItem<int>(
+              value: n['id'],
+              padding: EdgeInsets.zero,
+              onTap: () => _markAsRead(n['id']),
+              child: Container(
+                width: 320,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                color: isRead ? Colors.transparent : AppColors.primary.withValues(alpha: 0.05),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: n['color'].withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(n['icon'], size: 16, color: n['color']),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(n['title'], style: TextStyle(fontSize: 13, fontWeight: isRead ? FontWeight.w500 : FontWeight.bold, color: AppColors.textPrimary)),
+                          const SizedBox(height: 4),
+                          Text(n['body'], style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 6),
+                          Text(n['time'], style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                        ],
+                      ),
+                    ),
+                    if (!isRead)
+                      Container(
+                        margin: const EdgeInsets.only(top: 6),
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+          // Footer
+          if (_notifications.isEmpty)
+            const PopupMenuItem<int>(
+              enabled: false,
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: Text('Nenhuma notificação', style: TextStyle(color: AppColors.textSecondary, fontSize: 13))),
+              ),
+            ),
+        ];
+      },
     );
   }
 }
