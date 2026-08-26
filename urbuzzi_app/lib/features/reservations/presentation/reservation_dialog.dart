@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../crm/presentation/clients_provider.dart';
 import '../../lots/domain/models/lot.dart';
+import '../../lots/presentation/lots_provider.dart';
 import 'reservations_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -27,6 +29,9 @@ class _ReservationDialogState extends ConsumerState<ReservationDialog> {
         'lotId': widget.lot.id,
       }).future);
 
+      // Atualização Reativa
+      ref.read(lotsControllerProvider.notifier).fetchLots();
+
       if (mounted) {
         Navigator.pop(context, true); // Retorna sucesso
         ScaffoldMessenger.of(context).showSnackBar(
@@ -35,6 +40,18 @@ class _ReservationDialogState extends ConsumerState<ReservationDialog> {
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             backgroundColor: AppColors.disponivel,
+          ),
+        );
+      }
+    } on DioException catch (e) {
+      if (mounted) {
+        final String errorMsg = e.response?.data['error'] ?? e.response?.data['message'] ?? 'Erro desconhecido na API';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao reservar lote: $errorMsg'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            backgroundColor: AppColors.vendido,
           ),
         );
       }

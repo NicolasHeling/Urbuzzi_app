@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
@@ -55,6 +56,9 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
         final repo = ref.read(clientsRepositoryProvider);
         await repo.createClient(newClient);
 
+        // Atualização Reativa: Invalida o provedor para buscar os novos dados instantaneamente
+        ref.invalidate(clientsProvider);
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: const Text('Cliente criado com sucesso!'),
@@ -63,6 +67,16 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
             backgroundColor: AppColors.disponivel,
           ));
           Navigator.pop(context);
+        }
+      } on DioException catch (e) {
+        if (mounted) {
+          final String errorMsg = e.response?.data['error'] ?? e.response?.data['message'] ?? 'Falha na conexão com a API';
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ao salvar cliente: $errorMsg'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            backgroundColor: AppColors.vendido,
+          ));
         }
       } catch (e) {
         if (mounted) {
@@ -198,7 +212,7 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-                    child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Salvar Cliente'),
+                    child: _isLoading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Salvar Cliente'),
                   ),
                 ),
               ],
