@@ -120,8 +120,11 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                     fillColor: AppColors.muted,
                     contentPadding: const EdgeInsets.all(16),
                   ),
-                  validator: (val) => val == null || val.isEmpty ? 'Campo obrigatório' : null,
-                  onSaved: (val) => _name = val!,
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) return 'Campo obrigatório';
+                    return null;
+                  },
+                  onSaved: (val) => _name = val!.trim(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -142,7 +145,11 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                   ),
                   keyboardType: TextInputType.number,
                   inputFormatters: [_cpfCnpjFormatter],
-                  validator: (val) => val == null || val.length < 14 ? 'CPF inválido' : null,
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) return 'Campo obrigatório';
+                    if (val.length < 14) return 'Documento incompleto';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -162,8 +169,13 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                     contentPadding: const EdgeInsets.all(16),
                   ),
                   keyboardType: TextInputType.emailAddress,
-                  validator: (val) => val == null || !val.contains('@') ? 'E-mail inválido' : null,
-                  onSaved: (val) => _email = val!,
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) return 'Campo obrigatório';
+                    final emailRegex = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+                    if (!emailRegex.hasMatch(val)) return 'E-mail inválido';
+                    return null;
+                  },
+                  onSaved: (val) => _email = val!.trim(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -184,7 +196,11 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                   ),
                   keyboardType: TextInputType.phone,
                   inputFormatters: [_phoneFormatter],
-                  validator: (val) => val == null || val.length < 14 ? 'Telefone inválido' : null,
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) return 'Campo obrigatório';
+                    if (val.length < 14) return 'Telefone incompleto';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(

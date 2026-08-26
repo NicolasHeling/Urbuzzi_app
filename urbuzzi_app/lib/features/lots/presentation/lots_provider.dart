@@ -27,6 +27,21 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
     fetchLots();
   }
 
+  void updateLotInState(String lotId, String newStatus) {
+    if (state is AsyncData) {
+      final currentLots = state.value!;
+      
+      // Verifica se o lote existe e se o status é diferente antes de atualizar (otimização de rebuilds)
+      final lotIndex = currentLots.indexWhere((l) => l.id == lotId);
+      if (lotIndex == -1 || currentLots[lotIndex].status == newStatus) return;
+
+      final updatedLots = List<Lot>.from(currentLots);
+      updatedLots[lotIndex] = currentLots[lotIndex].copyWith(status: newStatus);
+      
+      state = AsyncValue.data(updatedLots);
+    }
+  }
+
   Future<void> fetchLots() async {
     try {
       state = const AsyncValue.loading();
@@ -41,18 +56,11 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
   Future<void> updateLotStatus(String lotId, String newStatus, {String? justification}) async {
     try {
       await _repository.updateLotStatus(lotId, newStatus, justification: justification);
-      // Atualiza a lista localmente para refletir na UI instantaneamente
-      state = state.whenData((lots) {
-        return lots.map((lot) {
-          if (lot.id == lotId) {
-            return lot.copyWith(status: newStatus);
-          }
-          return lot;
-        }).toList();
-      });
+      updateLotInState(lotId, newStatus);
     } catch (e) {
-      // Ignora erro por enquanto. Em um app real, mostraríamos um SnackBar.
       print('Erro ao atualizar status: $e');
     }
   }
 }
+
+

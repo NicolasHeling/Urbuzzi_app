@@ -1,7 +1,10 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../routing/app_routes.dart';
+import '../theme/app_colors.dart';
 
 String getBaseUrl() {
   if (kIsWeb) return 'http://localhost:3000';
@@ -29,7 +32,7 @@ class DioClient {
       ),
     );
 
-    // Interceptor para adicionar Token JWT automaticamente
+    // Interceptor para adicionar Token JWT automaticamente e tratar erros globais
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -48,25 +51,41 @@ class DioClient {
             }
           }
 
-          print('=== INTERCEPTOR DIO ===');
-          print('URL: ${options.uri}');
-          print('Token em memoria: $currentToken');
-          print('Token que será enviado: $token');
-
           if (token != null && token.isNotEmpty) {
             options.headers['authorization'] = 'Bearer $token';
-          } else {
-            print('AVISO: Nenhum token encontrado! Requisição vai sem Auth.');
           }
 
           return handler.next(options);
         },
         onError: (error, handler) {
-          // Se receber 401, o token expirou — pode redirecionar para login
+          final context = AppRoutes.navigatorKey.currentContext;
+          
           if (error.response?.statusCode == 401) {
             // Limpa o token expirado
             currentToken = null;
             _storage.delete(key: 'jwt_token');
+            
+            // Redireciona para a página de login
+            if (context != null) {
+              Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Sessão expirada. Faça login novamente.'),
+                  backgroundColor: AppColors.vendido,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          } else if (error.response?.statusCode != null && error.response!.statusCode! >= 400 && context != null) {
+             // Exibe feedback visual de erros globalmente
+             final String errorMsg = error.response?.data['error'] ?? error.response?.data['message'] ?? 'Erro na operação';
+             ScaffoldMessenger.of(context).showSnackBar(
+               SnackBar(
+                 content: Text(errorMsg),
+                 backgroundColor: AppColors.vendido,
+                 behavior: SnackBarBehavior.floating,
+               ),
+             );
           }
           return handler.next(error);
         },

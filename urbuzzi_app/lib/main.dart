@@ -50,6 +50,7 @@ class UrbuzziApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'Urbizzi',
+      navigatorKey: AppRoutes.navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         textTheme: displayTextTheme,

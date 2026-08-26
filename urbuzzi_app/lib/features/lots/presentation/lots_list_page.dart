@@ -80,19 +80,30 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                       },
                     );
 
-                    final filterButton = OutlinedButton.icon(
-                      onPressed: () {
-                        // TODO: Implement Status Filter Dialog or Dropdown
-                      },
-                      icon: const Icon(Icons.tune, size: 20),
-                      label: const Text('Status'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textPrimary,
-                        side: const BorderSide(color: AppColors.border),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    final filterDropdown = Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedStatus,
+                          icon: const Icon(Icons.arrow_drop_down, color: AppColors.textPrimary),
+                          items: _statuses.map((String status) {
+                            return DropdownMenuItem<String>(
+                              value: status,
+                              child: Text(status, style: const TextStyle(color: AppColors.textPrimary)),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _selectedStatus = newValue;
+                              });
+                            }
+                          },
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                     );
 
@@ -102,7 +113,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                         children: [
                           searchField,
                           const SizedBox(height: 12),
-                          filterButton,
+                          filterDropdown,
                         ],
                       );
                     }
@@ -111,7 +122,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                       children: [
                         Expanded(child: searchField),
                         const SizedBox(width: 16),
-                        filterButton,
+                        filterDropdown,
                       ],
                     );
                   },
@@ -131,27 +142,39 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                     }).toList();
 
                     if (filteredLots.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.inbox_outlined, size: 72, color: AppColors.border),
-                            SizedBox(height: 16),
-                            Text('Nenhum item encontrado', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 8),
-                            Text('Não há lotes que correspondam aos filtros atuais.', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-                          ],
+                      return RefreshIndicator(
+                        onRefresh: () => ref.read(lotsControllerProvider.notifier).fetchLots(),
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Container(
+                            height: 400,
+                            alignment: Alignment.center,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.inbox_outlined, size: 72, color: AppColors.border),
+                                SizedBox(height: 16),
+                                Text('Nenhum item encontrado', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                                SizedBox(height: 8),
+                                Text('Não há lotes que correspondam aos filtros atuais.', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                              ],
+                            ),
+                          ),
                         ),
                       );
                     }
 
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
+                        return RefreshIndicator(
+                          onRefresh: () => ref.read(lotsControllerProvider.notifier).fetchLots(),
                           child: SingleChildScrollView(
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            scrollDirection: Axis.vertical,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(minWidth: constraints.maxWidth, minHeight: constraints.maxHeight),
                               child: DataTable(
                                 headingRowColor: WidgetStateProperty.all(AppColors.muted.withValues(alpha: 0.6)),
                                 dataRowColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {

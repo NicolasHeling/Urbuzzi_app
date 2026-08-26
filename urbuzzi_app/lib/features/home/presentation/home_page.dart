@@ -505,10 +505,10 @@ class _MapCard extends StatelessWidget {
                 Positioned.fill(
                   child: InteractiveViewer(
                     transformationController: transformationController,
-                    minScale: 0.1,
+                    minScale: 0.3,
                     maxScale: 4.0,
                     constrained: false,
-                    boundaryMargin: const EdgeInsets.all(500),
+                    boundaryMargin: const EdgeInsets.all(100),
                     child: GestureDetector(
                       onTapDown: onTapDown,
                       child: SizedBox(

@@ -10,6 +10,8 @@ import '../widgets/app_shell.dart';
 class AppRoutes {
   AppRoutes._();
 
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   static const String login = '/login';
   static const String register = '/register';
   static const String app = '/app';
