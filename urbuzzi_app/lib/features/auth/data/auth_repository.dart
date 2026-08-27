@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import '../../../core/network/dio_client.dart';
 import '../domain/models/user.dart';
 
@@ -17,14 +18,18 @@ class AuthRepository {
       final String token = response.data['accessToken'];
       final Map<String, dynamic> userData = response.data['user'];
 
-      print('DEBUG LOGIN: Token recebido do backend: $token');
+      if (kDebugMode) {
+        debugPrint('DEBUG LOGIN: Token recebido do backend: $token');
+      }
 
       // Armazena o token de forma segura e na memória
       DioClient().currentToken = token;
       await _storage.write(key: 'jwt_token', value: token);
 
       final tokenSalvo = await _storage.read(key: 'jwt_token');
-      print('DEBUG LOGIN: Token salvo no SecureStorage e lido com sucesso? ${tokenSalvo == token}');
+      if (kDebugMode) {
+        debugPrint('DEBUG LOGIN: Token salvo no SecureStorage e lido com sucesso? ${tokenSalvo == token}');
+      }
 
       return User.fromJson(userData);
     } catch (e) {

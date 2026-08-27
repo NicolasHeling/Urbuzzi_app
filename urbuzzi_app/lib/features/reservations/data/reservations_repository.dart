@@ -17,4 +17,8 @@ class ReservationsRepository {
     final List<dynamic> data = response.data;
     return data.map((json) => Reservation.fromJson(json)).toList();
   }
+
+  Future<void> approveReservation(String id) async {
+    await _dio.patch('/reservations/$id/approve');
+  }
 }

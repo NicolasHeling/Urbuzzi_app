@@ -1,5 +1,5 @@
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -47,7 +47,9 @@ class DioClient {
               token = await _storage.read(key: 'jwt_token');
               if (token != null) currentToken = token; // Sincroniza
             } catch (e) {
-              print('Erro ao ler token do SecureStorage: $e');
+              if (kDebugMode) {
+                debugPrint('Erro ao ler token do SecureStorage: $e');
+              }
             }
           }
 

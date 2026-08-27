@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'lots_provider.dart';
-import '../../reservations/presentation/reservation_dialog.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/status_badge.dart';
-import '../../../core/widgets/justification_dialog.dart';
-import '../../auth/presentation/auth_provider.dart';
 
 class LotsListPage extends ConsumerStatefulWidget {
   const LotsListPage({super.key});
@@ -28,7 +25,6 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
   @override
   Widget build(BuildContext context) {
     final lotsState = ref.watch(lotsControllerProvider);
-    final userRole = ref.watch(currentUserRoleProvider);
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     return Scaffold(
@@ -205,7 +201,22 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                                     cells: [
                                       DataCell(Text(lot.landName ?? '-', style: const TextStyle(fontWeight: FontWeight.w500))),
                                       DataCell(Text(lot.block)),
-                                      DataCell(Text(lot.number)),
+                                      DataCell(
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(lot.number),
+                                            Text(
+                                              'Matrícula: ${lot.registration ?? '—'}',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                       DataCell(Text('${lot.area} m²')),
                                       DataCell(Text(currencyFormatter.format(lot.price))),
                                       DataCell(StatusBadge(status: lot.status)),
@@ -215,10 +226,11 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                               ),
                             ),
                           ),
-                        );
-                      }
-                    );
-                  },
+                        ),
+                      );
+                    },
+                  );
+                },
                   loading: () => const Align(
                     alignment: Alignment.topCenter,
                     child: LinearProgressIndicator(color: AppColors.primary),

@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/models/lot.dart';
 

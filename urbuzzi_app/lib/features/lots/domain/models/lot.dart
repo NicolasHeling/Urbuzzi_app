@@ -15,6 +15,8 @@ class Lot {
   final String? registration; // matrícula do imóvel
   final double? frontMeasure; // "frente" em metros
   final double? backMeasure; // "fundo" em metros
+  final String? clientName; // nome do cliente (se reservado/vendido)
+  final String? clientDocument; // documento do cliente
 
   Lot({
     required this.id,
@@ -28,6 +30,8 @@ class Lot {
     this.registration,
     this.frontMeasure,
     this.backMeasure,
+    this.clientName,
+    this.clientDocument,
   });
 
   // Factory Method para desserializar JSON
@@ -48,6 +52,8 @@ class Lot {
       backMeasure: json['backMeasure'] != null
           ? double.tryParse(json['backMeasure'].toString())
           : (json['fundo'] != null ? double.tryParse(json['fundo'].toString()) : null),
+      clientName: json['clientName'] ?? json['client']?['name'] ?? json['customerName'],
+      clientDocument: json['clientDocument'] ?? json['client']?['document'] ?? json['customerDocument'],
     );
   }
 
@@ -64,6 +70,8 @@ class Lot {
       'registration': registration,
       'frontMeasure': frontMeasure,
       'backMeasure': backMeasure,
+      'clientName': clientName,
+      'clientDocument': clientDocument,
     };
   }
 
@@ -80,6 +88,8 @@ class Lot {
       registration: registration,
       frontMeasure: frontMeasure,
       backMeasure: backMeasure,
+      clientName: clientName,
+      clientDocument: clientDocument,
     );
   }
 }

@@ -18,10 +18,20 @@ class AuditController extends StateNotifier<AsyncValue<List<AuditEntry>>> {
     fetchEntries();
   }
 
-  Future<void> fetchEntries() async {
+  Future<void> fetchEntries({
+    String? userId,
+    String? action,
+    String? startDate,
+    String? endDate,
+  }) async {
     try {
       state = const AsyncValue.loading();
-      final entries = await _repository.fetchAuditEntries();
+      final entries = await _repository.fetchAuditEntries(
+        userId: userId,
+        action: action,
+        startDate: startDate,
+        endDate: endDate,
+      );
       state = AsyncValue.data(entries);
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);

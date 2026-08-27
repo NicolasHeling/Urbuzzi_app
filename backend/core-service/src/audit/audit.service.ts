@@ -21,11 +21,33 @@ export class AuditService {
     return this.auditRepository.save(audit);
   }
 
-  async findAll(limit: number = 50, offset: number = 0): Promise<Audit[]> {
-    return this.auditRepository.find({
-      order: { createdAt: 'DESC' },
-      take: limit,
-      skip: offset,
-    });
+  async findAll(
+    limit: number = 50,
+    offset: number = 0,
+    userId?: string,
+    action?: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<Audit[]> {
+    const query = this.auditRepository.createQueryBuilder('audit');
+
+    if (userId) {
+      query.andWhere('audit.userId = :userId', { userId });
+    }
+    if (action) {
+      query.andWhere('audit.action = :action', { action });
+    }
+    if (startDate) {
+      query.andWhere('audit.createdAt >= :startDate', { startDate });
+    }
+    if (endDate) {
+      query.andWhere('audit.createdAt <= :endDate', { endDate });
+    }
+
+    return query
+      .orderBy('audit.createdAt', 'DESC')
+      .take(limit)
+      .skip(offset)
+      .getMany();
   }
 }

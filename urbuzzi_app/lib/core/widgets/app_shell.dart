@@ -6,6 +6,7 @@ import '../../features/lots/presentation/lots_list_page.dart';
 import '../../features/proposals/presentation/proposals_page.dart';
 import '../../features/audit/presentation/audit_page.dart';
 import '../../features/vitrine/presentation/vitrine_page.dart';
+import '../../features/reservations/presentation/reservations_page.dart';
 import '../../features/auth/presentation/auth_provider.dart';
 import '../routing/app_routes.dart';
 import '../theme/app_colors.dart';
@@ -23,6 +24,7 @@ const _navItems = [
   _NavItem(icon: Icons.map_outlined, label: 'Mapa Interativo'),
   _NavItem(icon: Icons.format_list_bulleted_outlined, label: 'Lista de Lotes'),
   _NavItem(icon: Icons.view_kanban_outlined, label: 'Propostas', badge: 'SLA 7 dias'),
+  _NavItem(icon: Icons.event_available_outlined, label: 'Reservas Pendentes'),
   _NavItem(icon: Icons.history_outlined, label: 'Histórico/Auditoria'),
   _NavItem(icon: Icons.public_outlined, label: 'Vitrine Pública'),
 ];
@@ -32,6 +34,7 @@ const _pageTitles = [
   ('Mapa Interativo', 'Loteamento Morada do Sol · 15 quadras · 192 lotes'),
   ('Lista de Lotes', 'Loteamento Morada do Sol'),
   ('Propostas', 'SLA de 7 dias por proposta'),
+  ('Reservas Pendentes', 'Aprovação de reservas de lotes'),
   ('Histórico / Auditoria', 'Registro completo de eventos'),
   ('Vitrine Pública', 'Página pública do loteamento'),
 ];
@@ -53,6 +56,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     HomePage(),
     LotsListPage(),
     ProposalsPage(),
+    ReservationsPage(),
     AuditPage(),
     VitrinePage(),
   ];

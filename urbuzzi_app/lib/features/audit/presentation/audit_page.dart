@@ -6,8 +6,27 @@ import '../domain/models/audit_entry.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../core/theme/app_colors.dart';
 
-class AuditPage extends ConsumerWidget {
+class AuditPage extends ConsumerStatefulWidget {
   const AuditPage({super.key});
+
+  @override
+  ConsumerState<AuditPage> createState() => _AuditPageState();
+}
+
+class _AuditPageState extends ConsumerState<AuditPage> {
+  String? _userId;
+  String? _action;
+  DateTime? _startDate;
+  DateTime? _endDate;
+
+  void _applyFilters() {
+    ref.read(auditControllerProvider.notifier).fetchEntries(
+      userId: _userId,
+      action: _action,
+      startDate: _startDate?.toIso8601String(),
+      endDate: _endDate?.toIso8601String(),
+    );
+  }
 
   /// Traduz os códigos de ação do backend para textos legíveis em português
   String _translateAction(String action) {
@@ -36,7 +55,7 @@ class AuditPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final auditState = ref.watch(auditControllerProvider);
     final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
 
@@ -63,15 +82,118 @@ class AuditPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
-                    child: Text(
-                      'Últimos 30 dias · registro imutável',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    padding: const EdgeInsets.fromLTRB(32, 24, 32, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Filtros',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                decoration: const InputDecoration(
+                                  labelText: 'Usuário (ID ou Email)',
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                                onChanged: (value) => _userId = value.isEmpty ? null : value,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: DropdownButtonFormField<String?>(
+                                decoration: const InputDecoration(
+                                  labelText: 'Ação',
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                                value: _action,
+                                items: const [
+                                  DropdownMenuItem(value: null, child: Text('Todas')),
+                                  DropdownMenuItem(value: 'CREATE_LOT', child: Text('Criou lote')),
+                                  DropdownMenuItem(value: 'UPDATE_LOT_STATUS', child: Text('Alterou status do lote')),
+                                  DropdownMenuItem(value: 'CREATE_PROPOSAL', child: Text('Criou proposta')),
+                                  DropdownMenuItem(value: 'UPDATE_PROPOSAL_STATUS', child: Text('Alterou status da proposta')),
+                                  DropdownMenuItem(value: 'CREATE_RESERVATION', child: Text('Criou reserva')),
+                                  DropdownMenuItem(value: 'APPROVE_RESERVATION', child: Text('Aprovou reserva')),
+                                ],
+                                onChanged: (val) => _action = val,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton.icon(
+                                onPressed: () async {
+                                  final date = await showDatePicker(
+                                    context: context,
+                                    initialDate: _startDate ?? DateTime.now(),
+                                    firstDate: DateTime(2000),
+                                    lastDate: DateTime.now(),
+                                  );
+                                  if (date != null) {
+                                    setState(() => _startDate = date);
+                                  }
+                                },
+                                icon: const Icon(Icons.calendar_today, size: 16),
+                                label: Text(_startDate != null ? DateFormat('dd/MM/yyyy').format(_startDate!) : 'Data Inicial'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextButton.icon(
+                                onPressed: () async {
+                                  final date = await showDatePicker(
+                                    context: context,
+                                    initialDate: _endDate ?? DateTime.now(),
+                                    firstDate: DateTime(2000),
+                                    lastDate: DateTime.now(),
+                                  );
+                                  if (date != null) {
+                                    setState(() => _endDate = date);
+                                  }
+                                },
+                                icon: const Icon(Icons.calendar_today, size: 16),
+                                label: Text(_endDate != null ? DateFormat('dd/MM/yyyy').format(_endDate!) : 'Data Final'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _applyFilters();
+                                });
+                              },
+                              child: const Text('Filtrar'),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _userId = null;
+                                  _action = null;
+                                  _startDate = null;
+                                  _endDate = null;
+                                  _applyFilters();
+                                });
+                              },
+                              child: const Text('Limpar'),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   Expanded(
                     child: ListView.builder(
-                      padding: const EdgeInsets.all(32),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
                       itemCount: entries.length,
                       itemBuilder: (context, index) {
                         final entry = entries[index];

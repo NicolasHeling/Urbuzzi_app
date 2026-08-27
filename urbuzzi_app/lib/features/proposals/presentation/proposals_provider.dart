@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import '../../proposals/data/proposals_repository.dart';
 import '../../proposals/domain/models/proposal.dart';
 
@@ -52,7 +53,9 @@ class ProposalsController extends StateNotifier<AsyncValue<List<Proposal>>> {
         }).toList();
       });
     } catch (e) {
-      print('Erro ao atualizar status da proposta: $e');
+      if (kDebugMode) {
+        debugPrint('Erro ao atualizar status da proposta: $e');
+      }
     }
   }
 }

@@ -51,7 +51,7 @@ class _ClientsPageState extends ConsumerState<ClientsPage> {
               data: (clients) {
                 final filteredClients = clients.where((client) {
                   final nameMatches = client.name.toLowerCase().contains(_searchQuery);
-                  final cpfMatches = client.cpfOrCnpj?.toLowerCase().contains(_searchQuery) ?? false;
+                  final cpfMatches = client.cpfOrCnpj.toLowerCase().contains(_searchQuery);
                   return nameMatches || cpfMatches;
                 }).toList();
 
@@ -154,7 +154,7 @@ class _ClientsPageState extends ConsumerState<ClientsPage> {
         onPressed: () {
           Navigator.pushNamed(context, '/clients/new').then((_) {
             // Atualiza a lista quando voltar da tela de criação
-            ref.refresh(clientsProvider);
+            ref.invalidate(clientsProvider);
           });
         },
         child: const Icon(Icons.add),

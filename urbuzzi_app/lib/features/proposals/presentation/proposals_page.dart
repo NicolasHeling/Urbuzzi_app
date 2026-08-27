@@ -7,7 +7,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../auth/presentation/auth_provider.dart';
 import '../../../core/auth/user_role.dart';
 import '../../../core/widgets/justification_dialog.dart';
-import '../../../core/widgets/status_badge.dart';
 
 class ProposalsPage extends ConsumerWidget {
   const ProposalsPage({super.key});

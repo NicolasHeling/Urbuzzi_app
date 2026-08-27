@@ -9,9 +9,13 @@ export class AuditController {
   findAll(
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
+    @Query('userId') userId?: string,
+    @Query('action') action?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     const parsedLimit = limit ? parseInt(limit, 10) : 50;
     const parsedOffset = offset ? parseInt(offset, 10) : 0;
-    return this.auditService.findAll(parsedLimit, parsedOffset);
+    return this.auditService.findAll(parsedLimit, parsedOffset, userId, action, startDate, endDate);
   }
 }

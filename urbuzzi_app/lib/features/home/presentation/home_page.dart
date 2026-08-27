@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/status_badge.dart';
 import 'map_data.dart';
 import '../../reservations/presentation/reservation_dialog.dart';
+import 'lot_details_modal.dart';
 
 const double _mapWidth = 1200;
 const double _mapHeight = 860;
@@ -147,9 +148,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       if (path.contains(localPosition)) {
         setState(() => _selectedPolygon = poly);
-        if (!isWide) {
-          _showLotDetailsSheet(poly, lots);
-        }
+        _showLotDetailsSheet(poly, lots);
         return;
       }
     }
@@ -158,20 +157,15 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _showLotDetailsSheet(LotPolygon poly, List<Lot> lots) {
+    final lot = _lotForPolygon(poly, lots);
+    if (lot == null) return; // Só exibe se encontrar o lote
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: _SelectedLotPanel(
-            poly: poly,
-            lot: _lotForPolygon(poly, lots),
-            onClose: () => Navigator.pop(context),
-            isBottomSheet: true,
-          ),
-        );
+        return LotDetailsModal(lot: lot, poly: poly);
       },
     );
   }
@@ -730,21 +724,62 @@ class _SelectedLotPanel extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // Botão de reserva
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: lot!.status == 'Disponível' ? AppColors.primary : AppColors.border,
-                    foregroundColor: lot!.status == 'Disponível' ? Colors.white : AppColors.textMuted,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
+              // Botão de reserva ou visualizar
+              if (lot!.status == 'Disponível')
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    onPressed: () => showReservationDialog(context, lot!),
+                    child: const Text('Fazer Reserva', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
-                  onPressed: lot!.status == 'Disponível' ? () => showReservationDialog(context, lot!) : null,
-                  child: const Text('Fazer Reserva', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                )
+              else ...[
+                if (lot!.clientName != null && lot!.clientName!.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.muted.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Cliente', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                        const SizedBox(height: 2),
+                        Text(lot!.clientName!, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      ],
+                    ),
+                  ),
+                ],
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.surface,
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.border),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Visualização de contratos em breve.')),
+                      );
+                    },
+                    child: const Text('Ver Contrato/Proposta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
                 ),
-              ),
+              ],
             ],
           ],
         ],
@@ -841,3 +876,4 @@ class _SummaryCard extends StatelessWidget {
     );
   }
 }
+

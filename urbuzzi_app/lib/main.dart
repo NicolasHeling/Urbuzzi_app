@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,10 +17,14 @@ void main() async {
     savedToken = await storage.read(key: 'jwt_token');
     if (savedToken != null && savedToken.isNotEmpty) {
       DioClient().currentToken = savedToken;
-      print('Sessão restaurada no boot. Token carregado em memória.');
+      if (kDebugMode) {
+        debugPrint('Sessão restaurada no boot. Token carregado em memória.');
+      }
     }
   } catch (e) {
-    print('Nenhuma sessão anterior válida ou erro ao ler storage: $e');
+    if (kDebugMode) {
+      debugPrint('Nenhuma sessão anterior válida ou erro ao ler storage: $e');
+    }
   }
 
   runApp(

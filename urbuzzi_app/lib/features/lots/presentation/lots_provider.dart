@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import '../../lots/data/lots_repository.dart';
 import '../../lots/domain/models/lot.dart';
 
@@ -48,7 +49,9 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
       final lots = await _repository.fetchLots();
       state = AsyncValue.data(lots);
     } catch (e, stackTrace) {
-      print('Erro ao carregar lotes: $e');
+      if (kDebugMode) {
+        debugPrint('Erro ao carregar lotes: $e');
+      }
       state = AsyncValue.error(e, stackTrace);
     }
   }
@@ -58,7 +61,9 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
       await _repository.updateLotStatus(lotId, newStatus, justification: justification);
       updateLotInState(lotId, newStatus);
     } catch (e) {
-      print('Erro ao atualizar status: $e');
+      if (kDebugMode) {
+        debugPrint('Erro ao atualizar status: $e');
+      }
     }
   }
 }
