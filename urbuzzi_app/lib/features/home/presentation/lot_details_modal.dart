@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../lots/domain/models/lot.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../reservations/presentation/reservation_dialog.dart';
+import '../../auth/presentation/auth_provider.dart';
 import 'map_data.dart';
 
-class LotDetailsModal extends StatelessWidget {
+class LotDetailsModal extends ConsumerWidget {
   final Lot lot;
   final LotPolygon poly;
 
   const LotDetailsModal({super.key, required this.lot, required this.poly});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final isAvailable = lot.status == 'Disponível';
     final hasClient = lot.clientName != null && lot.clientName!.isNotEmpty;
+
+    final authState = ref.watch(authControllerProvider);
+    final isAuthenticated = authState.value != null;
 
     return Container(
       decoration: const BoxDecoration(
@@ -77,8 +82,8 @@ class LotDetailsModal extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Informações de Cliente (Se reservado/vendido)
-          if (!isAvailable && hasClient) ...[
+          // Informações de Cliente (Se reservado/vendido e logado)
+          if (isAuthenticated && !isAvailable && hasClient) ...[
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -136,35 +141,58 @@ class LotDetailsModal extends StatelessWidget {
           
           const SizedBox(height: 32),
 
-          // Botões Contextuais
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isAvailable ? AppColors.primary : AppColors.surface,
-                foregroundColor: isAvailable ? Colors.white : AppColors.primary,
-                side: BorderSide(color: isAvailable ? AppColors.primary : AppColors.border),
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
-              ),
-              onPressed: () {
-                if (isAvailable) {
-                  Navigator.pop(context);
-                  showReservationDialog(context, lot);
-                } else {
-                  // Ação para ver contrato/proposta
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Visualização de contratos em breve.')),
-                  );
-                }
-              },
-              child: Text(
-                isAvailable ? 'Fazer Reserva' : 'Ver Contrato/Proposta',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          // Botões Contextuais (Apenas se logado ou indicar login)
+          if (isAuthenticated) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isAvailable ? AppColors.primary : AppColors.surface,
+                  foregroundColor: isAvailable ? Colors.white : AppColors.primary,
+                  side: BorderSide(color: isAvailable ? AppColors.primary : AppColors.border),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                onPressed: () {
+                  if (isAvailable) {
+                    Navigator.pop(context);
+                    showReservationDialog(context, lot);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Visualização de contratos em breve.')),
+                    );
+                  }
+                },
+                child: Text(
+                  isAvailable ? 'Fazer Reserva' : 'Ver Contrato/Proposta',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
             ),
-          ),
+          ] else ...[
+            if (isAvailable)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF25D366),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    // Open WhatsApp or generic action
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Fale com o comercial pelo WhatsApp.')),
+                    );
+                  },
+                  icon: const Icon(Icons.chat, size: 18),
+                  label: const Text('Falar com o Comercial', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+          ],
         ],
       ),
     );

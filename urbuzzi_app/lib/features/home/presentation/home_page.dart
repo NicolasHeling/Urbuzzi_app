@@ -639,17 +639,24 @@ class _ZoomButton extends StatelessWidget {
 
 // ─── Selected Lot Panel ────────────────────────────────────────────────────
 
-class _SelectedLotPanel extends StatelessWidget {
+class _SelectedLotPanel extends ConsumerWidget {
   final LotPolygon? poly;
   final Lot? lot;
-  final VoidCallback? onClose;
   final bool isBottomSheet;
+  final VoidCallback? onClose;
 
-  const _SelectedLotPanel({required this.poly, required this.lot, this.onClose, this.isBottomSheet = false});
+  const _SelectedLotPanel({
+    this.poly,
+    this.lot,
+    this.isBottomSheet = false,
+    this.onClose,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final authState = ref.watch(authControllerProvider);
+    final isAuthenticated = authState.value != null;
 
     return Container(
       width: double.infinity,
@@ -724,61 +731,84 @@ class _SelectedLotPanel extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // Botão de reserva ou visualizar
-              if (lot!.status == 'Disponível')
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
+              // Botões e Cliente (Apenas se logado)
+              if (isAuthenticated) ...[
+                if (lot!.status == 'Disponível')
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      onPressed: () => showReservationDialog(context, lot!),
+                      child: const Text('Fazer Reserva', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
-                    onPressed: () => showReservationDialog(context, lot!),
-                    child: const Text('Fazer Reserva', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  ),
-                )
-              else ...[
-                if (lot!.clientName != null && lot!.clientName!.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.muted.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.border),
+                  )
+                else ...[
+                  if (lot!.clientName != null && lot!.clientName!.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.muted.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Cliente', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                          const SizedBox(height: 2),
+                          Text(lot!.clientName!, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Cliente', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                        const SizedBox(height: 2),
-                        Text(lot!.clientName!, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                      ],
+                  ],
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.surface,
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.border),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Visualização de contratos em breve.')),
+                        );
+                      },
+                      child: const Text('Ver Contrato/Proposta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
                 ],
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.surface,
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.border),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
+              ] else ...[
+                if (lot!.status == 'Disponível')
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF25D366),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Fale com o comercial pelo WhatsApp.')),
+                        );
+                      },
+                      icon: const Icon(Icons.chat, size: 18),
+                      label: const Text('Falar com o Comercial', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Visualização de contratos em breve.')),
-                      );
-                    },
-                    child: const Text('Ver Contrato/Proposta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
-                ),
               ],
             ],
           ],

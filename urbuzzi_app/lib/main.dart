@@ -29,14 +29,14 @@ void main() async {
 
   runApp(
     ProviderScope(
-      child: UrbuzziApp(initialRoute: savedToken != null && savedToken.isNotEmpty ? '/app' : AppRoutes.login),
+      child: UrbuzziApp(initialRoute: AppRoutes.app),
     ),
   );
 }
 
 class UrbuzziApp extends ConsumerWidget {
   final String initialRoute;
-  const UrbuzziApp({super.key, this.initialRoute = AppRoutes.login});
+  const UrbuzziApp({super.key, this.initialRoute = AppRoutes.app});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

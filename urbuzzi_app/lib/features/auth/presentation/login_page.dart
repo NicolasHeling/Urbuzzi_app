@@ -157,19 +157,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: 24),
                 const Divider(color: AppColors.border),
                 const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/register'),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
-                  child: const Text('Não tem uma conta? Cadastre-se'),
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: OutlinedButton.icon(
-                    onPressed: () => Navigator.pushNamed(context, '/vitrine'),
-                    icon: const Icon(Icons.storefront),
-                    label: const Text('Acessar Vitrine Pública'),
+                    onPressed: () => Navigator.pushReplacementNamed(context, '/app'),
+                    icon: const Icon(Icons.map_outlined),
+                    label: const Text('Voltar para o Mapa Público'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.textPrimary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

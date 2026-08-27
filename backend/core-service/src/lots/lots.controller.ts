@@ -5,11 +5,13 @@ import { Lot } from './lot.entity';
 import { CreateLotDto } from './dto/create-lot.dto';
 import { UpdateLotStatusDto } from './dto/update-lot-status.dto';
 import { Roles } from '../guards/roles.guard';
+import { Public } from '../decorators/public.decorator';
 
 @Controller('lots')
 export class LotsController {
   constructor(private readonly lotsService: LotsService) {}
 
+  @Public()
   @Get()
   findAll(): Promise<Lot[]> {
     return this.lotsService.findAll();

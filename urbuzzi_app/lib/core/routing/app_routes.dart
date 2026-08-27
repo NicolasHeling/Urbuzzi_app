@@ -21,7 +21,7 @@ class AppRoutes {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final isAuthenticated = DioClient().currentToken != null && DioClient().currentToken!.isNotEmpty;
 
-    if (!isAuthenticated && (settings.name == app || settings.name == clientForm)) {
+    if (!isAuthenticated && (settings.name == clientForm)) {
       return _build(settings, const LoginPage());
     }
 

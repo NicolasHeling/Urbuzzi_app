@@ -64,6 +64,9 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     final isLarge = MediaQuery.of(context).size.width >= 1024;
+    final authState = ref.watch(authControllerProvider);
+    final isAuthenticated = authState.value != null;
+    final showSidebar = isAuthenticated && isLarge;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -73,13 +76,14 @@ class _AppShellState extends ConsumerState<AppShell> {
           AnimatedPadding(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
-            padding: EdgeInsets.only(left: isLarge ? 280 : 0),
+            padding: EdgeInsets.only(left: showSidebar ? 280 : 0),
             child: Column(
               children: [
                 _AppHeader(
                   title: _pageTitles[_selectedIndex].$1,
                   subtitle: _pageTitles[_selectedIndex].$2,
-                  onMenuTap: isLarge ? null : () => setState(() => _sidebarOpen = true),
+                  isAuthenticated: isAuthenticated,
+                  onMenuTap: (isAuthenticated && !isLarge) ? () => setState(() => _sidebarOpen = true) : null,
                   onLogout: () async {
                     await ref.read(authControllerProvider.notifier).logout();
                     if (context.mounted) {
@@ -95,31 +99,32 @@ class _AppShellState extends ConsumerState<AppShell> {
           ),
 
           // --- Overlay mobile ---
-          if (!isLarge && _sidebarOpen)
+          if (isAuthenticated && !isLarge && _sidebarOpen)
             GestureDetector(
               onTap: () => setState(() => _sidebarOpen = false),
               child: Container(color: Colors.black54),
             ),
 
           // --- Sidebar ---
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            left: isLarge ? 0 : (_sidebarOpen ? 0 : -280),
-            top: 0,
-            bottom: 0,
-            width: 280,
-            child: _Sidebar(
-              selectedIndex: _selectedIndex,
-              onSelect: (i) {
-                setState(() {
-                  _selectedIndex = i;
-                  _sidebarOpen = false;
-                });
-              },
-              onClose: isLarge ? null : () => setState(() => _sidebarOpen = false),
+          if (isAuthenticated)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              left: showSidebar ? 0 : (_sidebarOpen ? 0 : -280),
+              top: 0,
+              bottom: 0,
+              width: 280,
+              child: _Sidebar(
+                selectedIndex: _selectedIndex,
+                onSelect: (i) {
+                  setState(() {
+                    _selectedIndex = i;
+                    _sidebarOpen = false;
+                  });
+                },
+                onClose: isLarge ? null : () => setState(() => _sidebarOpen = false),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -327,12 +332,14 @@ class _SidebarItem extends StatelessWidget {
 class _AppHeader extends StatelessWidget {
   final String title;
   final String subtitle;
+  final bool isAuthenticated;
   final VoidCallback? onMenuTap;
   final VoidCallback onLogout;
 
   const _AppHeader({
     required this.title,
     required this.subtitle,
+    required this.isAuthenticated,
     this.onMenuTap,
     required this.onLogout,
   });
@@ -401,12 +408,22 @@ class _AppHeader extends StatelessWidget {
             ),
           ),
 
-          // Notificações
-          const _NotificationMenu(),
-          const SizedBox(width: 8),
-
-          // Avatar / usuário
-          _UserMenu(onLogout: onLogout),
+          if (isAuthenticated) ...[
+            // Notificações
+            const _NotificationMenu(),
+            const SizedBox(width: 8),
+            // Avatar / usuário
+            _UserMenu(onLogout: onLogout),
+          ] else ...[
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).pushNamed(AppRoutes.login),
+              icon: const Icon(Icons.login, size: 18),
+              label: const Text('Área do Corretor/Admin', style: TextStyle(fontWeight: FontWeight.w600)),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textPrimary,
+              ),
+            ),
+          ],
         ],
       ),
     );
