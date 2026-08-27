@@ -715,11 +715,11 @@ class _SelectedLotPanel extends StatelessWidget {
               // Medidas em grid de 3
               Row(
                 children: [
-                  _MeasureTile(label: 'Área', value: '${lot!.area.toStringAsFixed(0)} m²'),
+                  _MeasureTile(label: 'Área', value: '${NumberFormat.decimalPattern('pt_BR').format(lot!.area)} m²'),
                   const SizedBox(width: 6),
-                  _MeasureTile(label: 'Frente', value: lot!.frontMeasure != null ? '${lot!.frontMeasure} m' : '—'),
+                  _MeasureTile(label: 'Frente', value: lot!.frontMeasure != null ? '${NumberFormat.decimalPattern('pt_BR').format(lot!.frontMeasure)} m' : '—'),
                   const SizedBox(width: 6),
-                  _MeasureTile(label: 'Fundo', value: lot!.backMeasure != null ? '${lot!.backMeasure} m' : '—'),
+                  _MeasureTile(label: 'Fundo', value: lot!.backMeasure != null ? '${NumberFormat.decimalPattern('pt_BR').format(lot!.backMeasure)} m' : '—'),
                 ],
               ),
               const SizedBox(height: 16),

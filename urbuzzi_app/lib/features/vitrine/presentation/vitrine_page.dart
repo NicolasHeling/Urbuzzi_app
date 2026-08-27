@@ -178,7 +178,7 @@ class VitrinePage extends ConsumerWidget {
                                                   const Icon(Icons.straighten, size: 14, color: AppColors.textSecondary),
                                                   const SizedBox(width: 4),
                                                   Text(
-                                                    '${lot.area} m²',
+                                                    '${NumberFormat.decimalPattern('pt_BR').format(lot.area)} m²',
                                                     style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
                                                   ),
                                                 ],

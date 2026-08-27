@@ -112,7 +112,7 @@ class LotDetailsModal extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _InfoCard(label: 'Área Total', value: '${lot.area.toStringAsFixed(2)} m²'),
+              _InfoCard(label: 'Área Total', value: '${NumberFormat.decimalPattern('pt_BR').format(lot.area)} m²'),
               const SizedBox(width: 12),
               _InfoCard(label: 'Valor de Tabela', value: currencyFormatter.format(lot.price)),
             ],
@@ -120,9 +120,9 @@ class LotDetailsModal extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _InfoCard(label: 'Frente', value: lot.frontMeasure != null ? '${lot.frontMeasure} m' : 'N/A'),
+              _InfoCard(label: 'Frente', value: lot.frontMeasure != null ? '${NumberFormat.decimalPattern('pt_BR').format(lot.frontMeasure)} m' : 'N/A'),
               const SizedBox(width: 12),
-              _InfoCard(label: 'Fundo', value: lot.backMeasure != null ? '${lot.backMeasure} m' : 'N/A'),
+              _InfoCard(label: 'Fundo', value: lot.backMeasure != null ? '${NumberFormat.decimalPattern('pt_BR').format(lot.backMeasure)} m' : 'N/A'),
             ],
           ),
           if (lot.registration != null) ...[

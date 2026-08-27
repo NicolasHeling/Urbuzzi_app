@@ -227,7 +227,12 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary, 
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
+                      disabledForegroundColor: Colors.white,
+                    ),
                     child: _isLoading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Salvar Cliente'),
                   ),
                 ),

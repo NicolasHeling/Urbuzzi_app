@@ -217,7 +217,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                                           ],
                                         ),
                                       ),
-                                      DataCell(Text('${lot.area} m²')),
+                                      DataCell(Text('${NumberFormat.decimalPattern('pt_BR').format(lot.area)} m²')),
                                       DataCell(Text(currencyFormatter.format(lot.price))),
                                       DataCell(StatusBadge(status: lot.status)),
                                     ],

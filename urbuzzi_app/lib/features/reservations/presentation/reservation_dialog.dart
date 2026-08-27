@@ -126,7 +126,12 @@ class _ReservationDialogState extends ConsumerState<ReservationDialog> {
         ),
         ElevatedButton(
           onPressed: (_selectedClientId == null || _isLoading) ? null : _submit,
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary, 
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
+            disabledForegroundColor: Colors.white,
+          ),
           child: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Confirmar Reserva'),
         ),
       ],

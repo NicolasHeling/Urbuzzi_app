@@ -48,7 +48,7 @@ class ReservationsPage extends ConsumerWidget {
                 separatorBuilder: (context, index) => const Divider(color: AppColors.border),
                 itemBuilder: (context, index) {
                   final res = reservations[index];
-                  final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+                  final dateFormat = DateFormat('dd/MM/yyyy');
                   final expDate = res.expirationDate != null ? dateFormat.format(res.expirationDate!) : 'N/A';
                   
                   return ListTile(
