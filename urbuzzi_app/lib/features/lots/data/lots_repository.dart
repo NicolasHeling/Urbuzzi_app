@@ -1,14 +1,39 @@
 import '../../../core/network/dio_client.dart';
 import '../domain/models/lot.dart';
 
+class LotsPage {
+  final List<Lot> data;
+  final int total;
+
+  LotsPage({required this.data, required this.total});
+}
+
 class LotsRepository {
   final _dio = DioClient().dio;
 
-  Future<List<Lot>> fetchLots() async {
+  /// Busca lotes com paginação. Retorna dados + total para scroll infinito.
+  Future<LotsPage> fetchLots({int limit = 50, int offset = 0, String? search, String? status}) async {
     try {
-      final response = await _dio.get('/lots');
-      final List<dynamic> data = response.data;
-      return data.map((json) => Lot.fromJson(json)).toList();
+      final queryParams = <String, dynamic>{
+        'limit': limit,
+        'offset': offset,
+      };
+      
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+      
+      if (status != null && status != 'Todos') {
+        queryParams['status'] = status;
+      }
+
+      final response = await _dio.get('/lots', queryParameters: queryParams);
+      final Map<String, dynamic> body = response.data;
+      final List<dynamic> items = body['data'];
+      return LotsPage(
+        data: items.map((json) => Lot.fromJson(json)).toList(),
+        total: body['total'] as int,
+      );
     } catch (e) {
       throw Exception('Falha ao buscar lotes: $e');
     }

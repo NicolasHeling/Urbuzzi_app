@@ -12,8 +12,24 @@ export class LotsService {
     private readonly auditService: AuditService,
   ) {}
 
-  async findAll(): Promise<Lot[]> {
-    return this.lotRepository.find();
+  async findAll(limit: number = 50, offset: number = 0, search?: string, status?: string): Promise<{ data: Lot[]; total: number }> {
+    const query = this.lotRepository.createQueryBuilder('lot')
+      .orderBy('lot.block', 'ASC')
+      .addOrderBy('lot.number', 'ASC')
+      .take(limit)
+      .skip(offset);
+
+    if (status && status !== 'Todos') {
+      query.andWhere('lot.status = :status', { status });
+    }
+
+    if (search) {
+      const searchTerm = `%${search.toLowerCase()}%`;
+      query.andWhere('(LOWER(lot.block) LIKE :search OR LOWER(lot.number) LIKE :search)', { search: searchTerm });
+    }
+
+    const [data, total] = await query.getManyAndCount();
+    return { data, total };
   }
 
   async findPublic(): Promise<Lot[]> {

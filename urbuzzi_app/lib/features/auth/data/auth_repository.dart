@@ -83,6 +83,33 @@ class AuthRepository {
     }
   }
 
+  Future<void> forgotPassword(String email) async {
+    try {
+      await _dio.post('/auth/forgot-password', data: {'email': email});
+    } catch (e) {
+      if (e is DioException) {
+        final msg = e.response?.data['message'] ?? 'Erro ao solicitar recuperação de senha.';
+        throw Exception(msg);
+      }
+      throw Exception('Erro inesperado: $e');
+    }
+  }
+
+  Future<void> resetPassword(String token, String newPassword) async {
+    try {
+      await _dio.post('/auth/reset-password', data: {
+        'token': token,
+        'newPassword': newPassword,
+      });
+    } catch (e) {
+      if (e is DioException) {
+        final msg = e.response?.data['message'] ?? 'Erro ao redefinir senha. O token pode ser inválido ou estar expirado.';
+        throw Exception(msg);
+      }
+      throw Exception('Erro inesperado: $e');
+    }
+  }
+
   Future<void> logout() async {
     DioClient().currentToken = null;
     await _storage.delete(key: 'jwt_token');

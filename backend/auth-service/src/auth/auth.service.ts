@@ -91,4 +91,64 @@ export class AuthService {
       throw new UnauthorizedException('Token inválido ou expirado');
     }
   }
+
+  async forgotPassword(email: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      // Para não vazar quais emails existem, retornamos sucesso silencioso
+      return { message: 'Se o email existir, um link de recuperação foi enviado.' };
+    }
+
+    // Cria um secret único para o usuário, baseado na senha atual
+    // Assim, se a senha for alterada, o token é invalidado imediatamente
+    const secret = process.env.JWT_SECRET + user.passwordHash;
+    const payload = { sub: user.id, email: user.email };
+    const resetToken = await this.jwtService.signAsync(payload, {
+      secret,
+      expiresIn: '1h',
+    });
+
+    // TODO: Implementar envio real de email (ex: via nodemailer, SendGrid, AWS SES)
+    // Como não há provedor de email configurado ainda, apenas logamos e retornamos o token.
+    console.log(`\n==========================================`);
+    console.log(`URL DE RECUPERAÇÃO DE SENHA (Apenas para dev):`);
+    console.log(`Token: ${resetToken}`);
+    console.log(`==========================================\n`);
+
+    return { 
+      message: 'Se o email existir, um link de recuperação foi enviado.',
+      // Retornado aqui provisoriamente para facilitar o desenvolvimento frontend
+      devToken: resetToken 
+    };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    try {
+      // O JWT service não consegue verificar sozinho pois não sabe o secret ainda.
+      // Primeiro decodificamos sem verificar para pegar o ID.
+      const decoded = this.jwtService.decode(token) as any;
+      if (!decoded || !decoded.sub) {
+        throw new UnauthorizedException('Token inválido ou expirado.');
+      }
+
+      const user = await this.usersService.findById(decoded.sub);
+      if (!user) {
+        throw new UnauthorizedException('Usuário não encontrado.');
+      }
+
+      // Agora verificamos com a assinatura correta
+      const secret = process.env.JWT_SECRET + user.passwordHash;
+      await this.jwtService.verifyAsync(token, { secret });
+
+      // Hash da nova senha
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(newPassword, salt);
+
+      await this.usersService.update(user.id, { passwordHash });
+
+      return { message: 'Senha alterada com sucesso.' };
+    } catch (error) {
+      throw new UnauthorizedException('Token inválido ou expirado.');
+    }
+  }
 }

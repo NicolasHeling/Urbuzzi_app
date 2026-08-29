@@ -14,9 +14,6 @@ class LotsListPage extends ConsumerStatefulWidget {
 }
 
 class _LotsListPageState extends ConsumerState<LotsListPage> {
-  String _searchQuery = '';
-  String _selectedStatus = 'Todos';
-
   final List<String> _statuses = [
     'Todos',
     ...AppColors.statusOrder
@@ -25,6 +22,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
   @override
   Widget build(BuildContext context) {
     final lotsState = ref.watch(lotsControllerProvider);
+    final controller = ref.read(lotsControllerProvider.notifier);
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     return Scaffold(
@@ -70,9 +68,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                       onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value.toLowerCase();
-                        });
+                        controller.setSearchQuery(value);
                       },
                     );
 
@@ -84,7 +80,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
-                          value: _selectedStatus,
+                          value: controller.selectedStatus,
                           icon: const Icon(Icons.arrow_drop_down, color: AppColors.textPrimary),
                           items: _statuses.map((String status) {
                             return DropdownMenuItem<String>(
@@ -94,9 +90,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                           }).toList(),
                           onChanged: (String? newValue) {
                             if (newValue != null) {
-                              setState(() {
-                                _selectedStatus = newValue;
-                              });
+                              controller.setStatusFilter(newValue);
                             }
                           },
                         ),
@@ -130,14 +124,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
               Expanded(
                 child: lotsState.when(
                   data: (lots) {
-                    final filteredLots = lots.where((lot) {
-                      final matchesSearch = lot.block.toLowerCase().contains(_searchQuery) ||
-                          lot.number.toLowerCase().contains(_searchQuery);
-                      final matchesStatus = _selectedStatus == 'Todos' || lot.status == _selectedStatus;
-                      return matchesSearch && matchesStatus;
-                    }).toList();
-
-                    if (filteredLots.isEmpty) {
+                    if (lots.isEmpty) {
                       return RefreshIndicator(
                         onRefresh: () => ref.read(lotsControllerProvider.notifier).fetchLots(),
                         child: SingleChildScrollView(
@@ -160,6 +147,8 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                       );
                     }
 
+                    final controller = ref.read(lotsControllerProvider.notifier);
+
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return RefreshIndicator(
@@ -167,70 +156,104 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                           child: SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             scrollDirection: Axis.vertical,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(minWidth: constraints.maxWidth, minHeight: constraints.maxHeight),
-                              child: DataTable(
-                                headingRowColor: WidgetStateProperty.all(AppColors.muted.withValues(alpha: 0.6)),
-                                dataRowColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
-                                  if (states.contains(WidgetState.hovered)) {
-                                    return AppColors.muted.withValues(alpha: 0.3);
-                                  }
-                                  return null; 
-                                }),
-                                dividerThickness: 1,
-                                horizontalMargin: 24,
-                                columnSpacing: 24,
-                                headingTextStyle: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 1.2,
-                                  color: AppColors.textSecondary,
-                                ),
-                                columns: const [
-                                  DataColumn(label: Text('LOTEAMENTO')),
-                                  DataColumn(label: Text('QUADRA')),
-                                  DataColumn(label: Text('LOTE')),
-                                  DataColumn(label: Text('ÁREA')),
-                                  DataColumn(label: Text('VALOR')),
-                                  DataColumn(label: Text('STATUS')),
-                                ],
-                                rows: filteredLots.map((lot) {
-                                  return DataRow(
-                                    cells: [
-                                      DataCell(Text(lot.landName ?? '-', style: const TextStyle(fontWeight: FontWeight.w500))),
-                                      DataCell(Text(lot.block)),
-                                      DataCell(
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Text(lot.number),
-                                            Text(
-                                              'Matrícula: ${lot.registration ?? '—'}',
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                color: AppColors.textSecondary,
+                            child: Column(
+                              children: [
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                                    child: DataTable(
+                                      headingRowColor: WidgetStateProperty.all(AppColors.muted.withValues(alpha: 0.6)),
+                                      dataRowColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+                                        if (states.contains(WidgetState.hovered)) {
+                                          return AppColors.muted.withValues(alpha: 0.3);
+                                        }
+                                        return null; 
+                                      }),
+                                      dividerThickness: 1,
+                                      horizontalMargin: 24,
+                                      columnSpacing: 24,
+                                      headingTextStyle: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 1.2,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      columns: const [
+                                        DataColumn(label: Text('LOTEAMENTO')),
+                                        DataColumn(label: Text('QUADRA')),
+                                        DataColumn(label: Text('LOTE')),
+                                        DataColumn(label: Text('ÁREA')),
+                                        DataColumn(label: Text('VALOR')),
+                                        DataColumn(label: Text('STATUS')),
+                                      ],
+                                      rows: lots.map((lot) {
+                                        return DataRow(
+                                          cells: [
+                                            DataCell(Text(lot.landName ?? '-', style: const TextStyle(fontWeight: FontWeight.w500))),
+                                            DataCell(Text(lot.block)),
+                                            DataCell(
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Text(lot.number),
+                                                  Text(
+                                                    'Matrícula: ${lot.registration ?? '—'}',
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      color: AppColors.textSecondary,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
+                                            DataCell(Text('${NumberFormat.decimalPattern('pt_BR').format(lot.area)} m²')),
+                                            DataCell(Text(currencyFormatter.format(lot.price))),
+                                            DataCell(StatusBadge(status: lot.status)),
                                           ],
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                ),
+                                // Botão "Carregar mais" para paginação
+                                if (controller.hasMore)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    child: SizedBox(
+                                      width: 200,
+                                      child: OutlinedButton.icon(
+                                        onPressed: controller.isLoadingMore
+                                            ? null
+                                            : () => controller.loadMore(),
+                                        icon: controller.isLoadingMore
+                                            ? const SizedBox(
+                                                width: 16,
+                                                height: 16,
+                                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                              )
+                                            : const Icon(Icons.expand_more),
+                                        label: Text(
+                                          controller.isLoadingMore ? 'Carregando...' : 'Carregar mais',
+                                          style: const TextStyle(fontWeight: FontWeight.w600),
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: AppColors.primary,
+                                          side: const BorderSide(color: AppColors.primary),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
                                         ),
                                       ),
-                                      DataCell(Text('${NumberFormat.decimalPattern('pt_BR').format(lot.area)} m²')),
-                                      DataCell(Text(currencyFormatter.format(lot.price))),
-                                      DataCell(StatusBadge(status: lot.status)),
-                                    ],
-                                  );
-                                }).toList(),
-                              ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
+                        );
+                      },
+                    );
+                  },
                   loading: () => const Align(
                     alignment: Alignment.topCenter,
                     child: LinearProgressIndicator(color: AppColors.primary),

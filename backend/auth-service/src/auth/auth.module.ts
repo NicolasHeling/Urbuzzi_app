@@ -6,12 +6,18 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
+// Throw error on boot se JWT_SECRET não estiver configurado
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET não configurado! Por segurança, o sistema não pode iniciar sem uma chave secreta.');
+}
+
 @Module({
   imports: [
     UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'urbuzzi_super_secret',
+      secret: JWT_SECRET,
       signOptions: { expiresIn: '15m' },  // Access token curto (15 min)
     }),
   ],

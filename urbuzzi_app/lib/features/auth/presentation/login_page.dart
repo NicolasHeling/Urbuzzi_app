@@ -154,9 +154,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         : const Text('Entrar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                 ),
-                const SizedBox(height: 24),
-                const Divider(color: AppColors.border),
                 const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.center,
+                  child: TextButton(
+                    onPressed: () => Navigator.pushReplacementNamed(context, '/forgot-password'),
+                    child: const Text('Esqueci minha senha', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Divider(color: AppColors.border),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,

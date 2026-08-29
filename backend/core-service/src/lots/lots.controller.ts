@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req, Query } from '@nestjs/common';
 import { Request } from 'express';
 import { LotsService } from './lots.service';
 import { Lot } from './lot.entity';
@@ -13,8 +13,15 @@ export class LotsController {
 
   @Public()
   @Get()
-  findAll(): Promise<Lot[]> {
-    return this.lotsService.findAll();
+  findAll(
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+  ) {
+    const parsedLimit = limit ? parseInt(limit, 10) : 50;
+    const parsedOffset = offset ? parseInt(offset, 10) : 0;
+    return this.lotsService.findAll(parsedLimit, parsedOffset, search, status);
   }
 
   @Get('public')

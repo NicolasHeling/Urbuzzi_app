@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
+import '../../features/auth/presentation/forgot_password_page.dart';
 import '../../features/crm/presentation/client_form_page.dart';
 import '../../features/vitrine/presentation/vitrine_page.dart';
 import '../network/dio_client.dart';
@@ -14,6 +15,7 @@ class AppRoutes {
 
   static const String login = '/login';
   static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
   static const String app = '/app';
   static const String clientForm = '/clients/new';
   static const String vitrine = '/vitrine';
@@ -30,6 +32,8 @@ class AppRoutes {
         return _build(settings, const LoginPage());
       case register:
         return _build(settings, const RegisterPage());
+      case forgotPassword:
+        return _build(settings, const ForgotPasswordPage());
       case app:
         return _build(settings, const AppShell());
       case clientForm:
