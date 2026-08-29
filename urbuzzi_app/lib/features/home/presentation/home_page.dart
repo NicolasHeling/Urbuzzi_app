@@ -9,6 +9,7 @@ import '../../../core/widgets/status_badge.dart';
 import 'map_data.dart';
 import '../../reservations/presentation/reservation_dialog.dart';
 import 'lot_details_modal.dart';
+import '../../auth/presentation/auth_provider.dart';
 
 const double _mapWidth = 1200;
 const double _mapHeight = 860;
@@ -18,8 +19,9 @@ const double _mapHeight = 860;
 class MapPainter extends CustomPainter {
   final List<Lot> lotsFromApi;
   final LotPolygon? selectedPolygon;
+  final String activeFilter;
 
-  MapPainter({required this.lotsFromApi, this.selectedPolygon});
+  MapPainter({required this.lotsFromApi, this.selectedPolygon, required this.activeFilter});
 
   Lot? _matchLot(LotPolygon poly) {
     final blockLetter = String.fromCharCode(64 + int.parse(poly.block));
@@ -47,15 +49,26 @@ class MapPainter extends CustomPainter {
       }
 
       final matchingLot = _matchLot(poly);
-      final baseColor = matchingLot != null
-          ? AppColors.statusColor(matchingLot.status)
-          : AppColors.textMuted.withValues(alpha: 0.3);
+      
+      bool isMatchFilter = true;
+      if (activeFilter != 'Todos' && matchingLot != null) {
+        isMatchFilter = matchingLot.status == activeFilter;
+      }
+
+      Color baseColor = AppColors.textMuted.withValues(alpha: 0.1); // Muted by default
+      if (matchingLot != null) {
+         if (activeFilter == 'Todos' || isMatchFilter) {
+           baseColor = AppColors.statusColor(matchingLot.status);
+         } else {
+           baseColor = Colors.grey.withValues(alpha: 0.2); // Faded color for non-matching lots
+         }
+      }
 
       final isSelected = selectedPolygon == poly;
 
       final paint = Paint()
         ..style = PaintingStyle.fill
-        ..color = baseColor.withValues(alpha: isSelected ? 0.78 : 0.58);
+        ..color = baseColor.withValues(alpha: isSelected ? 0.78 : (isMatchFilter ? 0.58 : 0.3));
       canvas.drawPath(path, paint);
 
       final borderPaint = Paint()
@@ -68,7 +81,9 @@ class MapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant MapPainter oldDelegate) {
-    return oldDelegate.lotsFromApi != lotsFromApi || oldDelegate.selectedPolygon != selectedPolygon;
+    return oldDelegate.lotsFromApi != lotsFromApi || 
+           oldDelegate.selectedPolygon != selectedPolygon ||
+           oldDelegate.activeFilter != activeFilter;
   }
 }
 
@@ -85,6 +100,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   LotPolygon? _selectedPolygon;
   final TransformationController _transformationController = TransformationController();
   double _zoom = 1.0;
+  String _activeFilter = 'Todos';
 
   @override
   void initState() {
@@ -180,10 +196,20 @@ class _HomePageState extends ConsumerState<HomePage> {
       return Center(child: Text('Erro: ${lotsState.error}'));
     }
 
-    return _buildContent(context, lots, isLoading);
+    final lotsNotifier = ref.read(lotsControllerProvider.notifier);
+    final authState = ref.watch(authControllerProvider);
+    final isAuthenticated = authState.value != null;
+
+    return _buildContent(
+      context, 
+      lots, 
+      isLoading, 
+      isAuthenticated ? lotsNotifier.totalVendido : null,
+      isAuthenticated ? lotsNotifier.totalNegociacao : null,
+    );
   }
 
-  Widget _buildContent(BuildContext context, List<Lot> lots, bool isLoading) {
+  Widget _buildContent(BuildContext context, List<Lot> lots, bool isLoading, double? totalVendido, double? totalNegociacao) {
     final Map<String, int> counts = {for (final s in AppColors.statusOrder) s: 0};
     for (var lot in lots) {
       counts[lot.status] = (counts[lot.status] ?? 0) + 1;
@@ -196,7 +222,18 @@ class _HomePageState extends ConsumerState<HomePage> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: _OverviewDashboard(counts: counts, total: lots.length, isLoading: isLoading),
+            child: _OverviewDashboard(
+              counts: counts, 
+              total: lots.length, 
+              isLoading: isLoading, 
+              activeFilter: _activeFilter,
+              totalVendido: totalVendido,
+              totalNegociacao: totalNegociacao,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: _buildFilters(),
           ),
           Expanded(
             child: Padding(
@@ -214,6 +251,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             transformationController: _transformationController,
                             selectedPolygon: _selectedPolygon,
                             lots: lots,
+                            activeFilter: _activeFilter,
                             onTapDown: (d) => _handleTapDown(d, lots, true),
                             onZoomIn: () => _zoomBy(1.25),
                             onZoomOut: () => _zoomBy(0.8),
@@ -232,7 +270,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   lot: _lotForPolygon(_selectedPolygon, lots),
                                 ),
                                 const SizedBox(height: 16),
-                                _SummaryCard(counts: counts, isLoading: isLoading),
+                                _SummaryCard(counts: counts, isLoading: isLoading, activeFilter: _activeFilter),
                               ],
                             ),
                           ),
@@ -249,6 +287,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             transformationController: _transformationController,
                             selectedPolygon: _selectedPolygon,
                             lots: lots,
+                            activeFilter: _activeFilter,
                             onTapDown: (d) => _handleTapDown(d, lots, false),
                             onZoomIn: () => _zoomBy(1.25),
                             onZoomOut: () => _zoomBy(0.8),
@@ -256,7 +295,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _SummaryCard(counts: counts, isLoading: isLoading),
+                        _SummaryCard(counts: counts, isLoading: isLoading, activeFilter: _activeFilter),
                       ],
                     ),
             ),
@@ -264,6 +303,53 @@ class _HomePageState extends ConsumerState<HomePage> {
         ],
       );
     });
+  }
+
+  Widget _buildFilters() {
+    final filters = ['Todos', 'Disponível', 'Reservado', 'Vendido'];
+    
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: filters.map((filter) {
+          final isSelected = _activeFilter == filter;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: FilterChip(
+              label: Text(filter == 'Disponível' ? 'Apenas Disponíveis' : filter == 'Reservado' ? 'Reservados' : filter == 'Vendido' ? 'Vendidos' : 'Todos'),
+              selected: isSelected,
+              onSelected: (bool selected) {
+                if (selected) {
+                  setState(() {
+                    _activeFilter = filter;
+                  });
+                } else if (_activeFilter == filter) {
+                  setState(() {
+                    _activeFilter = 'Todos';
+                  });
+                }
+              },
+              backgroundColor: AppColors.surface,
+              selectedColor: filter == 'Todos' ? AppColors.primary.withValues(alpha: 0.15) : AppColors.statusColor(filter).withValues(alpha: 0.15),
+              checkmarkColor: filter == 'Todos' ? AppColors.primary : AppColors.statusColor(filter),
+              labelStyle: TextStyle(
+                color: isSelected 
+                  ? (filter == 'Todos' ? AppColors.primary : AppColors.statusColor(filter))
+                  : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                fontSize: 13,
+              ),
+              side: BorderSide(
+                color: isSelected 
+                  ? (filter == 'Todos' ? AppColors.primary : AppColors.statusColor(filter))
+                  : AppColors.border,
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 }
 
@@ -273,11 +359,23 @@ class _OverviewDashboard extends StatelessWidget {
   final Map<String, int> counts;
   final int total;
   final bool isLoading;
+  final String activeFilter;
+  final double? totalVendido;
+  final double? totalNegociacao;
 
-  const _OverviewDashboard({required this.counts, required this.total, required this.isLoading});
+  const _OverviewDashboard({
+    required this.counts,
+    required this.total,
+    required this.isLoading,
+    required this.activeFilter,
+    this.totalVendido,
+    this.totalNegociacao,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    
     return Wrap(
       spacing: 16,
       runSpacing: 16,
@@ -285,30 +383,34 @@ class _OverviewDashboard extends StatelessWidget {
         _OverviewCard(
           title: 'Total de Lotes',
           value: total.toString(),
-          icon: Icons.landscape_outlined,
-          color: AppColors.primary,
+          icon: Icons.landscape_rounded,
+          color: AppColors.textPrimary,
           isLoading: isLoading,
+          isActive: activeFilter == 'Todos',
         ),
         _OverviewCard(
-          title: 'Lotes Disponíveis',
+          title: 'Disponíveis',
           value: (counts['Disponível'] ?? 0).toString(),
-          icon: Icons.check_circle_outline,
+          icon: Icons.check_circle_outline_rounded,
           color: AppColors.disponivel,
           isLoading: isLoading,
+          isActive: activeFilter == 'Disponível',
         ),
         _OverviewCard(
-          title: 'Reservas Ativas',
-          value: (counts['Reservado'] ?? 0).toString(),
-          icon: Icons.bookmark_outline,
+          title: totalNegociacao != null ? 'Valor em Negociação' : 'Reservados',
+          value: totalNegociacao != null ? currencyFormatter.format(totalNegociacao) : (counts['Reservado'] ?? 0).toString(),
+          icon: Icons.access_time_rounded,
           color: AppColors.reservado,
           isLoading: isLoading,
+          isActive: activeFilter == 'Reservado',
         ),
         _OverviewCard(
-          title: 'Em Aprovação',
-          value: (counts['Em aprovação'] ?? 0).toString(),
-          icon: Icons.pending_actions_outlined,
-          color: AppColors.emAprovacao,
+          title: totalVendido != null ? 'Valor Total Vendido' : 'Vendidos',
+          value: totalVendido != null ? currencyFormatter.format(totalVendido) : (counts['Vendido'] ?? 0).toString(),
+          icon: Icons.monetization_on_outlined,
+          color: AppColors.vendido,
           isLoading: isLoading,
+          isActive: activeFilter == 'Vendido',
         ),
       ],
     );
@@ -321,6 +423,7 @@ class _OverviewCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final bool isLoading;
+  final bool isActive;
 
   const _OverviewCard({
     required this.title,
@@ -328,6 +431,7 @@ class _OverviewCard extends StatelessWidget {
     required this.icon,
     required this.color,
     this.isLoading = false,
+    this.isActive = false,
   });
 
   @override
@@ -336,9 +440,10 @@ class _OverviewCard extends StatelessWidget {
       width: 240,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: isActive ? color.withValues(alpha: 0.05) : AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: isActive ? color : AppColors.border, width: isActive ? 2 : 1),
+        boxShadow: isActive ? [BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4))] : [],
       ),
       child: Stack(
         children: [
@@ -372,12 +477,19 @@ class _OverviewCard extends StatelessWidget {
                   ),
                 )
               else
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
+                SizedBox(
+                  height: 38,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -396,6 +508,7 @@ class _MapCard extends StatelessWidget {
   final TransformationController transformationController;
   final LotPolygon? selectedPolygon;
   final List<Lot> lots;
+  final String activeFilter;
   final void Function(TapDownDetails) onTapDown;
   final VoidCallback onZoomIn;
   final VoidCallback onZoomOut;
@@ -407,6 +520,7 @@ class _MapCard extends StatelessWidget {
     required this.transformationController,
     required this.selectedPolygon,
     required this.lots,
+    required this.activeFilter,
     required this.onTapDown,
     required this.onZoomIn,
     required this.onZoomOut,
@@ -513,7 +627,7 @@ class _MapCard extends StatelessWidget {
                             SvgPicture.asset('assets/mapa.svg', fit: BoxFit.fill),
                             CustomPaint(
                               size: const Size(_mapWidth, _mapHeight),
-                              painter: MapPainter(lotsFromApi: lots, selectedPolygon: selectedPolygon),
+                              painter: MapPainter(lotsFromApi: lots, selectedPolygon: selectedPolygon, activeFilter: activeFilter),
                             ),
                             ...blockCenters.entries.map((entry) {
                               return Positioned(
@@ -850,7 +964,8 @@ class _MeasureTile extends StatelessWidget {
 class _SummaryCard extends StatelessWidget {
   final Map<String, int> counts;
   final bool isLoading;
-  const _SummaryCard({required this.counts, this.isLoading = false});
+  final String activeFilter;
+  const _SummaryCard({required this.counts, this.isLoading = false, required this.activeFilter});
 
   @override
   Widget build(BuildContext context) {
@@ -880,11 +995,21 @@ class _SummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ...AppColors.statusOrder.map((status) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+            final isActive = activeFilter == status;
+            return Container(
+              margin: const EdgeInsets.symmetric(vertical: 2),
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.statusColor(status).withValues(alpha: 0.1) : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Row(
                 children: [
-                  Text(status, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                  Text(status, style: TextStyle(
+                    fontSize: 13, 
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.w600, 
+                    color: isActive ? AppColors.statusColor(status) : AppColors.textSecondary
+                  )),
                   const Spacer(),
                   if (isLoading)
                     const SizedBox(
@@ -895,7 +1020,11 @@ class _SummaryCard extends StatelessWidget {
                   else
                     Text(
                       '${counts[status] ?? 0}',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      style: TextStyle(
+                        fontSize: 14, 
+                        fontWeight: FontWeight.w800, 
+                        color: isActive ? AppColors.statusColor(status) : AppColors.textPrimary
+                      ),
                     ),
                 ],
               ),

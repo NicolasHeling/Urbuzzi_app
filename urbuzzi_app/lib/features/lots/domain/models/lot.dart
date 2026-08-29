@@ -17,6 +17,7 @@ class Lot {
   final double? backMeasure; // "fundo" em metros
   final String? clientName; // nome do cliente (se reservado/vendido)
   final String? clientDocument; // documento do cliente
+  final String? whatsappNumber; // WhatsApp comercial do loteamento
 
   Lot({
     required this.id,
@@ -32,6 +33,7 @@ class Lot {
     this.backMeasure,
     this.clientName,
     this.clientDocument,
+    this.whatsappNumber,
   });
 
   // Factory Method para desserializar JSON
@@ -54,6 +56,7 @@ class Lot {
           : (json['fundo'] != null ? double.tryParse(json['fundo'].toString()) : null),
       clientName: json['clientName'] ?? json['client']?['name'] ?? json['customerName'],
       clientDocument: json['clientDocument'] ?? json['client']?['document'] ?? json['customerDocument'],
+      whatsappNumber: json['whatsappNumber'],
     );
   }
 
@@ -72,6 +75,7 @@ class Lot {
       'backMeasure': backMeasure,
       'clientName': clientName,
       'clientDocument': clientDocument,
+      'whatsappNumber': whatsappNumber,
     };
   }
 
@@ -90,6 +94,8 @@ class Lot {
       backMeasure: backMeasure,
       clientName: clientName,
       clientDocument: clientDocument,
+      whatsappNumber: whatsappNumber,
     );
   }
 }
+

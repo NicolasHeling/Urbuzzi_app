@@ -114,11 +114,13 @@ class ProposalsPage extends ConsumerWidget {
                 Expanded(child: _buildKanbanColumn(context, 'Nova', 'Nova', proposals, AppColors.primary, userRole, ref)),
                 Expanded(child: _buildKanbanColumn(context, 'Em Análise', 'Em Análise', proposals, AppColors.reservado, userRole, ref)),
                 Expanded(child: _buildKanbanColumn(context, 'Aprovada', 'Aprovada', proposals, AppColors.disponivel, userRole, ref)),
+                Expanded(child: _buildKanbanColumn(context, 'Concluída', 'Concluída', proposals, AppColors.emAprovacao, userRole, ref)),
                 Expanded(child: _buildKanbanColumn(context, 'Rejeitada', 'Rejeitada', proposals, AppColors.cancelado, userRole, ref)),
               ] else ...[
                 SizedBox(width: 300, child: _buildKanbanColumn(context, 'Nova', 'Nova', proposals, AppColors.primary, userRole, ref)),
                 SizedBox(width: 300, child: _buildKanbanColumn(context, 'Em Análise', 'Em Análise', proposals, AppColors.reservado, userRole, ref)),
                 SizedBox(width: 300, child: _buildKanbanColumn(context, 'Aprovada', 'Aprovada', proposals, AppColors.disponivel, userRole, ref)),
+                SizedBox(width: 300, child: _buildKanbanColumn(context, 'Concluída', 'Concluída', proposals, AppColors.emAprovacao, userRole, ref)),
                 SizedBox(width: 300, child: _buildKanbanColumn(context, 'Rejeitada', 'Rejeitada', proposals, AppColors.cancelado, userRole, ref)),
               ]
             ],
@@ -278,9 +280,9 @@ class ProposalsPage extends ConsumerWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () async {
-                      final justification = await showJustificationDialog(context, 'Rejeitar Proposta');
+                      final justification = await showJustificationDialog(context, 'Cancelar Proposta');
                       if (justification != null) {
-                        ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Rejeitada');
+                        ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Cancelada', lotId: proposal.lot?['id']);
                       }
                     },
                     style: OutlinedButton.styleFrom(
@@ -289,27 +291,49 @@ class ProposalsPage extends ConsumerWidget {
                       foregroundColor: AppColors.cancelado,
                       side: const BorderSide(color: AppColors.cancelado),
                     ),
-                    child: const Text('Rejeitar', style: TextStyle(fontSize: 12)),
+                    child: const Text('Cancelar', style: TextStyle(fontSize: 12)),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: FilledButton(
                     onPressed: () async {
-                      final justification = await showJustificationDialog(context, 'Aprovar Proposta');
+                      final justification = await showJustificationDialog(context, 'Aprovar Venda');
                       if (justification != null) {
-                        ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Aprovada');
+                        ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Aprovada', lotId: proposal.lot?['id']);
                       }
                     },
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                       minimumSize: const Size(0, 32),
-                      backgroundColor: AppColors.disponivel,
+                      backgroundColor: AppColors.primary,
                     ),
-                    child: const Text('Aprovar', style: TextStyle(fontSize: 12)),
+                    child: const Text('Aprovar Venda', style: TextStyle(fontSize: 12)),
                   ),
                 ),
               ],
+            ),
+          ],
+          // Botão para gestor/admin marcar proposta aprovada como concluída
+          if (proposal.status == 'Aprovada' && userRole.canApprove) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () async {
+                  final justification = await showJustificationDialog(context, 'Marcar como Concluída');
+                  if (justification != null) {
+                    ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Concluída', lotId: proposal.lot?['id']);
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                  minimumSize: const Size(0, 32),
+                  backgroundColor: AppColors.emAprovacao,
+                ),
+                icon: const Icon(Icons.check_circle_outline, size: 14),
+                label: const Text('Marcar como Concluída', style: TextStyle(fontSize: 12)),
+              ),
             ),
           ],
         ],

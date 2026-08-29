@@ -21,4 +21,8 @@ class ReservationsRepository {
   Future<void> approveReservation(String id) async {
     await _dio.patch('/reservations/$id/approve');
   }
+
+  Future<void> cancelReservation(String id) async {
+    await _dio.patch('/reservations/$id/cancel');
+  }
 }

@@ -36,6 +36,9 @@ export class Lot {
   @Column({ nullable: true })
   landName: string; // Nome do loteamento (ex: Biopark, Vista Verde)
 
+  @Column({ nullable: true })
+  whatsappNumber: string; // WhatsApp comercial do loteamento (ex: 5545999990000)
+
   @OneToMany(() => Proposal, proposal => proposal.lot)
   proposals: Proposal[];
 

@@ -204,7 +204,9 @@ class VitrinePage extends ConsumerWidget {
                                                 height: 48,
                                                 child: FilledButton.icon(
                                                   onPressed: isAvailable ? () async {
-                                                    final uri = Uri.parse('https://wa.me/5545999990000');
+                                                    // Usa o WhatsApp do loteamento, ou cai no número padrão
+                                                    final whatsapp = lot.whatsappNumber ?? '5545999990000';
+                                                    final uri = Uri.parse('https://wa.me/$whatsapp');
                                                     if (await canLaunchUrl(uri)) {
                                                       await launchUrl(uri, mode: LaunchMode.externalApplication);
                                                     }

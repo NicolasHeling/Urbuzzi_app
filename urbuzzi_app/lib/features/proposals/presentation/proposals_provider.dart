@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import '../../proposals/data/proposals_repository.dart';
 import '../../proposals/domain/models/proposal.dart';
 
+import '../../lots/presentation/lots_provider.dart';
+
 // Provider para o Repositório
 final proposalsRepositoryProvider = Provider<ProposalsRepository>((ref) {
   return ProposalsRepository();
@@ -12,13 +14,14 @@ final proposalsRepositoryProvider = Provider<ProposalsRepository>((ref) {
 final proposalsControllerProvider =
     StateNotifierProvider<ProposalsController, AsyncValue<List<Proposal>>>((ref) {
   final repository = ref.watch(proposalsRepositoryProvider);
-  return ProposalsController(repository);
+  return ProposalsController(repository, ref);
 });
 
 class ProposalsController extends StateNotifier<AsyncValue<List<Proposal>>> {
   final ProposalsRepository _repository;
+  final Ref _ref;
 
-  ProposalsController(this._repository) : super(const AsyncValue.loading()) {
+  ProposalsController(this._repository, this._ref) : super(const AsyncValue.loading()) {
     fetchProposals();
   }
 
@@ -32,7 +35,7 @@ class ProposalsController extends StateNotifier<AsyncValue<List<Proposal>>> {
     }
   }
 
-  Future<void> updateProposalStatus(String proposalId, String newStatus) async {
+  Future<void> updateProposalStatus(String proposalId, String newStatus, {String? lotId}) async {
     try {
       await _repository.updateProposalStatus(proposalId, newStatus);
       // Atualiza a lista localmente
@@ -52,6 +55,14 @@ class ProposalsController extends StateNotifier<AsyncValue<List<Proposal>>> {
           return p;
         }).toList();
       });
+
+      if (lotId != null) {
+        if (newStatus == 'Aprovada') {
+          _ref.read(lotsControllerProvider.notifier).updateLotInState(lotId, 'Vendido');
+        } else if (newStatus == 'Rejeitada' || newStatus == 'Cancelada') {
+          _ref.read(lotsControllerProvider.notifier).updateLotInState(lotId, 'Disponível');
+        }
+      }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Erro ao atualizar status da proposta: $e');

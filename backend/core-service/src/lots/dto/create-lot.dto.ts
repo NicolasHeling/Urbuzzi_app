@@ -44,4 +44,9 @@ export class CreateLotDto {
   @IsString()
   @MaxLength(200)
   landName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  whatsappNumber?: string;
 }

@@ -28,6 +28,16 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
     fetchLots();
   }
 
+  double get totalVendido {
+    final lots = state.valueOrNull ?? [];
+    return lots.where((l) => l.status == 'Vendido').fold(0.0, (sum, l) => sum + l.price);
+  }
+
+  double get totalNegociacao {
+    final lots = state.valueOrNull ?? [];
+    return lots.where((l) => l.status == 'Reservado' || l.status == 'Em aprovação').fold(0.0, (sum, l) => sum + l.price);
+  }
+
   void updateLotInState(String lotId, String newStatus) {
     if (state is AsyncData) {
       final currentLots = state.value!;

@@ -62,17 +62,35 @@ class ReservationsPage extends ConsumerWidget {
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                     trailing: canApprove
-                        ? ElevatedButton.icon(
-                            onPressed: () {
-                              ref.read(pendingReservationsProvider.notifier).approve(res.id);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            icon: const Icon(Icons.check, size: 16),
-                            label: const Text('Aprovar'),
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  ref.read(pendingReservationsProvider.notifier).cancel(res.id, res.lot!.id);
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.cancelado,
+                                  side: const BorderSide(color: AppColors.cancelado),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.close, size: 16),
+                                label: const Text('Cancelar'),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  ref.read(pendingReservationsProvider.notifier).approve(res.id, res.lot!.id);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.check, size: 16),
+                                label: const Text('Aprovar Venda'),
+                              ),
+                            ],
                           )
                         : null,
                   );
