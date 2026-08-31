@@ -2,8 +2,7 @@ import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req, Forbidde
 import { Request } from 'express';
 import { ProposalsService } from './proposals.service';
 import { Proposal } from './proposal.entity';
-import { CreateProposalDto } from './dto/create-proposal.dto';
-import { UpdateProposalStatusDto } from './dto/update-proposal-status.dto';
+import { CreateProposalDto, UpdateProposalStatusDto } from './dto/proposal.dto';
 
 @Controller('proposals')
 export class ProposalsController {

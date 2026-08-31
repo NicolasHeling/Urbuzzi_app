@@ -2,8 +2,7 @@ import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req, Query } 
 import { Request } from 'express';
 import { LotsService } from './lots.service';
 import { Lot } from './lot.entity';
-import { CreateLotDto } from './dto/create-lot.dto';
-import { UpdateLotStatusDto } from './dto/update-lot-status.dto';
+import { CreateLotDto, UpdateLotStatusDto } from './dto/lot.dto';
 import { Roles } from '../guards/roles.guard';
 import { Public } from '../decorators/public.decorator';
 

@@ -17,7 +17,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   final _newPasswordController = TextEditingController();
 
   bool _isLoading = false;
-  bool _tokenSent = false;
+  final bool _tokenSent = false;
   String? _errorMessage;
 
   void _sendEmail() async {

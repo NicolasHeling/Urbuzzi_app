@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, Min, MaxLength } from 'class-validator';
+import { IsString, IsNumber, IsOptional, Min, MaxLength, IsIn } from 'class-validator';
 
 export class CreateLotDto {
   @IsString()
@@ -49,4 +49,14 @@ export class CreateLotDto {
   @IsString()
   @MaxLength(20)
   whatsappNumber?: string;
+}
+
+export class UpdateLotStatusDto {
+  @IsString()
+  @IsIn(['Disponível', 'Reservado', 'Vendido', 'Em aprovação', 'Bloqueado', 'Cancelado'])
+  status: string;
+
+  @IsOptional()
+  @IsString()
+  justification?: string;
 }

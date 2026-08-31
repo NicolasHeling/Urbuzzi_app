@@ -111,7 +111,7 @@ class _AuditPageState extends ConsumerState<AuditPage> {
                                   border: OutlineInputBorder(),
                                   isDense: true,
                                 ),
-                                value: _action,
+                                initialValue: _action,
                                 items: const [
                                   DropdownMenuItem(value: null, child: Text('Todas')),
                                   DropdownMenuItem(value: 'CREATE_LOT', child: Text('Criou lote')),

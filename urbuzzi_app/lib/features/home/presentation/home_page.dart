@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../../lots/presentation/lots_provider.dart';
 import '../../lots/domain/models/lot.dart';
@@ -14,27 +13,32 @@ import '../../auth/presentation/auth_provider.dart';
 const double _mapWidth = 1200;
 const double _mapHeight = 860;
 
+final matchedLotsProvider = Provider<Map<LotPolygon, Lot>>((ref) {
+  final lotsAsync = ref.watch(lotsControllerProvider);
+  final lots = lotsAsync.valueOrNull ?? [];
+  final map = <LotPolygon, Lot>{};
+  for (var poly in MapData.lots) {
+    final blockLetter = String.fromCharCode(64 + int.parse(poly.block));
+    final numberStr = poly.number;
+    final numberStrTrimmed = poly.number.replaceFirst(RegExp(r'^0+'), '');
+    for (var l in lots) {
+      if (l.block == blockLetter && (l.number == numberStr || l.number == numberStrTrimmed)) {
+        map[poly] = l;
+        break;
+      }
+    }
+  }
+  return map;
+});
+
 // ─── Painter ───────────────────────────────────────────────────────────────
 
 class MapPainter extends CustomPainter {
-  final List<Lot> lotsFromApi;
+  final Map<LotPolygon, Lot> matchedLots;
   final LotPolygon? selectedPolygon;
   final String activeFilter;
 
-  MapPainter({required this.lotsFromApi, this.selectedPolygon, required this.activeFilter});
-
-  Lot? _matchLot(LotPolygon poly) {
-    final blockLetter = String.fromCharCode(64 + int.parse(poly.block));
-    final numberStr = poly.number;
-    try {
-      return lotsFromApi.firstWhere((l) =>
-          l.block == blockLetter &&
-          (l.number == numberStr ||
-              l.number == poly.number.replaceFirst(RegExp(r'^0+'), '')));
-    } catch (_) {
-      return null;
-    }
-  }
+  MapPainter({required this.matchedLots, this.selectedPolygon, required this.activeFilter});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -48,7 +52,7 @@ class MapPainter extends CustomPainter {
         path.close();
       }
 
-      final matchingLot = _matchLot(poly);
+      final matchingLot = matchedLots[poly];
       
       bool isMatchFilter = true;
       if (activeFilter != 'Todos' && matchingLot != null) {
@@ -81,7 +85,7 @@ class MapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant MapPainter oldDelegate) {
-    return oldDelegate.lotsFromApi != lotsFromApi || 
+    return oldDelegate.matchedLots != matchedLots || 
            oldDelegate.selectedPolygon != selectedPolygon ||
            oldDelegate.activeFilter != activeFilter;
   }
@@ -502,7 +506,7 @@ class _OverviewCard extends StatelessWidget {
 
 // ─── Map Card ──────────────────────────────────────────────────────────────
 
-class _MapCard extends StatelessWidget {
+class _MapCard extends ConsumerWidget {
   final double zoom;
   final int lotCount;
   final TransformationController transformationController;
@@ -528,7 +532,7 @@ class _MapCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final blockCenters = MapData.blockCenters;
 
     return Container(
@@ -631,7 +635,7 @@ class _MapCard extends StatelessWidget {
                             Container(color: Colors.blue.withValues(alpha: 0.1)),
                             CustomPaint(
                               size: const Size(_mapWidth, _mapHeight),
-                              painter: MapPainter(lotsFromApi: lots, selectedPolygon: selectedPolygon, activeFilter: activeFilter),
+                              painter: MapPainter(matchedLots: ref.watch(matchedLotsProvider), selectedPolygon: selectedPolygon, activeFilter: activeFilter),
                             ),
                             ...blockCenters.entries.map((entry) {
                               return Positioned(
@@ -760,14 +764,10 @@ class _ZoomButton extends StatelessWidget {
 class _SelectedLotPanel extends ConsumerWidget {
   final LotPolygon? poly;
   final Lot? lot;
-  final bool isBottomSheet;
-  final VoidCallback? onClose;
 
   const _SelectedLotPanel({
     this.poly,
     this.lot,
-    this.isBottomSheet = false,
-    this.onClose,
   });
 
   @override
@@ -778,12 +778,12 @@ class _SelectedLotPanel extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      padding: isBottomSheet ? const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 40) : const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: isBottomSheet ? const BorderRadius.vertical(top: Radius.circular(24)) : BorderRadius.circular(16),
-        border: isBottomSheet ? null : Border.all(color: AppColors.border),
-        boxShadow: isBottomSheet ? [] : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 2))],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -801,11 +801,6 @@ class _SelectedLotPanel extends ConsumerWidget {
                   letterSpacing: 1.2,
                 ),
               ),
-              if (onClose != null)
-                GestureDetector(
-                  onTap: onClose,
-                  child: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
-                ),
             ],
           ),
           const SizedBox(height: 10),

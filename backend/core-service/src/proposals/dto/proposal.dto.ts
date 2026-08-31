@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsUUID, IsOptional, Min, MaxLength } from 'class-validator';
+import { IsString, IsNumber, IsUUID, IsOptional, Min, MaxLength, IsIn } from 'class-validator';
 
 export class CreateProposalDto {
   @IsString()
@@ -21,4 +21,10 @@ export class CreateProposalDto {
   @IsString()
   @MaxLength(200)
   responsibleUserName?: string;
+}
+
+export class UpdateProposalStatusDto {
+  @IsString()
+  @IsIn(['Nova', 'Em Análise', 'Aprovada', 'Rejeitada', 'Concluída'])
+  status: string;
 }

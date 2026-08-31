@@ -717,7 +717,7 @@ class _NotificationMenuState extends State<_NotificationMenu> {
                 ),
               ),
             );
-          }).toList(),
+          }),
           // Footer
           if (_notifications.isEmpty)
             const PopupMenuItem<int>(

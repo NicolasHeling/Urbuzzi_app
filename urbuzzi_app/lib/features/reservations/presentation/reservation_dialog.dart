@@ -105,7 +105,7 @@ class _ReservationDialogState extends ConsumerState<ReservationDialog> {
                     fillColor: AppColors.muted,
                   ),
                   hint: const Text('Escolha o Cliente'),
-                  value: _selectedClientId,
+                  initialValue: _selectedClientId,
                   items: clients.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
                   onChanged: (val) {
                     setState(() => _selectedClientId = val);
