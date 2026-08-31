@@ -629,22 +629,6 @@ class _MapCard extends StatelessWidget {
                         child: Stack(
                           children: [
                             Container(color: Colors.blue.withValues(alpha: 0.1)),
-                            SvgPicture.asset(
-                              'assets/mapa.svg',
-                              fit: BoxFit.fill,
-                              placeholderBuilder: (BuildContext context) => Container(
-                                padding: const EdgeInsets.all(30.0),
-                                alignment: Alignment.center,
-                                child: const Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.broken_image, color: Colors.red, size: 48),
-                                    SizedBox(height: 16),
-                                    Text('Erro ao carregar SVG ou carregando...', style: TextStyle(color: Colors.red)),
-                                  ],
-                                ),
-                              ),
-                            ),
                             CustomPaint(
                               size: const Size(_mapWidth, _mapHeight),
                               painter: MapPainter(lotsFromApi: lots, selectedPolygon: selectedPolygon, activeFilter: activeFilter),
