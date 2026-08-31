@@ -108,17 +108,11 @@ export class AuthService {
       expiresIn: '1h',
     });
 
-    // TODO: Implementar envio real de email (ex: via nodemailer, SendGrid, AWS SES)
-    // Como não há provedor de email configurado ainda, apenas logamos e retornamos o token.
-    console.log(`\n==========================================`);
-    console.log(`URL DE RECUPERAÇÃO DE SENHA (Apenas para dev):`);
-    console.log(`Token: ${resetToken}`);
-    console.log(`==========================================\n`);
+    console.log(`[EMAIL MOCK] Solicitação de redefinição para ${email}. Token: ${resetToken}`);
 
     return { 
-      message: 'Se o email existir, um link de recuperação foi enviado.',
-      // Retornado aqui provisoriamente para facilitar o desenvolvimento frontend
-      devToken: resetToken 
+      success: true,
+      message: 'Se o email existir, um link de recuperação foi enviado.' 
     };
   }
 

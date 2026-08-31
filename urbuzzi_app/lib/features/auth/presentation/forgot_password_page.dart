@@ -31,16 +31,14 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
     try {
       await ref.read(authControllerProvider.notifier).forgotPassword(email);
-      setState(() {
-        _tokenSent = true;
-      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Se o email existir, um link de recuperação foi enviado.'),
+          content: const Text('Se o e-mail estiver cadastrado, você receberá as instruções'),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           backgroundColor: AppColors.disponivel,
         ));
+        Navigator.pushReplacementNamed(context, '/login');
       }
     } catch (e) {
       setState(() {
