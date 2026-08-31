@@ -155,12 +155,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.center,
-                  child: TextButton(
-                    onPressed: () => Navigator.pushReplacementNamed(context, '/forgot-password'),
-                    child: const Text('Esqueci minha senha', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(context, '/register'),
+                      child: const Text('Criar conta', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
+                    ),
+                    const Text('·', style: TextStyle(color: AppColors.textMuted)),
+                    TextButton(
+                      onPressed: () => Navigator.pushReplacementNamed(context, '/forgot-password'),
+                      child: const Text('Esqueci minha senha', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 const Divider(color: AppColors.border),

@@ -129,4 +129,13 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
       }
     }
   }
+
+  /// Atualiza o status de múltiplos lotes em sequência (ação em massa).
+  /// Cada lote é atualizado individualmente; falhas parciais são logadas mas
+  /// não interrompem os demais itens da seleção.
+  Future<void> updateLotsStatusBulk(List<String> lotIds, String newStatus) async {
+    for (final id in lotIds) {
+      await updateLotStatus(id, newStatus);
+    }
+  }
 }
