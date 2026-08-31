@@ -28,11 +28,22 @@ class LotsRepository {
       }
 
       final response = await _dio.get('/lots', queryParameters: queryParams);
-      final Map<String, dynamic> body = response.data;
-      final List<dynamic> items = body['data'];
+      
+      List<dynamic> items;
+      int total;
+
+      if (response.data is List) {
+        items = response.data as List;
+        total = items.length;
+      } else {
+        final Map<String, dynamic> body = response.data;
+        items = body['data'];
+        total = body['total'] as int;
+      }
+
       return LotsPage(
         data: items.map((json) => Lot.fromJson(json)).toList(),
-        total: body['total'] as int,
+        total: total,
       );
     } catch (e) {
       throw Exception('Falha ao buscar lotes: $e');
