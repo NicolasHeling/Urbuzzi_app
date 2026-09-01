@@ -1,5 +1,8 @@
-import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { LotsService } from './lots.service';
 import { Lot } from './lot.entity';
 import { CreateLotDto, UpdateLotStatusDto } from './dto/lot.dto';
@@ -49,5 +52,28 @@ export class LotsController {
   ): Promise<Lot> {
     const userId = req.headers['x-user-id'] as string;
     return this.lotsService.updateStatus(id, updateStatusDto.status, userId, updateStatusDto.justification);
+  }
+
+  @Post(':id/documents')
+  @Roles('gestor', 'administrador')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        const name = file.originalname.split('.')[0].replace(/\s+/g, '-');
+        cb(null, `${name}-${uniqueSuffix}${ext}`);
+      },
+    }),
+  }))
+  uploadDocument(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ): Promise<Lot> {
+    const userId = req.headers['x-user-id'] as string;
+    // We pass the filename to the service instead of the whole file
+    return this.lotsService.uploadDocument(id, file, userId);
   }
 }

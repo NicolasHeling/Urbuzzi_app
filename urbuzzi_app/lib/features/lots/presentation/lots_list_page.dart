@@ -6,6 +6,7 @@ import 'lots_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../domain/models/lot.dart';
+import '../../auth/presentation/auth_provider.dart';
 
 class LotsListPage extends ConsumerStatefulWidget {
   const LotsListPage({super.key});
@@ -14,11 +15,14 @@ class LotsListPage extends ConsumerStatefulWidget {
   ConsumerState<LotsListPage> createState() => _LotsListPageState();
 }
 
-class _LotsListPageState extends ConsumerState<LotsListPage> {
+class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepAliveClientMixin {
   final List<String> _statuses = [
     'Todos',
     ...AppColors.statusOrder,
   ];
+
+  @override
+  bool get wantKeepAlive => true;
 
   /// IDs dos lotes selecionados para ação em massa.
   final Set<String> _selectedIds = {};
@@ -66,6 +70,15 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
           SnackBar(
             content: Text('Status alterado para "$newStatus" com sucesso.'),
             backgroundColor: AppColors.disponivel,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Falha ao alterar status em massa: $e'),
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -123,8 +136,11 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final lotsState = ref.watch(lotsControllerProvider);
     final controller = ref.read(lotsControllerProvider.notifier);
+    final userRole = ref.watch(currentUserRoleProvider);
+    final canWrite = userRole.canWrite;
     final currencyFormatter =
         NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
@@ -150,7 +166,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
               // ── Barra de ações em massa (visível apenas quando há seleção) ──
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
-                child: _selectedIds.isNotEmpty
+                child: (canWrite && _selectedIds.isNotEmpty)
                     ? _BulkActionBar(
                         key: const ValueKey('bulk_bar'),
                         selectedCount: _selectedIds.length,
@@ -330,19 +346,20 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                                       ),
                                       columns: [
                                         // Coluna de checkbox "selecionar tudo"
-                                        DataColumn(
-                                          label: Checkbox(
-                                            tristate: true,
-                                            value: allSelected
-                                                ? true
-                                                : (_selectedIds.isEmpty
-                                                    ? false
-                                                    : null),
-                                            activeColor: AppColors.primary,
-                                            onChanged: (_) =>
-                                                _toggleSelectAll(lots),
+                                        if (canWrite)
+                                          DataColumn(
+                                            label: Checkbox(
+                                              tristate: true,
+                                              value: allSelected
+                                                  ? true
+                                                  : (_selectedIds.isEmpty
+                                                      ? false
+                                                      : null),
+                                              activeColor: AppColors.primary,
+                                              onChanged: (_) =>
+                                                  _toggleSelectAll(lots),
+                                            ),
                                           ),
-                                        ),
                                         const DataColumn(
                                             label: Text('LOTEAMENTO')),
                                         const DataColumn(
@@ -378,14 +395,15 @@ class _LotsListPageState extends ConsumerState<LotsListPage> {
                                           ),
                                           cells: [
                                             // Checkbox individual do lote
-                                            DataCell(
-                                              Checkbox(
-                                                value: isSelected,
-                                                activeColor: AppColors.primary,
-                                                onChanged: (_) =>
-                                                    _toggleSelect(lot.id),
+                                            if (canWrite)
+                                              DataCell(
+                                                Checkbox(
+                                                  value: isSelected,
+                                                  activeColor: AppColors.primary,
+                                                  onChanged: (_) =>
+                                                      _toggleSelect(lot.id),
+                                                ),
                                               ),
-                                            ),
                                             DataCell(Text(lot.landName ?? '-',
                                                 style: const TextStyle(
                                                     fontWeight:

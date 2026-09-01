@@ -63,6 +63,10 @@ export class ProposalsService {
       if (!otherActiveProposal && !activeReservation) {
         await this.lotRepository.update(lotId, { status: 'Disponível' });
       }
+    } else if (status === 'Concluída' && updatedProposal?.lot) {
+      const lotId = updatedProposal.lot.id;
+      await this.lotRepository.update(lotId, { status: 'Vendido' });
+      await this.auditService.logAction('LOT_SOLD', 'Lot', lotId, userId, { proposalId: id, trigger: 'PROPOSAL_CONCLUDED' });
     }
 
     await this.auditService.logAction('UPDATE_PROPOSAL_STATUS', 'Proposal', id, userId, { status });

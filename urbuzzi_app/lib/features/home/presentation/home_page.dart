@@ -100,11 +100,14 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> with AutomaticKeepAliveClientMixin {
   LotPolygon? _selectedPolygon;
   final TransformationController _transformationController = TransformationController();
   double _zoom = 1.0;
   String _activeFilter = 'Todos';
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -168,7 +171,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       if (path.contains(localPosition)) {
         setState(() => _selectedPolygon = poly);
-        _showLotDetailsSheet(poly, lots);
+        if (!isWide) {
+          _showLotDetailsSheet(poly, lots);
+        }
         return;
       }
     }
@@ -192,6 +197,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final lotsState = ref.watch(lotsControllerProvider);
     final isLoading = lotsState.isLoading;
     final lots = lotsState.valueOrNull ?? [];
@@ -220,7 +226,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
     return LayoutBuilder(builder: (context, constraints) {
-      final isWide = constraints.maxWidth > 900;
+      final isWide = constraints.maxWidth > 800;
 
       return Column(
         children: [
@@ -273,8 +279,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   poly: _selectedPolygon,
                                   lot: _lotForPolygon(_selectedPolygon, lots),
                                 ),
-                                const SizedBox(height: 16),
-                                _SummaryCard(counts: counts, isLoading: isLoading, activeFilter: _activeFilter),
                               ],
                             ),
                           ),
@@ -298,8 +302,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                             onReset: _resetZoom,
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        _SummaryCard(counts: counts, isLoading: isLoading, activeFilter: _activeFilter),
                       ],
                     ),
             ),
@@ -561,45 +563,7 @@ class _MapCard extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                // Legenda de status (igual ao protótipo)
-                Expanded(
-                  child: Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: AppColors.statusOrder.map((status) {
-                      final color = AppColors.statusColor(status);
-                      final bg = AppColors.statusBgColor(status);
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: bg,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              status,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: color,
-                                height: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(width: 12),
+                const Spacer(),
                 // Rótulo "Planta de parcelamento"
                 Text(
                   'Planta de parcelamento · Gleba 1',
@@ -953,83 +917,6 @@ class _MeasureTile extends StatelessWidget {
             Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ─── Summary Card ──────────────────────────────────────────────────────────
-
-class _SummaryCard extends StatelessWidget {
-  final Map<String, int> counts;
-  final bool isLoading;
-  final String activeFilter;
-  const _SummaryCard({required this.counts, this.isLoading = false, required this.activeFilter});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), offset: const Offset(0, 1), blurRadius: 2),
-          BoxShadow(color: Colors.black.withValues(alpha: 0.08), offset: const Offset(0, 12), blurRadius: 32, spreadRadius: -8),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'RESUMO DO LOTEAMENTO',
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textMuted,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...AppColors.statusOrder.map((status) {
-            final isActive = activeFilter == status;
-            return Container(
-              margin: const EdgeInsets.symmetric(vertical: 2),
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-              decoration: BoxDecoration(
-                color: isActive ? AppColors.statusColor(status).withValues(alpha: 0.1) : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Text(status, style: TextStyle(
-                    fontSize: 13, 
-                    fontWeight: isActive ? FontWeight.bold : FontWeight.w600, 
-                    color: isActive ? AppColors.statusColor(status) : AppColors.textSecondary
-                  )),
-                  const Spacer(),
-                  if (isLoading)
-                    const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else
-                    Text(
-                      '${counts[status] ?? 0}',
-                      style: TextStyle(
-                        fontSize: 14, 
-                        fontWeight: FontWeight.w800, 
-                        color: isActive ? AppColors.statusColor(status) : AppColors.textPrimary
-                      ),
-                    ),
-                ],
-              ),
-            );
-          }),
-        ],
       ),
     );
   }

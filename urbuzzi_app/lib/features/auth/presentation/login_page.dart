@@ -162,11 +162,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       onPressed: () => Navigator.pushNamed(context, '/register'),
                       child: const Text('Criar conta', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
                     ),
-                    const Text('·', style: TextStyle(color: AppColors.textMuted)),
-                    TextButton(
-                      onPressed: () => Navigator.pushReplacementNamed(context, '/forgot-password'),
-                      child: const Text('Esqueci minha senha', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
-                    ),
+
                   ],
                 ),
                 const SizedBox(height: 8),

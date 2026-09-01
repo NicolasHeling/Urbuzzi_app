@@ -18,6 +18,7 @@ class Lot {
   final String? clientName; // nome do cliente (se reservado/vendido)
   final String? clientDocument; // documento do cliente
   final String? whatsappNumber; // WhatsApp comercial do loteamento
+  final List<String>? documents; // Documentos anexados
 
   Lot({
     required this.id,
@@ -34,6 +35,7 @@ class Lot {
     this.clientName,
     this.clientDocument,
     this.whatsappNumber,
+    this.documents,
   });
 
   // Factory Method para desserializar JSON
@@ -57,6 +59,7 @@ class Lot {
       clientName: json['clientName'] ?? json['client']?['name'] ?? json['customerName'],
       clientDocument: json['clientDocument'] ?? json['client']?['document'] ?? json['customerDocument'],
       whatsappNumber: json['whatsappNumber'],
+      documents: json['documents'] != null ? List<String>.from(json['documents']) : null,
     );
   }
 
@@ -76,10 +79,11 @@ class Lot {
       'clientName': clientName,
       'clientDocument': clientDocument,
       'whatsappNumber': whatsappNumber,
+      'documents': documents,
     };
   }
 
-  Lot copyWith({String? status}) {
+  Lot copyWith({String? status, List<String>? documents}) {
     return Lot(
       id: id,
       block: block,
@@ -95,6 +99,7 @@ class Lot {
       clientName: clientName,
       clientDocument: clientDocument,
       whatsappNumber: whatsappNumber,
+      documents: documents ?? this.documents,
     );
   }
 }

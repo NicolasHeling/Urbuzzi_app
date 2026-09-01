@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import '../../lots/data/lots_repository.dart';
 import '../../lots/domain/models/lot.dart';
+import '../../../core/network/socket_service.dart';
 
 // Provider para injetar o Repositório
 final lotsRepositoryProvider = Provider<LotsRepository>((ref) {
@@ -29,9 +30,26 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
 
   String _searchQuery = '';
   String _selectedStatus = 'Todos';
+  
+  final SocketService _socketService = SocketService();
 
   LotsController(this._repository) : super(const AsyncValue.loading()) {
     fetchLots();
+    _initSocket();
+  }
+
+  void _initSocket() {
+    _socketService.initSocket(
+      onLotStatusUpdated: (lotId, newStatus) {
+        updateLotInState(lotId, newStatus);
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _socketService.disconnect();
+    super.dispose();
   }
 
   /// Total de lotes no servidor (para saber se há mais páginas)
@@ -127,6 +145,7 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
       if (kDebugMode) {
         debugPrint('Erro ao atualizar status: $e');
       }
+      rethrow;
     }
   }
 
@@ -136,6 +155,26 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
   Future<void> updateLotsStatusBulk(List<String> lotIds, String newStatus) async {
     for (final id in lotIds) {
       await updateLotStatus(id, newStatus);
+    }
+  }
+
+  Future<void> uploadDocument(String lotId, List<int> bytes, String filename) async {
+    try {
+      final updatedLot = await _repository.uploadDocument(lotId, bytes, filename);
+      if (state is AsyncData) {
+        final currentLots = state.value!;
+        final lotIndex = currentLots.indexWhere((l) => l.id == lotId);
+        if (lotIndex != -1) {
+          final updatedLots = List<Lot>.from(currentLots);
+          updatedLots[lotIndex] = updatedLot;
+          state = AsyncValue.data(updatedLots);
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Erro ao fazer upload do documento: $e');
+      }
+      rethrow;
     }
   }
 }

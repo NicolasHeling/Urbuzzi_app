@@ -57,7 +57,7 @@ class ProposalsController extends StateNotifier<AsyncValue<List<Proposal>>> {
       });
 
       if (lotId != null) {
-        if (newStatus == 'Aprovada') {
+        if (newStatus == 'Aprovada' || newStatus == 'Concluída') {
           _ref.read(lotsControllerProvider.notifier).updateLotInState(lotId, 'Vendido');
         } else if (newStatus == 'Rejeitada' || newStatus == 'Cancelada') {
           _ref.read(lotsControllerProvider.notifier).updateLotInState(lotId, 'Disponível');

@@ -38,10 +38,10 @@ class PendingReservationsController extends StateNotifier<AsyncValue<List<Reserv
     try {
       await _repository.approveReservation(id);
       await fetchPending(); // refresh list
-      // Atualizar o lote para Vendido para reatividade instantânea no Dashboard
-      _ref.read(lotsControllerProvider.notifier).updateLotInState(lotId, 'Vendido');
+      // Atualizar o lote para Reservado para reatividade instantânea no Dashboard
+      _ref.read(lotsControllerProvider.notifier).updateLotInState(lotId, 'Reservado');
     } catch (e) {
-      // Ignore or log error
+      rethrow;
     }
   }
 
@@ -52,7 +52,7 @@ class PendingReservationsController extends StateNotifier<AsyncValue<List<Reserv
       // Retornar lote para Disponível se cancelado
       _ref.read(lotsControllerProvider.notifier).updateLotInState(lotId, 'Disponível');
     } catch (e) {
-      // Ignore or log error
+      rethrow;
     }
   }
 }

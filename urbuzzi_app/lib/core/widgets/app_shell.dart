@@ -51,6 +51,7 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   int _selectedIndex = 0;
   bool _sidebarOpen = false; // para mobile
+  late final PageController _pageController;
 
   final List<Widget> _pages = const [
     HomePage(),
@@ -61,6 +62,17 @@ class _AppShellState extends ConsumerState<AppShell> {
     VitrinePage(),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     final isLarge = MediaQuery.of(context).size.width >= 1024;
@@ -92,7 +104,11 @@ class _AppShellState extends ConsumerState<AppShell> {
                   },
                 ),
                 Expanded(
-                  child: _pages[_selectedIndex],
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: _pages,
+                  ),
                 ),
               ],
             ),
@@ -121,6 +137,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                     _selectedIndex = i;
                     _sidebarOpen = false;
                   });
+                  _pageController.jumpToPage(i);
                 },
                 onClose: isLarge ? null : () => setState(() => _sidebarOpen = false),
               ),

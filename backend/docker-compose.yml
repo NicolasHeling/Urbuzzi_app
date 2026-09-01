@@ -30,6 +30,8 @@ services:
 
   core-service:
     build: ./core-service
+    ports:
+      - "3002:3002"
     environment:
       - DB_HOST=postgres-urbuzzi
       - DB_PORT=5432

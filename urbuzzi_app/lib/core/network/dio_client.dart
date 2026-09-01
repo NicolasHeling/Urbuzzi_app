@@ -63,6 +63,8 @@ class DioClient {
           final context = AppRoutes.navigatorKey.currentContext;
           
           if (error.response?.statusCode == 401) {
+            final hasAuthHeader = error.requestOptions.headers.containsKey('authorization');
+            
             // Limpa o token expirado
             currentToken = null;
             _storage.delete(key: 'jwt_token');
@@ -70,13 +72,16 @@ class DioClient {
             // Redireciona para a página de login
             if (context != null) {
               Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Sessão expirada. Faça login novamente.'),
-                  backgroundColor: AppColors.vendido,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              
+              if (hasAuthHeader) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Sessão expirada. Faça login novamente.'),
+                    backgroundColor: AppColors.vendido,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
             }
           } else if (error.response?.statusCode != null && error.response!.statusCode! >= 400 && context != null) {
              // Exibe feedback visual de erros globalmente

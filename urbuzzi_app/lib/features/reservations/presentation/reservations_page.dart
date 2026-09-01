@@ -66,8 +66,19 @@ class ReservationsPage extends ConsumerWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               OutlinedButton.icon(
-                                onPressed: () {
-                                  ref.read(pendingReservationsProvider.notifier).cancel(res.id, res.lot!.id);
+                                onPressed: () async {
+                                  try {
+                                    await ref.read(pendingReservationsProvider.notifier).cancel(res.id, res.lot!.id);
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Falha ao cancelar reserva: $e'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  }
                                 },
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppColors.cancelado,
@@ -79,8 +90,19 @@ class ReservationsPage extends ConsumerWidget {
                               ),
                               const SizedBox(width: 8),
                               ElevatedButton.icon(
-                                onPressed: () {
-                                  ref.read(pendingReservationsProvider.notifier).approve(res.id, res.lot!.id);
+                                onPressed: () async {
+                                  try {
+                                    await ref.read(pendingReservationsProvider.notifier).approve(res.id, res.lot!.id);
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Falha ao aprovar venda: $e'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/models/lot.dart';
 
@@ -78,6 +79,18 @@ class LotsRepository {
       await _dio.patch('/lots/$id/status', data: payload);
     } catch (e) {
       throw Exception('Falha ao atualizar o status do lote: $e');
+    }
+  }
+
+  Future<Lot> uploadDocument(String id, List<int> bytes, String filename) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(bytes, filename: filename),
+      });
+      final response = await _dio.post('/lots/$id/documents', data: formData);
+      return Lot.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Falha ao enviar documento: $e');
     }
   }
 }

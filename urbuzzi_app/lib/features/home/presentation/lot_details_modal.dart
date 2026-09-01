@@ -1,25 +1,84 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../lots/domain/models/lot.dart';
+import '../../lots/presentation/lots_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../reservations/presentation/reservation_dialog.dart';
 import '../../auth/presentation/auth_provider.dart';
 import 'map_data.dart';
 
-class LotDetailsModal extends ConsumerWidget {
+class LotDetailsModal extends ConsumerStatefulWidget {
   final Lot lot;
   final LotPolygon poly;
 
   const LotDetailsModal({super.key, required this.lot, required this.poly});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    final isAvailable = lot.status == 'Disponível';
-    final hasClient = lot.clientName != null && lot.clientName!.isNotEmpty;
+  ConsumerState<LotDetailsModal> createState() => _LotDetailsModalState();
+}
 
+class _LotDetailsModalState extends ConsumerState<LotDetailsModal> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  bool _isUploading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickAndUploadDocument() async {
+    try {
+      FilePickerResult? result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        withData: true,
+      );
+
+      if (result != null) {
+        setState(() => _isUploading = true);
+        
+        // Chamar repository para enviar multipart pro endpoint /lots/:id/documents criado no backend
+        final bytes = result.files.first.bytes;
+        final filename = result.files.first.name;
+        
+        if (bytes != null) {
+          await ref.read(lotsControllerProvider.notifier).uploadDocument(widget.lot.id, bytes, filename);
+        } else {
+          throw Exception('Não foi possível ler os dados do arquivo selecionado.');
+        }
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Documento anexado com sucesso!')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao anexar documento: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final isAuthenticated = authState.value != null;
 
@@ -61,7 +120,7 @@ class LotDetailsModal extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Quadra ${poly.block} - Lote ${poly.number}',
+                      'Quadra ${widget.poly.block} - Lote ${widget.poly.number}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 22,
@@ -71,130 +130,239 @@ class LotDetailsModal extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      lot.landName ?? 'Loteamento',
+                      widget.lot.landName ?? 'Loteamento',
                       style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
                     ),
                   ],
                 ),
               ),
-              StatusBadge(status: lot.status),
+              StatusBadge(status: widget.lot.status),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          TabBar(
+            controller: _tabController,
+            labelColor: AppColors.primary,
+            unselectedLabelColor: AppColors.textSecondary,
+            indicatorColor: AppColors.primary,
+            tabs: const [
+              Tab(text: 'Geral'),
+              Tab(text: 'Documentos'),
             ],
           ),
           const SizedBox(height: 24),
 
-          // Informações de Cliente (Se reservado/vendido e logado)
-          if (isAuthenticated && !isAvailable && hasClient) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.muted.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.person_outline, color: AppColors.textSecondary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Cliente', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                        Text(lot.clientName!, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                        if (lot.clientDocument != null)
-                          Text('Doc: ${lot.clientDocument}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
+          // Content Wrapper
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: _tabController.index == 0
+                ? _buildGeneralTab(isAuthenticated)
+                : _buildDocumentsTab(),
+          ),
+        ],
+      ),
+    );
+  }
 
-          // Grid de Especificações
-          Text('Especificações', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _InfoCard(label: 'Área Total', value: '${NumberFormat.decimalPattern('pt_BR').format(lot.area)} m²'),
-              const SizedBox(width: 12),
-              _InfoCard(label: 'Valor de Tabela', value: currencyFormatter.format(lot.price)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _InfoCard(label: 'Frente', value: lot.frontMeasure != null ? '${NumberFormat.decimalPattern('pt_BR').format(lot.frontMeasure)} m' : 'N/A'),
-              const SizedBox(width: 12),
-              _InfoCard(label: 'Fundo', value: lot.backMeasure != null ? '${NumberFormat.decimalPattern('pt_BR').format(lot.backMeasure)} m' : 'N/A'),
-            ],
-          ),
-          if (lot.registration != null) ...[
-            const SizedBox(height: 12),
-            Row(
+  Widget _buildGeneralTab(bool isAuthenticated) {
+    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final isAvailable = widget.lot.status == 'Disponível';
+    final hasClient = widget.lot.clientName != null && widget.lot.clientName!.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (isAuthenticated && !isAvailable && hasClient) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.muted.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
               children: [
-                _InfoCard(label: 'Matrícula', value: lot.registration!),
+                const Icon(Icons.person_outline, color: AppColors.textSecondary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Cliente', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                      Text(widget.lot.clientName!, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      if (widget.lot.clientDocument != null)
+                        Text('Doc: ${widget.lot.clientDocument}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ],
-          
-          const SizedBox(height: 32),
+          ),
+          const SizedBox(height: 24),
+        ],
 
-          // Botões Contextuais (Apenas se logado ou indicar login)
-          if (isAuthenticated) ...[
+        Text('Especificações', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _InfoCard(label: 'Área Total', value: '${NumberFormat.decimalPattern('pt_BR').format(widget.lot.area)} m²'),
+            const SizedBox(width: 12),
+            _InfoCard(label: 'Valor de Tabela', value: currencyFormatter.format(widget.lot.price)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _InfoCard(label: 'Frente', value: widget.lot.frontMeasure != null ? '${NumberFormat.decimalPattern('pt_BR').format(widget.lot.frontMeasure)} m' : 'N/A'),
+            const SizedBox(width: 12),
+            _InfoCard(label: 'Fundo', value: widget.lot.backMeasure != null ? '${NumberFormat.decimalPattern('pt_BR').format(widget.lot.backMeasure)} m' : 'N/A'),
+          ],
+        ),
+        if (widget.lot.registration != null) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _InfoCard(label: 'Matrícula', value: widget.lot.registration!),
+            ],
+          ),
+        ],
+        
+        const SizedBox(height: 32),
+
+        if (isAuthenticated) ...[
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isAvailable ? AppColors.primary : AppColors.surface,
+                foregroundColor: isAvailable ? Colors.white : AppColors.primary,
+                side: BorderSide(color: isAvailable ? AppColors.primary : AppColors.border),
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              onPressed: () {
+                if (isAvailable) {
+                  Navigator.pop(context);
+                  showReservationDialog(context, widget.lot);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Visualização de contratos em breve.')),
+                  );
+                }
+              },
+              child: Text(
+                isAvailable ? 'Fazer Reserva' : 'Ver Contrato/Proposta',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ),
+        ] else ...[
+          if (isAvailable)
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isAvailable ? AppColors.primary : AppColors.surface,
-                  foregroundColor: isAvailable ? Colors.white : AppColors.primary,
-                  side: BorderSide(color: isAvailable ? AppColors.primary : AppColors.border),
+                  backgroundColor: const Color(0xFF25D366),
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
                 onPressed: () {
-                  if (isAvailable) {
-                    Navigator.pop(context);
-                    showReservationDialog(context, lot);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Visualização de contratos em breve.')),
-                    );
-                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Fale com o comercial pelo WhatsApp.')),
+                  );
                 },
-                child: Text(
-                  isAvailable ? 'Fazer Reserva' : 'Ver Contrato/Proposta',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+                icon: const Icon(Icons.chat, size: 18),
+                label: const Text('Falar com o Comercial', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
-          ] else ...[
-            if (isAvailable)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF25D366),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
-                  ),
-                  onPressed: () {
-                    // Open WhatsApp or generic action
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fale com o comercial pelo WhatsApp.')),
-                    );
-                  },
-                  icon: const Icon(Icons.chat, size: 18),
-                  label: const Text('Falar com o Comercial', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDocumentsTab() {
+    final docs = widget.lot.documents ?? [];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Anexos',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+            ),
+            if (_isUploading)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              TextButton.icon(
+                onPressed: _pickAndUploadDocument,
+                icon: const Icon(Icons.upload_file, size: 18),
+                label: const Text('Anexar'),
               ),
           ],
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        if (docs.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border, style: BorderStyle.solid),
+            ),
+            child: const Column(
+              children: [
+                Icon(Icons.folder_open, size: 32, color: AppColors.textMuted),
+                SizedBox(height: 8),
+                Text('Nenhum documento anexado.', style: TextStyle(color: AppColors.textSecondary)),
+              ],
+            ),
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final url = docs[index];
+              final uri = Uri.tryParse(url);
+              final filename = uri?.pathSegments.last ?? 'Documento ${index + 1}';
+              final isPdf = filename.toLowerCase().endsWith('.pdf');
+              return Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListTile(
+                  leading: Icon(
+                    isPdf ? Icons.picture_as_pdf : Icons.image,
+                    color: isPdf ? Colors.red.shade400 : Colors.blue.shade400,
+                  ),
+                  title: Text(filename, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  trailing: const Icon(Icons.open_in_new, size: 18, color: AppColors.textSecondary),
+                  onTap: () {
+                    // Abrir URL do documento
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Abrindo: $filename...')),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+      ],
     );
   }
 }

@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import * as express from 'express';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -44,6 +46,9 @@ async function bootstrap() {
       ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb01', 'Sandra Bertoldi', '222.333.444-55', 'Rejeitada', 268000.00, '88888888-8888-8888-8888-888888888881', 'João Vitor Salles', NOW() - INTERVAL '5 days', NOW(), NOW());
     `);
   }
+
+  // Serve uploads folder publicly
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 
   // Core service listens on 3002
   await app.listen(3002);

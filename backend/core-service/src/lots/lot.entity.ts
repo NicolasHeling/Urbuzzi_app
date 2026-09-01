@@ -42,6 +42,9 @@ export class Lot {
   @OneToMany(() => Proposal, proposal => proposal.lot)
   proposals: Proposal[];
 
+  @Column({ type: 'jsonb', nullable: true, default: [] })
+  documents: string[];
+
   @CreateDateColumn()
   createdAt: Date;
 

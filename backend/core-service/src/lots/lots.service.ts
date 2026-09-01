@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lot } from './lot.entity';
 import { AuditService } from '../audit/audit.service';
+import { EventsGateway } from './events.gateway';
 
 @Injectable()
 export class LotsService {
@@ -10,6 +11,7 @@ export class LotsService {
     @InjectRepository(Lot)
     private readonly lotRepository: Repository<Lot>,
     private readonly auditService: AuditService,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async findAll(limit: number = 50, offset: number = 0, search?: string, status?: string): Promise<{ data: Lot[]; total: number }> {
@@ -60,6 +62,23 @@ export class LotsService {
       landName: updatedLot?.landName,
       justification,
     });
+    this.eventsGateway.notifyLotStatusUpdated(id, status);
+    return updatedLot;
+  }
+
+  async uploadDocument(id: string, file: Express.Multer.File, userId?: string): Promise<Lot> {
+    const lot = await this.findOne(id);
+    if (!lot) throw new Error('Lot not found');
+    
+    // Armazenamento local
+    const publicUrl = `http://localhost:3002/uploads/${file.filename}`;
+
+    const documents = lot.documents || [];
+    documents.push(publicUrl);
+    
+    await this.lotRepository.update(id, { documents });
+    const updatedLot = await this.findOne(id);
+    await this.auditService.logAction('UPLOAD_DOCUMENT', 'Lot', id, userId, { file: file.filename });
     return updatedLot;
   }
 }

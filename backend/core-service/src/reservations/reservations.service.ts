@@ -53,7 +53,7 @@ export class ReservationsService {
     reservation.status = 'APPROVED';
     
     // Atualiza status do lote
-    reservation.lot.status = 'Vendido';
+    reservation.lot.status = 'Reservado';
     await this.lotRepository.save(reservation.lot);
 
     return this.reservationRepository.save(reservation);

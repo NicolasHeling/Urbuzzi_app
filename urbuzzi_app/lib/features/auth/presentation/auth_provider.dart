@@ -50,9 +50,7 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     }
   }
 
-  Future<void> forgotPassword(String email) async {
-    await _repository.forgotPassword(email);
-  }
+
 
   Future<void> resetPassword(String token, String newPassword) async {
     await _repository.resetPassword(token, newPassword);
