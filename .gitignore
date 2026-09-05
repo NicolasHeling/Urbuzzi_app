@@ -31,9 +31,20 @@ npm-debug.log*
 .flutter-plugins
 .flutter-plugins-dependencies
 
+# iOS
+Pods/
+.symlinks/
+
+# Android
+.gradle/
+
 # Docker
 *.pid
 .aider*
 
 # Python
 .venv/
+
+# Uploads / generated assets
+uploads/
+flutter_01.png
