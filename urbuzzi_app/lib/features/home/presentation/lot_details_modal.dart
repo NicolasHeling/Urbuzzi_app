@@ -8,7 +8,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../reservations/presentation/reservation_dialog.dart';
 import '../../auth/presentation/auth_provider.dart';
+import '../../audit/presentation/audit_provider.dart';
 import 'map_data.dart';
+import 'financing_simulator.dart';
 
 class LotDetailsModal extends ConsumerStatefulWidget {
   final Lot lot;
@@ -27,7 +29,7 @@ class _LotDetailsModalState extends ConsumerState<LotDetailsModal> with SingleTi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       setState(() {});
     });
@@ -149,6 +151,8 @@ class _LotDetailsModalState extends ConsumerState<LotDetailsModal> with SingleTi
             tabs: const [
               Tab(text: 'Geral'),
               Tab(text: 'Documentos'),
+              Tab(text: 'Simulador'),
+              Tab(text: 'Histórico'),
             ],
           ),
           const SizedBox(height: 24),
@@ -159,7 +163,11 @@ class _LotDetailsModalState extends ConsumerState<LotDetailsModal> with SingleTi
             curve: Curves.easeInOut,
             child: _tabController.index == 0
                 ? _buildGeneralTab(isAuthenticated)
-                : _buildDocumentsTab(),
+                : _tabController.index == 1
+                    ? _buildDocumentsTab()
+                    : _tabController.index == 2
+                        ? FinancingSimulator(lotValue: widget.lot.price)
+                        : _buildAuditTab(),
           ),
         ],
       ),
@@ -334,7 +342,7 @@ class _LotDetailsModalState extends ConsumerState<LotDetailsModal> with SingleTi
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: docs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final url = docs[index];
               final uri = Uri.tryParse(url);
@@ -364,6 +372,124 @@ class _LotDetailsModalState extends ConsumerState<LotDetailsModal> with SingleTi
           ),
       ],
     );
+  }
+
+  Widget _buildAuditTab() {
+    final auditAsync = ref.watch(lotAuditProvider(widget.lot.id));
+
+    return auditAsync.when(
+      data: (entries) {
+        if (entries.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: Text(
+                'Nenhum histórico registrado para este lote.',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            ),
+          );
+        }
+
+        final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
+
+        return Container(
+          constraints: const BoxConstraints(maxHeight: 400),
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: entries.length,
+            itemBuilder: (context, index) {
+              final entry = entries[index];
+              final isLast = index == entries.length - 1;
+
+              return IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Linha do tempo visual
+                    SizedBox(
+                      width: 32,
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            margin: const EdgeInsets.only(top: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.primary, width: 2),
+                            ),
+                          ),
+                          if (!isLast)
+                            Expanded(
+                              child: Container(
+                                width: 2,
+                                color: AppColors.border,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    // Conteúdo do log
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _formatActionName(entry.action),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              dateFormatter.format(entry.createdAt),
+                              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            ),
+                            if (entry.userId.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  const Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    entry.userId,
+                                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ]
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, st) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: Text('Erro ao carregar histórico: $e')),
+      ),
+    );
+  }
+
+  String _formatActionName(String action) {
+    switch (action) {
+      case 'CREATE_LOT': return 'Lote Cadastrado';
+      case 'UPDATE_LOT_STATUS': return 'Status Atualizado';
+      case 'UPLOAD_DOCUMENT': return 'Documento Anexado';
+      case 'LOT_SOLD': return 'Venda Concluída';
+      default: return action.replaceAll('_', ' ');
+    }
   }
 }
 

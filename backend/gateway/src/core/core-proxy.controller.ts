@@ -8,7 +8,7 @@ import { JwtVerifyGuard } from '../guards/jwt-verify.guard';
 export class CoreProxyController {
   private readonly coreServiceUrl = 'http://core-service:3002';
 
-  @All(['lots', 'lots/*', 'proposals', 'proposals/*', 'clients', 'clients/*', 'reservations', 'reservations/*', 'audit', 'audit/*'])
+  @All(['lots', 'lots/*', 'proposals', 'proposals/*', 'clients', 'clients/*', 'reservations', 'reservations/*', 'audit', 'audit/*', 'dashboard', 'dashboard/*', 'tasks', 'tasks/*', 'projects', 'projects/*'])
   async proxyCore(@Req() req: Request, @Res() res: Response) {
     try {
       const targetUrl = `${this.coreServiceUrl}${req.url}`;

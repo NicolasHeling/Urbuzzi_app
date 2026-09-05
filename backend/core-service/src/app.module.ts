@@ -7,6 +7,11 @@ import { AuditModule } from './audit/audit.module';
 import { HealthModule } from './health/health.module';
 import { ClientsModule } from './clients/clients.module';
 import { ReservationsModule } from './reservations/reservations.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { TasksModule } from './tasks/tasks.module';
+import { ProjectsModule } from './projects/projects.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { PipelineModule } from './pipeline/pipeline.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { dataSourceOptions } from './data-source';
 import { RolesGuard } from './guards/roles.guard';
@@ -24,6 +29,11 @@ import { RolesGuard } from './guards/roles.guard';
     HealthModule,
     ClientsModule,
     ReservationsModule,
+    DashboardModule,
+    TasksModule,
+    ProjectsModule,
+    NotificationsModule,
+    PipelineModule,
   ],
   providers: [
     {

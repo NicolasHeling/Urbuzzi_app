@@ -25,4 +25,10 @@ class AuditRepository {
     final List<dynamic> data = response.data;
     return data.map((json) => AuditEntry.fromJson(json)).toList();
   }
+
+  Future<List<AuditEntry>> fetchAuditByLotId(String lotId) async {
+    final response = await _dio.get('/audit/lot/$lotId');
+    final List<dynamic> data = response.data;
+    return data.map((json) => AuditEntry.fromJson(json)).toList();
+  }
 }

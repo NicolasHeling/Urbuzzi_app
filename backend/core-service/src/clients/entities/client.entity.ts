@@ -21,6 +21,9 @@ export class Client {
   @Column({ nullable: true })
   address: string;
 
+  @Column({ default: 'Novo' })
+  funnelStage: string;
+
   @OneToMany(() => Reservation, (reservation) => reservation.client)
   reservations: Reservation[];
 

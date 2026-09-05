@@ -13,6 +13,9 @@ export class Reservation {
   @Column({ default: 'PENDING' }) // PENDING, APPROVED, CANCELLED, EXPIRED
   status: string;
 
+  @Column({ nullable: true })
+  projectId: string;
+
   @ManyToOne(() => Client, (client) => client.reservations, { eager: true })
   client: Client;
 

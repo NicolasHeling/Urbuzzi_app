@@ -25,6 +25,9 @@ export class Proposal {
   @Column({ nullable: true })
   responsibleUserName: string; // Corretor responsável pela negociação
 
+  @Column({ nullable: true })
+  projectId: string;
+
   @Column({ type: 'timestamp', nullable: true })
   slaDeadline: Date; // Prazo SLA (7 dias a partir da criação)
 

@@ -17,6 +17,7 @@ class AppRoutes {
   static const String app = '/app';
   static const String clientForm = '/clients/new';
   static const String vitrine = '/vitrine';
+  static const String agenda = '/agenda';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final isAuthenticated = DioClient().currentToken != null && DioClient().currentToken!.isNotEmpty;
@@ -36,6 +37,8 @@ class AppRoutes {
         return _build(settings, const ClientFormPage());
       case vitrine:
         return _build(settings, const VitrinePage());
+      case agenda:
+        return _build(settings, const AppShell());
       default:
         return _build(settings, const AppShell());
     }

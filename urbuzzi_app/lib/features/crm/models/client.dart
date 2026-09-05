@@ -6,6 +6,7 @@ class Client {
   final String phone;
   final String? address;
   final DateTime? createdAt;
+  final String? funnelStage;
 
   Client({
     required this.id,
@@ -15,6 +16,7 @@ class Client {
     required this.phone,
     this.address,
     this.createdAt,
+    this.funnelStage,
   });
 
   factory Client.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class Client {
       createdAt: json['createdAt'] != null 
           ? DateTime.parse(json['createdAt']) 
           : null,
+      funnelStage: json['funnelStage'] ?? 'Novo',
     );
   }
 
@@ -40,6 +43,7 @@ class Client {
       'phone': phone,
       'address': address,
       'createdAt': createdAt?.toIso8601String(),
+      'funnelStage': funnelStage,
     };
   }
 }

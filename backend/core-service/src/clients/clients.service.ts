@@ -32,4 +32,9 @@ export class ClientsService {
     if (!client) throw new NotFoundException('Client not found');
     return client;
   }
+
+  async update(id: string, updateData: Partial<Client>): Promise<Client> {
+    await this.clientRepository.update(id, updateData);
+    return this.findOne(id);
+  }
 }

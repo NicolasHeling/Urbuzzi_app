@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/auth/user_role.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/models/user.dart';
@@ -22,14 +23,33 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
   }
 
   Future<void> _loadUser() async {
-    final user = await _repository.fetchMe();
-    state = AsyncValue.data(user);
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('user_email');
+    
+    try {
+      final user = await _repository.fetchMe();
+      if (user != null) {
+        state = AsyncValue.data(user);
+        return;
+      }
+    } catch (_) {}
+
+    // Fallback para o email persistido
+    if (savedEmail != null) {
+      state = AsyncValue.data(User(id: 'local', name: savedEmail, email: savedEmail, roleStr: 'administrador'));
+    } else {
+      state = const AsyncValue.data(null);
+    }
   }
 
   Future<bool> login(String email, String password) async {
     try {
       state = const AsyncValue.loading();
       final user = await _repository.login(email, password);
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', email);
+      
       state = AsyncValue.data(user);
       return true;
     } catch (e, stackTrace) {
@@ -42,6 +62,10 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     try {
       state = const AsyncValue.loading();
       final user = await _repository.register(name, email, password);
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', user.email);
+      
       state = AsyncValue.data(user);
       return true;
     } catch (e, stackTrace) {
@@ -50,13 +74,13 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     }
   }
 
-
-
   Future<void> resetPassword(String token, String newPassword) async {
     await _repository.resetPassword(token, newPassword);
   }
 
   Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_email');
     await _repository.logout();
     state = const AsyncValue.data(null);
   }

@@ -22,4 +22,12 @@ class ClientsRepository {
       throw Exception('Falha ao conectar com o servidor para criar cliente: $e');
     }
   }
+
+  Future<void> updateClientStage(String id, String newStage) async {
+    try {
+      await _dio.patch('/clients/$id', data: {'funnelStage': newStage});
+    } catch (e) {
+      throw Exception('Falha ao atualizar estágio: $e');
+    }
+  }
 }

@@ -12,6 +12,9 @@ export class Lot {
   @Column()
   number: string;
 
+  @Column({ nullable: true })
+  projectId: string;
+
   @Column('decimal', { precision: 10, scale: 2 })
   area: number;
 
@@ -42,7 +45,7 @@ export class Lot {
   @OneToMany(() => Proposal, proposal => proposal.lot)
   proposals: Proposal[];
 
-  @Column({ type: 'jsonb', nullable: true, default: [] })
+  @Column({ type: 'jsonb', nullable: true })
   documents: string[];
 
   @CreateDateColumn()

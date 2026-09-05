@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/home/presentation/home_page.dart';
+import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/lots/presentation/lots_list_page.dart';
 import '../../features/proposals/presentation/proposals_page.dart';
 import '../../features/audit/presentation/audit_page.dart';
 import '../../features/vitrine/presentation/vitrine_page.dart';
 import '../../features/reservations/presentation/reservations_page.dart';
+import '../../features/agenda/presentation/agenda_page.dart';
 import '../../features/auth/presentation/auth_provider.dart';
+import '../../features/projects/presentation/projects_provider.dart';
+import '../../features/projects/presentation/projects_page.dart';
+import '../../features/notifications/presentation/notifications_provider.dart';
 import '../routing/app_routes.dart';
 import '../theme/app_colors.dart';
 
@@ -22,21 +27,27 @@ class _NavItem {
 
 const _navItems = [
   _NavItem(icon: Icons.map_outlined, label: 'Mapa Interativo'),
+  _NavItem(icon: Icons.bar_chart_outlined, label: 'Dashboard Analítico'),
   _NavItem(icon: Icons.format_list_bulleted_outlined, label: 'Lista de Lotes'),
   _NavItem(icon: Icons.view_kanban_outlined, label: 'Propostas', badge: 'SLA 7 dias'),
   _NavItem(icon: Icons.event_available_outlined, label: 'Reservas Pendentes'),
   _NavItem(icon: Icons.history_outlined, label: 'Histórico/Auditoria'),
   _NavItem(icon: Icons.public_outlined, label: 'Vitrine Pública'),
+  _NavItem(icon: Icons.event, label: 'Agenda de Visitas'),
+  _NavItem(icon: Icons.settings, label: 'Empreendimentos'),
 ];
 
 // Títulos e subtítulos de cada seção para o header
 const _pageTitles = [
   ('Mapa Interativo', 'Loteamento Morada do Sol · 15 quadras · 192 lotes'),
+  ('Dashboard Analítico', 'Funil de Conversão de Vendas'),
   ('Lista de Lotes', 'Loteamento Morada do Sol'),
   ('Propostas', 'SLA de 7 dias por proposta'),
   ('Reservas Pendentes', 'Aprovação de reservas de lotes'),
   ('Histórico / Auditoria', 'Registro completo de eventos'),
   ('Vitrine Pública', 'Página pública do loteamento'),
+  ('Agenda de Visitas', 'Compromissos e tarefas agendadas'),
+  ('Empreendimentos', 'Gestão de múltiplos loteamentos'),
 ];
 
 // --- App Shell ---
@@ -55,11 +66,14 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   final List<Widget> _pages = const [
     HomePage(),
+    DashboardPage(),
     LotsListPage(),
     ProposalsPage(),
     ReservationsPage(),
     AuditPage(),
     VitrinePage(),
+    AgendaPage(),
+    ProjectsPage(),
   ];
 
   @override
@@ -222,13 +236,15 @@ class _Sidebar extends StatelessWidget {
             ),
           ),
 
-          // Nav items
+            // Nav items
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const _ProjectDropdown(),
+                  const SizedBox(height: 16),
                   // Rótulo de seção
                   Padding(
                     padding: const EdgeInsets.only(left: 12, bottom: 8),
@@ -339,6 +355,51 @@ class _SidebarItem extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ProjectDropdown extends ConsumerWidget {
+  const _ProjectDropdown();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectsAsync = ref.watch(projectsProvider);
+    final selectedId = ref.watch(selectedProjectIdProvider);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+      ),
+      child: projectsAsync.when(
+        data: (projects) {
+          if (projects.isEmpty) {
+            return const Text('Nenhum empreendimento', style: TextStyle(color: AppColors.sidebarFg, fontSize: 13));
+          }
+          return DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: selectedId,
+              isExpanded: true,
+              dropdownColor: AppColors.sidebarBg,
+              icon: const Icon(Icons.arrow_drop_down, color: AppColors.sidebarFg),
+              items: projects.map((p) => DropdownMenuItem(
+                value: p.id,
+                child: Text(p.name, style: const TextStyle(color: AppColors.sidebarFg, fontSize: 13, fontWeight: FontWeight.bold)),
+              )).toList(),
+              onChanged: (id) {
+                if (id != null) {
+                  ref.read(selectedProjectIdProvider.notifier).state = id;
+                }
+              },
+            ),
+          );
+        },
+        loading: () => const Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
+        error: (e, st) => const Text('Erro', style: TextStyle(color: Colors.red)),
       ),
     );
   }
@@ -509,7 +570,7 @@ class _UserMenu extends ConsumerWidget {
     final userState = ref.watch(authControllerProvider);
     final user = userState.value;
 
-    final name = user?.name ?? 'Usuário Local';
+    final name = user?.name ?? user?.email ?? 'Usuário Local';
     final role = user?.roleStr.toUpperCase() ?? 'ADMINISTRADOR';
     
     // Calcula as iniciais
@@ -593,64 +654,57 @@ class _UserMenu extends ConsumerWidget {
     );
   }
 }
-class _NotificationMenu extends StatefulWidget {
+class _NotificationMenu extends ConsumerWidget {
   const _NotificationMenu();
 
-  @override
-  State<_NotificationMenu> createState() => _NotificationMenuState();
-}
-
-class _NotificationMenuState extends State<_NotificationMenu> {
-  final List<Map<String, dynamic>> _notifications = [
-    {
-      'id': 1,
-      'title': 'SLA Perto do Fim',
-      'body': 'A proposta de Ricardo Bomfim expira em 2 dias.',
-      'read': false,
-      'time': 'Há 2 horas',
-      'icon': Icons.warning_amber_rounded,
-      'color': AppColors.vendido,
-    },
-    {
-      'id': 2,
-      'title': 'Nova Proposta',
-      'body': 'Nova proposta recebida no Lote 13 da Quadra A.',
-      'read': false,
-      'time': 'Há 5 horas',
-      'icon': Icons.description_outlined,
-      'color': AppColors.primary,
-    },
-    {
-      'id': 3,
-      'title': 'Venda Concluída',
-      'body': 'Lote 07 (Quadra C) foi assinado e finalizado.',
-      'read': true,
-      'time': 'Ontem',
-      'icon': Icons.check_circle_outline,
-      'color': AppColors.disponivel,
-    },
-  ];
-
-  void _markAllAsRead() {
-    setState(() {
-      for (var n in _notifications) {
-        n['read'] = true;
-      }
-    });
+  IconData _iconForType(String type) {
+    switch (type) {
+      case 'lead_interaction':
+        return Icons.person_add_alt_1;
+      case 'reservation':
+        return Icons.event_available;
+      case 'proposal':
+        return Icons.description_outlined;
+      case 'sla_expiring':
+        return Icons.warning_amber_rounded;
+      case 'lot_status':
+        return Icons.map_outlined;
+      default:
+        return Icons.notifications_outlined;
+    }
   }
 
-  void _markAsRead(int id) {
-    setState(() {
-      final index = _notifications.indexWhere((n) => n['id'] == id);
-      if (index != -1) _notifications[index]['read'] = true;
-    });
+  Color _colorForType(String type) {
+    switch (type) {
+      case 'sla_expiring':
+        return AppColors.vendido;
+      case 'reservation':
+        return AppColors.reservado;
+      case 'lead_interaction':
+        return AppColors.primary;
+      case 'lot_status':
+        return AppColors.disponivel;
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  String _timeAgo(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inMinutes < 1) return 'Agora';
+    if (diff.inMinutes < 60) return 'Há ${diff.inMinutes} min';
+    if (diff.inHours < 24) return 'Há ${diff.inHours}h';
+    return 'Há ${diff.inDays} dia(s)';
   }
 
   @override
-  Widget build(BuildContext context) {
-    final unreadCount = _notifications.where((n) => !n['read']).length;
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Força a inicialização do provider de notificações
+    ref.watch(notificationsProvider);
+    final notifications = ref.watch(notificationsProvider);
+    final unreadCount = ref.watch(unreadCountProvider);
 
-    return PopupMenuButton<int>(
+    return PopupMenuButton<String>(
       tooltip: 'Notificações',
       offset: const Offset(0, 48),
       padding: EdgeInsets.zero,
@@ -658,13 +712,16 @@ class _NotificationMenuState extends State<_NotificationMenu> {
       icon: _HeaderIconBtn(
         icon: Icons.notifications_none,
         hasDot: unreadCount > 0,
-        tooltip: 'Notificações',
-        onTap: () {}, // Let the popup menu handle the tap
-      ), // Render the container visually
+        tooltip: 'Notificações ($unreadCount)',
+        onTap: () {},
+      ),
+      onSelected: (id) {
+        ref.read(notificationsProvider.notifier).markAsRead(id);
+      },
       itemBuilder: (context) {
         return [
           // Header
-          PopupMenuItem<int>(
+          PopupMenuItem<String>(
             enabled: false,
             child: Container(
               width: 320,
@@ -675,12 +732,15 @@ class _NotificationMenuState extends State<_NotificationMenu> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Notificações', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  Text(
+                    'Notificações${unreadCount > 0 ? ' ($unreadCount)' : ''}',
+                    style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  ),
                   if (unreadCount > 0)
                     InkWell(
                       onTap: () {
                         Navigator.pop(context);
-                        _markAllAsRead();
+                        ref.read(notificationsProvider.notifier).markAllAsRead();
                       },
                       child: const Text('Ler todas', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
                     ),
@@ -689,41 +749,48 @@ class _NotificationMenuState extends State<_NotificationMenu> {
             ),
           ),
           // Itens
-          ..._notifications.map((n) {
-            final bool isRead = n['read'];
-            return PopupMenuItem<int>(
-              value: n['id'],
+          if (notifications.isEmpty)
+            const PopupMenuItem<String>(
+              enabled: false,
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: Text('Nenhuma notificação', style: TextStyle(color: AppColors.textSecondary, fontSize: 13))),
+              ),
+            ),
+          ...notifications.take(10).map((n) {
+            final color = _colorForType(n.type);
+            return PopupMenuItem<String>(
+              value: n.id,
               padding: EdgeInsets.zero,
-              onTap: () => _markAsRead(n['id']),
               child: Container(
                 width: 320,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                color: isRead ? Colors.transparent : AppColors.primary.withValues(alpha: 0.05),
+                color: n.read ? Colors.transparent : AppColors.primary.withValues(alpha: 0.05),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: n['color'].withValues(alpha: 0.1),
+                        color: color.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(n['icon'], size: 16, color: n['color']),
+                      child: Icon(_iconForType(n.type), size: 16, color: color),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(n['title'], style: TextStyle(fontSize: 13, fontWeight: isRead ? FontWeight.w500 : FontWeight.bold, color: AppColors.textPrimary)),
+                          Text(n.title, style: TextStyle(fontSize: 13, fontWeight: n.read ? FontWeight.w500 : FontWeight.bold, color: AppColors.textPrimary)),
                           const SizedBox(height: 4),
-                          Text(n['body'], style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
+                          Text(n.body, style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
                           const SizedBox(height: 6),
-                          Text(n['time'], style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                          Text(_timeAgo(n.createdAt), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                         ],
                       ),
                     ),
-                    if (!isRead)
+                    if (!n.read)
                       Container(
                         margin: const EdgeInsets.only(top: 6),
                         width: 8,
@@ -735,17 +802,9 @@ class _NotificationMenuState extends State<_NotificationMenu> {
               ),
             );
           }),
-          // Footer
-          if (_notifications.isEmpty)
-            const PopupMenuItem<int>(
-              enabled: false,
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: Text('Nenhuma notificação', style: TextStyle(color: AppColors.textSecondary, fontSize: 13))),
-              ),
-            ),
         ];
       },
     );
   }
 }
+

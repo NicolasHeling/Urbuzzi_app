@@ -50,4 +50,11 @@ export class AuditService {
       .skip(offset)
       .getMany();
   }
+
+  async findByLotId(lotId: string): Promise<Audit[]> {
+    return this.auditRepository.find({
+      where: { entityId: lotId },
+      order: { createdAt: 'DESC' }
+    });
+  }
 }

@@ -585,12 +585,13 @@ class _MapCard extends ConsumerWidget {
                 Positioned.fill(
                   child: InteractiveViewer(
                     transformationController: transformationController,
-                    minScale: 0.3,
-                    maxScale: 4.0,
+                    minScale: 0.1,
+                    maxScale: 5.0,
                     constrained: false,
-                    boundaryMargin: const EdgeInsets.all(100),
-                    child: GestureDetector(
-                      onTapDown: onTapDown,
+                    boundaryMargin: const EdgeInsets.all(double.infinity),
+                    child: Center(
+                      child: GestureDetector(
+                        onTapDown: onTapDown,
                       child: SizedBox(
                         width: _mapWidth,
                         height: _mapHeight,
@@ -627,6 +628,7 @@ class _MapCard extends ConsumerWidget {
                           ],
                         ),
                       ),
+                    ),
                     ),
                   ),
                 ),

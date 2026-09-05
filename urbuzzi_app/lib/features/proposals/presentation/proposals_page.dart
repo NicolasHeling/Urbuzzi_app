@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'proposals_provider.dart';
+import 'pipeline_provider.dart';
+import 'pipeline_config_dialog.dart';
 import '../domain/models/proposal.dart';
+import '../domain/models/pipeline_stage.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/presentation/auth_provider.dart';
 import '../../../core/auth/user_role.dart';
@@ -14,46 +17,72 @@ class ProposalsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final proposalsState = ref.watch(proposalsControllerProvider);
+    final stagesState = ref.watch(pipelineProvider);
     final userRole = ref.watch(currentUserRoleProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: proposalsState.when(
         data: (proposals) {
-          if (proposals.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+          return stagesState.when(
+            data: (stages) {
+              if (proposals.isEmpty && stages.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.insert_drive_file_outlined, size: 72, color: AppColors.border),
+                      const SizedBox(height: 16),
+                      const Text('Nenhum item encontrado', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Text('Ainda não há propostas ou negociações.', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                    ],
+                  ),
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.insert_drive_file_outlined, size: 72, color: AppColors.border),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                    child: Row(
+                      children: [
+                        Text(
+                          '${proposals.length} negociações em andamento',
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 16),
+                        ),
+                        const Spacer(),
+                        if (userRole.canApprove)
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (_) => const PipelineConfigDialog(),
+                              );
+                            },
+                            icon: const Icon(Icons.settings, size: 16),
+                            label: const Text('Configurar Funil'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.textPrimary,
+                              side: const BorderSide(color: AppColors.border),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  const Text('Nenhum item encontrado', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text('Ainda não há propostas ou negociações.', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                  Expanded(
+                    child: _buildDynamicKanban(context, ref, userRole, proposals, stages),
+                  ),
                 ],
-              ),
-            );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Text(
-                  '${proposals.length} negociações em andamento',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 16),
-                ),
-              ),
-              Expanded(
-                child: _buildResponsiveProposals(context, ref, userRole, proposals),
-              ),
-            ],
+              );
+            },
+            loading: () => const Align(alignment: Alignment.topCenter, child: LinearProgressIndicator()),
+            error: (e, _) => Center(child: Text('Erro ao carregar funil: $e')),
           );
         },
-        loading: () => const Align(
-          alignment: Alignment.topCenter,
-          child: LinearProgressIndicator(),
-        ),
+        loading: () => const Align(alignment: Alignment.topCenter, child: LinearProgressIndicator()),
         error: (error, stack) => Center(child: Text('Erro: $error')),
       ),
     );
@@ -101,7 +130,13 @@ class ProposalsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildResponsiveProposals(BuildContext context, WidgetRef ref, UserRole userRole, List<Proposal> proposals) {
+  Widget _buildDynamicKanban(
+    BuildContext context, 
+    WidgetRef ref, 
+    UserRole userRole, 
+    List<Proposal> proposals,
+    List<PipelineStage> stages,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth > 800;
@@ -109,21 +144,18 @@ class ProposalsPage extends ConsumerWidget {
         Widget buildColumns() {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (isDesktop) ...[
-                Expanded(child: _buildKanbanColumn(context, 'Nova', 'Nova', proposals, AppColors.primary, userRole, ref)),
-                Expanded(child: _buildKanbanColumn(context, 'Em Análise', 'Em Análise', proposals, AppColors.reservado, userRole, ref)),
-                Expanded(child: _buildKanbanColumn(context, 'Aprovada', 'Aprovada', proposals, AppColors.disponivel, userRole, ref)),
-                Expanded(child: _buildKanbanColumn(context, 'Concluída', 'Concluída', proposals, AppColors.emAprovacao, userRole, ref)),
-                Expanded(child: _buildKanbanColumn(context, 'Rejeitada', 'Rejeitada', proposals, AppColors.cancelado, userRole, ref)),
-              ] else ...[
-                SizedBox(width: 300, child: _buildKanbanColumn(context, 'Nova', 'Nova', proposals, AppColors.primary, userRole, ref)),
-                SizedBox(width: 300, child: _buildKanbanColumn(context, 'Em Análise', 'Em Análise', proposals, AppColors.reservado, userRole, ref)),
-                SizedBox(width: 300, child: _buildKanbanColumn(context, 'Aprovada', 'Aprovada', proposals, AppColors.disponivel, userRole, ref)),
-                SizedBox(width: 300, child: _buildKanbanColumn(context, 'Concluída', 'Concluída', proposals, AppColors.emAprovacao, userRole, ref)),
-                SizedBox(width: 300, child: _buildKanbanColumn(context, 'Rejeitada', 'Rejeitada', proposals, AppColors.cancelado, userRole, ref)),
-              ]
-            ],
+            children: stages.map((stage) {
+              if (isDesktop) {
+                return Expanded(
+                  child: _buildKanbanColumn(context, stage, proposals, userRole, ref),
+                );
+              } else {
+                return SizedBox(
+                  width: 300,
+                  child: _buildKanbanColumn(context, stage, proposals, userRole, ref),
+                );
+              }
+            }).toList(),
           );
         }
 
@@ -145,73 +177,115 @@ class ProposalsPage extends ConsumerWidget {
 
   Widget _buildKanbanColumn(
     BuildContext context, 
-    String title, 
-    String status, 
+    PipelineStage stage,
     List<Proposal> allProposals, 
-    Color dotColor,
     UserRole userRole,
     WidgetRef ref,
   ) {
-    final proposals = allProposals.where((p) => p.status == status).toList();
+    final proposals = allProposals.where((p) => p.status == stage.name).toList();
     
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return DragTarget<Proposal>(
+      onAcceptWithDetails: (details) {
+        final proposal = details.data;
+        if (proposal.status != stage.name) {
+          ref.read(proposalsControllerProvider.notifier).updateProposalStatus(
+            proposal.id, 
+            stage.name, 
+            lotId: proposal.lot?['id'],
+          );
+        }
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHovering = candidateData.isNotEmpty;
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isHovering 
+                ? stage.color.withValues(alpha: 0.08) 
+                : AppColors.background,
+            border: Border.all(
+              color: isHovering ? stage.color : AppColors.border,
+              width: isHovering ? 2 : 1,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(color: stage.color, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      stage.name,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.border.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${proposals.length}',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
+              const SizedBox(height: 16),
               Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.border.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${proposals.length}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                child: ListView.separated(
+                  itemCount: proposals.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    return _buildDraggableCard(context, proposals[index], stage, userRole, ref);
+                  },
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView.separated(
-              itemCount: proposals.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                return _buildKanbanCard(context, proposals[index], userRole, ref);
-              },
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildKanbanCard(BuildContext context, Proposal proposal, UserRole userRole, WidgetRef ref) {
+  Widget _buildDraggableCard(
+    BuildContext context, 
+    Proposal proposal, 
+    PipelineStage stage,
+    UserRole userRole, 
+    WidgetRef ref,
+  ) {
+    final card = _buildKanbanCard(context, proposal, stage, userRole, ref);
+
+    return LongPressDraggable<Proposal>(
+      data: proposal,
+      feedback: Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: 280,
+          child: Opacity(opacity: 0.9, child: card),
+        ),
+      ),
+      childWhenDragging: Opacity(opacity: 0.3, child: card),
+      child: card,
+    );
+  }
+
+  Widget _buildKanbanCard(BuildContext context, Proposal proposal, PipelineStage stage, UserRole userRole, WidgetRef ref) {
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final lotNumber = proposal.lot?['number'] ?? '?';
     final lotBlock = proposal.lot?['block'] ?? '?';
-    final slaBadge = proposal.status == 'Em Análise' ? _buildSlaBadge(proposal) : null;
+    final slaBadge = _buildSlaBadge(proposal);
     final brokerName = proposal.responsibleUserName ?? 'Corretor';
 
     return Container(
@@ -225,11 +299,6 @@ class ProposalsPage extends ConsumerWidget {
             color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 2,
             offset: const Offset(0, 1),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -273,7 +342,8 @@ class ProposalsPage extends ConsumerWidget {
               ),
             ],
           ),
-          if ((proposal.status == 'Nova' || proposal.status == 'Em Análise') && userRole.canApprove) ...[
+          // Botões de ação para gestores/admin
+          if (!stage.isFinal && !stage.isCancellation && userRole.canApprove) ...[
             const SizedBox(height: 12),
             Row(
               children: [
@@ -282,7 +352,7 @@ class ProposalsPage extends ConsumerWidget {
                     onPressed: () async {
                       final justification = await showJustificationDialog(context, 'Cancelar Proposta');
                       if (justification != null) {
-                        ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Cancelada', lotId: proposal.lot?['id']);
+                        ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Rejeitada', lotId: proposal.lot?['id']);
                       }
                     },
                     style: OutlinedButton.styleFrom(
@@ -291,7 +361,7 @@ class ProposalsPage extends ConsumerWidget {
                       foregroundColor: AppColors.cancelado,
                       side: const BorderSide(color: AppColors.cancelado),
                     ),
-                    child: const Text('Cancelar', style: TextStyle(fontSize: 12)),
+                    child: const Text('Rejeitar', style: TextStyle(fontSize: 12)),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -308,14 +378,14 @@ class ProposalsPage extends ConsumerWidget {
                       minimumSize: const Size(0, 32),
                       backgroundColor: AppColors.primary,
                     ),
-                    child: const Text('Aprovar Venda', style: TextStyle(fontSize: 12)),
+                    child: const Text('Aprovar', style: TextStyle(fontSize: 12)),
                   ),
                 ),
               ],
             ),
           ],
-          // Botão para gestor/admin marcar proposta aprovada como concluída
-          if (proposal.status == 'Aprovada' && userRole.canApprove) ...[
+          // Botão para marcar como concluída
+          if (stage.name == 'Aprovada' && userRole.canApprove) ...[
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -332,7 +402,7 @@ class ProposalsPage extends ConsumerWidget {
                   backgroundColor: AppColors.emAprovacao,
                 ),
                 icon: const Icon(Icons.check_circle_outline, size: 14),
-                label: const Text('Marcar como Concluída', style: TextStyle(fontSize: 12)),
+                label: const Text('Concluída', style: TextStyle(fontSize: 12)),
               ),
             ),
           ],

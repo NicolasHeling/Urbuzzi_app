@@ -38,3 +38,8 @@ class AuditController extends StateNotifier<AsyncValue<List<AuditEntry>>> {
     }
   }
 }
+
+final lotAuditProvider = FutureProvider.family<List<AuditEntry>, String>((ref, lotId) async {
+  final repository = ref.watch(auditRepositoryProvider);
+  return repository.fetchAuditByLotId(lotId);
+});

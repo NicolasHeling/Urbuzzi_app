@@ -12,8 +12,10 @@ export class JwtVerifyGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     
-    // Bypass authentication for public routes or GET /lots
-    if (request.url.includes('/public') || (request.method === 'GET' && request.path === '/lots')) {
+    // Bypass authentication for public routes, GET /lots, or POST /clients
+    if (request.url.includes('/public') || 
+       (request.method === 'GET' && request.path === '/lots') ||
+       (request.method === 'POST' && request.path === '/clients')) {
       return true;
     }
 
