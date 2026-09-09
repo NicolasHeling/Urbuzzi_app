@@ -1,0 +1,22 @@
+# General
+.git/
+*.log
+.cache/
+.idea/
+.vscode/
+
+# Node.js / NestJS (Backend)
+node_modules/
+dist/
+out/
+coverage/
+
+# Flutter / Dart (Frontend)
+.dart_tool/
+.packages
+.pub-cache/
+pubspec.lock
+build/
+ios/Pods/
+macos/Pods/
+*.iml

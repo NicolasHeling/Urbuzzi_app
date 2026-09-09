@@ -16,6 +16,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   void _doRegister() async {
     final success = await ref.read(authControllerProvider.notifier).register(
       _nameController.text,

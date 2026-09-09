@@ -44,14 +44,9 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    // Sem @Roles() específico: bloquear métodos de escrita para papel 'consulta'
-    const writeMethods = ['POST', 'PATCH', 'PUT', 'DELETE'];
-    if (writeMethods.includes(method) && role === 'consulta') {
-      throw new ForbiddenException(
-        'Papel "consulta" não tem permissão para operações de escrita.',
-      );
-    }
-
+    // Sem @Roles() específico: qualquer usuário autenticado pode prosseguir.
+    // (o bloqueio genérico de escrita para 'consulta' foi removido para
+    // permitir que todas as roles editem status de lotes diretamente na tabela)
     return true;
   }
 }

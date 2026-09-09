@@ -4,14 +4,12 @@ import axios from 'axios';
 
 @Controller('auth')
 export class AuthProxyController {
-  private readonly authServiceUrl = 'http://auth-service:3001/auth';
-
-
+  private readonly authServiceUrl = 'http://auth-service:3001';
 
   @All('*')
   async proxyAuth(@Req() req: Request, @Res() res: Response) {
     try {
-      const targetUrl = `${this.authServiceUrl}/${req.params['0'] || ''}`;
+      const targetUrl = `${this.authServiceUrl}${req.url}`;
 
       // Repassa headers necessários, incluindo Authorization para rotas protegidas como /auth/me
       const safeHeaders: Record<string, string> = {

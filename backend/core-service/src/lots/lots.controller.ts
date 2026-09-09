@@ -44,7 +44,7 @@ export class LotsController {
   }
 
   @Patch(':id/status')
-  @Roles('gestor', 'administrador')
+  // @Roles('gestor', 'administrador') — removido para permitir edição por todos os usuários autenticados
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusDto: UpdateLotStatusDto,

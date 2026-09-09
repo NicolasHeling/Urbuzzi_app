@@ -15,6 +15,15 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
   final _addressCtrl = TextEditingController();
   final _svgCtrl = TextEditingController();
 
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _descCtrl.dispose();
+    _addressCtrl.dispose();
+    _svgCtrl.dispose();
+    super.dispose();
+  }
+
   void _createProject() async {
     if (_nameCtrl.text.isEmpty) return;
     try {

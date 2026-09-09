@@ -38,6 +38,8 @@ services:
       - DB_USER=${DB_USER:-postgres}
       - DB_PASS=${DB_PASS}
       - DB_NAME=core_db
+    volumes:
+      - core_uploads:/usr/src/app/uploads
     depends_on:
       - postgres-urbuzzi
     networks:
@@ -48,8 +50,6 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d
@@ -58,6 +58,7 @@ services:
 
 volumes:
   pgdata:
+  core_uploads:
 
 networks:
   urbuzzi-network:

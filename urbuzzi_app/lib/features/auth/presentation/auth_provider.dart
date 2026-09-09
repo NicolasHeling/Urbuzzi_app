@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/auth/user_role.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/models/user.dart';
@@ -25,20 +26,20 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
   Future<void> _loadUser() async {
     final prefs = await SharedPreferences.getInstance();
     final savedEmail = prefs.getString('user_email');
-    
-    try {
-      final user = await _repository.fetchMe();
-      if (user != null) {
-        state = AsyncValue.data(user);
-        return;
-      }
-    } catch (_) {}
+    final savedToken = await const FlutterSecureStorage().read(key: 'jwt_token');
 
-    // Fallback para o email persistido
-    if (savedEmail != null) {
-      state = AsyncValue.data(User(id: 'local', name: savedEmail, email: savedEmail, roleStr: 'administrador'));
-    } else {
+    if (savedEmail == null || savedEmail.isEmpty || savedToken == null || savedToken.isEmpty) {
+      await prefs.remove('user_email');
       state = const AsyncValue.data(null);
+    } else {
+      // Reconstroi o estado a partir do cache local
+      final user = User(
+        id: 'cached-session',
+        name: savedEmail.split('@').first,
+        email: savedEmail,
+        roleStr: 'admin', // Fallback para manter o acesso no app
+      );
+      state = AsyncValue.data(user);
     }
   }
 

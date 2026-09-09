@@ -15,11 +15,16 @@ final visitorMatchedLotsProvider = Provider<Map<LotPolygon, Lot>>((ref) {
   final lots = lotsAsync.valueOrNull ?? [];
   final map = <LotPolygon, Lot>{};
   for (var poly in MapData.lots) {
+    // O MapData usa blocos numéricos ('01','02'...) e a API usa letras ('A','B'...).
     final blockLetter = String.fromCharCode(64 + int.parse(poly.block));
     final numberStr = poly.number;
     final numberStrTrimmed = poly.number.replaceFirst(RegExp(r'^0+'), '');
     for (var l in lots) {
-      if (l.block == blockLetter && (l.number == numberStr || l.number == numberStrTrimmed)) {
+      // Aceita o block como letra (A, B...) ou como o número zerado (01, 02...) como fallback
+      final blockMatch = l.block == blockLetter ||
+          l.block.toUpperCase() == poly.block;
+      final numberMatch = l.number == numberStr || l.number == numberStrTrimmed;
+      if (blockMatch && numberMatch) {
         map[poly] = l;
         break;
       }
@@ -87,7 +92,10 @@ class _VitrinePageState extends ConsumerState<VitrinePage> {
   LotPolygon? _hoveredPolygon;
 
   void _handleTapDown(TapDownDetails details, Map<LotPolygon, Lot> matchedLots) {
-    final Offset localPosition = _transformationController.toScene(details.localPosition);
+    // details.localPosition já está nas coordenadas do SizedBox(1200×860)
+    // porque o GestureDetector envolve o conteúdo DENTRO do InteractiveViewer.
+    // Chamar toScene() aqui aplicaria uma dupla transformação e quebraria o hit-test.
+    final Offset localPosition = details.localPosition;
 
     for (var poly in MapData.lots) {
       final path = Path();

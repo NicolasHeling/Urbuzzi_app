@@ -12,6 +12,9 @@ import { TasksModule } from './tasks/tasks.module';
 import { ProjectsModule } from './projects/projects.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PipelineModule } from './pipeline/pipeline.module';
+import { KanbanModule } from './kanban/kanban.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { VisitsModule } from './visits/visits.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { dataSourceOptions } from './data-source';
 import { RolesGuard } from './guards/roles.guard';
@@ -34,6 +37,9 @@ import { RolesGuard } from './guards/roles.guard';
     ProjectsModule,
     NotificationsModule,
     PipelineModule,
+    KanbanModule,
+    AnalyticsModule,
+    VisitsModule,
   ],
   providers: [
     {

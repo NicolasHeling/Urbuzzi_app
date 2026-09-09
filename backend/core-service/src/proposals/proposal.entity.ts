@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Lot } from '../lots/lot.entity';
+import { KanbanColumn } from '../kanban/kanban-column.entity';
 
 @Entity('proposals')
 export class Proposal {
@@ -27,6 +28,10 @@ export class Proposal {
 
   @Column({ nullable: true })
   projectId: string;
+
+  @ManyToOne(() => KanbanColumn, column => column.proposals, { nullable: true })
+  @JoinColumn({ name: 'kanban_column_id' })
+  kanbanColumn: KanbanColumn;
 
   @Column({ type: 'timestamp', nullable: true })
   slaDeadline: Date; // Prazo SLA (7 dias a partir da criação)

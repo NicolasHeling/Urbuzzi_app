@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'proposals_provider.dart';
-import 'pipeline_provider.dart';
-import 'pipeline_config_dialog.dart';
+import 'kanban_provider.dart';
+import 'kanban_settings_page.dart';
 import '../domain/models/proposal.dart';
-import '../domain/models/pipeline_stage.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/presentation/auth_provider.dart';
 import '../../../core/auth/user_role.dart';
 import '../../../core/widgets/justification_dialog.dart';
+import 'proposal_details_modal.dart';
 
 class ProposalsPage extends ConsumerWidget {
   const ProposalsPage({super.key});
@@ -17,14 +17,14 @@ class ProposalsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final proposalsState = ref.watch(proposalsControllerProvider);
-    final stagesState = ref.watch(pipelineProvider);
+    final kanbanState = ref.watch(kanbanProvider);
     final userRole = ref.watch(currentUserRoleProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: proposalsState.when(
         data: (proposals) {
-          return stagesState.when(
+          return kanbanState.when(
             data: (stages) {
               if (proposals.isEmpty && stages.isEmpty) {
                 return Center(
@@ -57,7 +57,7 @@ class ProposalsPage extends ConsumerWidget {
                             onPressed: () {
                               showDialog(
                                 context: context,
-                                builder: (_) => const PipelineConfigDialog(),
+                                builder: (_) => const KanbanSettingsPage(),
                               );
                             },
                             icon: const Icon(Icons.settings, size: 16),
@@ -135,7 +135,7 @@ class ProposalsPage extends ConsumerWidget {
     WidgetRef ref, 
     UserRole userRole, 
     List<Proposal> proposals,
-    List<PipelineStage> stages,
+    List<KanbanColumnModel> stages,
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -177,7 +177,7 @@ class ProposalsPage extends ConsumerWidget {
 
   Widget _buildKanbanColumn(
     BuildContext context, 
-    PipelineStage stage,
+    KanbanColumnModel stage,
     List<Proposal> allProposals, 
     UserRole userRole,
     WidgetRef ref,
@@ -197,15 +197,16 @@ class ProposalsPage extends ConsumerWidget {
       },
       builder: (context, candidateData, rejectedData) {
         final isHovering = candidateData.isNotEmpty;
+        final stageColor = Color(int.parse(stage.color.replaceFirst('#', '0xFF')));
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isHovering 
-                ? stage.color.withValues(alpha: 0.08) 
+                ? stageColor.withValues(alpha: 0.08) 
                 : AppColors.background,
             border: Border.all(
-              color: isHovering ? stage.color : AppColors.border,
+              color: isHovering ? stageColor : AppColors.border,
               width: isHovering ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(16),
@@ -218,7 +219,7 @@ class ProposalsPage extends ConsumerWidget {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: BoxDecoration(color: stage.color, shape: BoxShape.circle),
+                    decoration: BoxDecoration(color: stageColor, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -260,7 +261,7 @@ class ProposalsPage extends ConsumerWidget {
   Widget _buildDraggableCard(
     BuildContext context, 
     Proposal proposal, 
-    PipelineStage stage,
+    KanbanColumnModel stage,
     UserRole userRole, 
     WidgetRef ref,
   ) {
@@ -281,15 +282,27 @@ class ProposalsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildKanbanCard(BuildContext context, Proposal proposal, PipelineStage stage, UserRole userRole, WidgetRef ref) {
+  Widget _buildKanbanCard(BuildContext context, Proposal proposal, KanbanColumnModel stage, UserRole userRole, WidgetRef ref) {
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final lotNumber = proposal.lot?['number'] ?? '?';
     final lotBlock = proposal.lot?['block'] ?? '?';
     final slaBadge = _buildSlaBadge(proposal);
     final brokerName = proposal.responsibleUserName ?? 'Corretor';
 
-    return Container(
-      padding: const EdgeInsets.all(16),
+    return GestureDetector(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => FractionallySizedBox(
+            heightFactor: 0.85,
+            child: ProposalDetailsModal(proposal: proposal),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -408,6 +421,7 @@ class ProposalsPage extends ConsumerWidget {
           ],
         ],
       ),
+    ),
     );
   }
 }

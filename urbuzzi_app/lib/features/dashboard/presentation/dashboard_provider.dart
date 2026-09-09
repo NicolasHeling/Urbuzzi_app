@@ -1,28 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/dio_client.dart';
 
-class FunnelMetrics {
-  final int totalClients;
-  final int totalReservations;
-  final int totalSales;
+class AnalyticsSummary {
+  final Map<String, dynamic> lotStatus;
+  final Map<String, dynamic> proposalsPerColumn;
 
-  FunnelMetrics({
-    required this.totalClients,
-    required this.totalReservations,
-    required this.totalSales,
+  AnalyticsSummary({
+    required this.lotStatus,
+    required this.proposalsPerColumn,
   });
 
-  factory FunnelMetrics.fromJson(Map<String, dynamic> json) {
-    return FunnelMetrics(
-      totalClients: json['totalClients'] as int? ?? 0,
-      totalReservations: json['totalReservations'] as int? ?? 0,
-      totalSales: json['totalSales'] as int? ?? 0,
+  factory AnalyticsSummary.fromJson(Map<String, dynamic> json) {
+    return AnalyticsSummary(
+      lotStatus: json['lotStatus'] as Map<String, dynamic>? ?? {},
+      proposalsPerColumn: json['proposalsPerColumn'] as Map<String, dynamic>? ?? {},
     );
   }
 }
 
-final funnelMetricsProvider = FutureProvider.autoDispose<FunnelMetrics>((ref) async {
+final analyticsSummaryProvider = FutureProvider.autoDispose<AnalyticsSummary>((ref) async {
   final dio = DioClient().dio;
-  final response = await dio.get('/dashboard/funnel');
-  return FunnelMetrics.fromJson(response.data);
+  final response = await dio.get('/analytics/summary');
+  return AnalyticsSummary.fromJson(response.data);
 });

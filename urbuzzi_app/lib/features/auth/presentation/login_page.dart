@@ -15,6 +15,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   void _doLogin() async {
     final success = await ref.read(authControllerProvider.notifier).login(
       _emailController.text,

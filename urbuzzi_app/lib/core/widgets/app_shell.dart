@@ -8,13 +8,14 @@ import '../../features/proposals/presentation/proposals_page.dart';
 import '../../features/audit/presentation/audit_page.dart';
 import '../../features/vitrine/presentation/vitrine_page.dart';
 import '../../features/reservations/presentation/reservations_page.dart';
-import '../../features/agenda/presentation/agenda_page.dart';
+import '../../features/agenda/visits_agenda_page.dart';
 import '../../features/auth/presentation/auth_provider.dart';
 import '../../features/projects/presentation/projects_provider.dart';
 import '../../features/projects/presentation/projects_page.dart';
 import '../../features/notifications/presentation/notifications_provider.dart';
 import '../routing/app_routes.dart';
 import '../theme/app_colors.dart';
+import '../network/socket_service.dart';
 
 // --- Definição dos itens de navegação ---
 
@@ -72,7 +73,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     ReservationsPage(),
     AuditPage(),
     VitrinePage(),
-    AgendaPage(),
+    VisitsAgendaPage(),
     ProjectsPage(),
   ];
 
@@ -80,10 +81,26 @@ class _AppShellState extends ConsumerState<AppShell> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _selectedIndex);
+    
+    SocketService().initNotifications(
+      onNotification: (notification) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${notification.title}: ${notification.body}'),
+              backgroundColor: AppColors.primary,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
+    SocketService().disconnect();
     _pageController.dispose();
     super.dispose();
   }

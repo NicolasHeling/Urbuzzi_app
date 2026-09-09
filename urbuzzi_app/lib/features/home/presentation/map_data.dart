@@ -210,7 +210,7 @@ class MapData {
 
   /// Centro aproximado (bounding box) de cada quadra, usado para
   /// posicionar os rótulos "Q01".."Q15" sobre a planta.
-  static Map<String, Offset> get blockCenters {
+  static final Map<String, Offset> blockCenters = () {
     final Map<String, List<Offset>> grouped = {};
     for (final poly in lots) {
       grouped.putIfAbsent(poly.block, () => []).addAll(poly.points);
@@ -221,5 +221,5 @@ class MapData {
       final minY = points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
       return MapEntry(block, Offset((minX + maxX) / 2, minY - 14));
     });
-  }
+  }();
 }

@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lot } from './lot.entity';
 import { AuditService } from '../audit/audit.service';
+import { Audit } from '../audit/audit.entity';
 import { EventsGateway } from './events.gateway';
 
 @Injectable()
@@ -50,25 +51,50 @@ export class LotsService {
   }
 
   async updateStatus(id: string, status: string, userId?: string, justification?: string): Promise<Lot> {
-    const currentLot = await this.findOne(id);
-    const oldStatus = currentLot?.status;
-    await this.lotRepository.update(id, { status });
-    const updatedLot = await this.findOne(id);
-    await this.auditService.logAction('UPDATE_LOT_STATUS', 'Lot', id, userId, { 
-      oldStatus, 
-      newStatus: status,
-      lotNumber: updatedLot?.number,
-      lotBlock: updatedLot?.block,
-      landName: updatedLot?.landName,
-      justification,
-    });
-    this.eventsGateway.notifyLotStatusUpdated(id, status);
-    return updatedLot;
+    const queryRunner = this.lotRepository.manager.connection.createQueryRunner();
+    
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      const currentLot = await queryRunner.manager.findOne(Lot, { where: { id } });
+      const oldStatus = currentLot?.status;
+      
+      await queryRunner.manager.update(Lot, id, { status });
+      const updatedLot = await queryRunner.manager.findOne(Lot, { where: { id } });
+      
+      await queryRunner.manager.save(Audit, {
+        action: 'UPDATE_LOT_STATUS',
+        entityName: 'Lot',
+        entityId: id,
+        userId,
+        details: { 
+          oldStatus, 
+          newStatus: status,
+          lotNumber: updatedLot?.number,
+          lotBlock: updatedLot?.block,
+          landName: updatedLot?.landName,
+          justification,
+        },
+      });
+      
+      this.eventsGateway.notifyLotStatusUpdated(id, status);
+      
+      await queryRunner.commitTransaction();
+      return updatedLot;
+    } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async uploadDocument(id: string, file: Express.Multer.File, userId?: string): Promise<Lot> {
     const lot = await this.findOne(id);
-    if (!lot) throw new Error('Lot not found');
+    if (!lot) throw new NotFoundException('Lote não encontrado');
     
     // Armazenamento local
     const publicUrl = `http://localhost:3002/uploads/${file.filename}`;

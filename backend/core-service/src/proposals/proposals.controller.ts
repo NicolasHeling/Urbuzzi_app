@@ -13,6 +13,11 @@ export class ProposalsController {
     return this.proposalsService.findAll();
   }
 
+  @Get(':id/history')
+  getHistory(@Param('id', ParseUUIDPipe) id: string) {
+    return this.proposalsService.getHistory(id);
+  }
+
   @Post()
   create(@Body() createProposalDto: CreateProposalDto, @Req() req: Request): Promise<Proposal> {
     const userId = req.headers['x-user-id'] as string;

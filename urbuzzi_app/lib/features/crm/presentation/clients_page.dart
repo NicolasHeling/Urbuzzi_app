@@ -576,7 +576,11 @@ class _ClientProfileDialog extends ConsumerWidget {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      titleCtrl.dispose();
+      dateCtrl.dispose();
+      timeCtrl.dispose();
+    });
   }
 }
 

@@ -2,15 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import { Proposal } from './proposal.entity';
+import { ProposalHistory } from './proposal-history.entity';
 import { Lot } from '../lots/lot.entity';
 import { Reservation } from '../reservations/entities/reservation.entity';
 import { AuditService } from '../audit/audit.service';
+import { Audit } from '../audit/audit.entity';
 
 @Injectable()
 export class ProposalsService {
   constructor(
     @InjectRepository(Proposal)
     private readonly proposalRepository: Repository<Proposal>,
+    @InjectRepository(ProposalHistory)
+    private readonly proposalHistoryRepository: Repository<ProposalHistory>,
     @InjectRepository(Lot)
     private readonly lotRepository: Repository<Lot>,
     @InjectRepository(Reservation)
@@ -20,6 +24,13 @@ export class ProposalsService {
 
   async findAll(): Promise<Proposal[]> {
     return this.proposalRepository.find({ relations: ['lot'] });
+  }
+
+  async getHistory(id: string): Promise<ProposalHistory[]> {
+    return this.proposalHistoryRepository.find({
+      where: { proposalId: id },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async create(proposalData: any, userId?: string): Promise<Proposal> {
@@ -37,39 +48,64 @@ export class ProposalsService {
   }
 
   async updateStatus(id: string, status: string, userId?: string): Promise<Proposal> {
-    await this.proposalRepository.update(id, { status });
-    const updatedProposal = await this.proposalRepository.findOne({ where: { id }, relations: ['lot'] });
+    const queryRunner = this.proposalRepository.manager.connection.createQueryRunner();
+    
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      
+      await queryRunner.manager.update(Proposal, id, { status });
+      const updatedProposal = await queryRunner.manager.findOne(Proposal, { where: { id }, relations: ['lot'] });
 
-    // Ao rejeitar uma proposta, só libera o lote para 'Disponível' se não houver
-    // outra negociação ativa (proposta ou reserva) para o mesmo lote.
-    // Isso evita liberar indevidamente um lote que ainda está em negociação por outro canal.
-    if (status === 'Rejeitada' && updatedProposal?.lot) {
-      const lotId = updatedProposal.lot.id;
+      if (status === 'Rejeitada' && updatedProposal?.lot) {
+        const lotId = updatedProposal.lot.id;
 
-      const otherActiveProposal = await this.proposalRepository.findOne({
-        where: [
-          { lot: { id: lotId }, status: 'Nova', id: Not(id) },
-          { lot: { id: lotId }, status: 'Em Análise', id: Not(id) },
-        ],
-      });
+        const otherActiveProposal = await queryRunner.manager.findOne(Proposal, {
+          where: [
+            { lot: { id: lotId }, status: 'Nova', id: Not(id) },
+            { lot: { id: lotId }, status: 'Em Análise', id: Not(id) },
+          ],
+        });
 
-      const activeReservation = await this.reservationRepository.findOne({
-        where: [
-          { lot: { id: lotId }, status: 'PENDING' },
-          { lot: { id: lotId }, status: 'APPROVED' },
-        ],
-      });
+        const activeReservation = await queryRunner.manager.findOne(Reservation, {
+          where: [
+            { lot: { id: lotId }, status: 'PENDING' },
+            { lot: { id: lotId }, status: 'APPROVED' },
+          ],
+        });
 
-      if (!otherActiveProposal && !activeReservation) {
-        await this.lotRepository.update(lotId, { status: 'Disponível' });
+        if (!otherActiveProposal && !activeReservation) {
+          await queryRunner.manager.update(Lot, lotId, { status: 'Disponível' });
+        }
+      } else if (status === 'Concluída' && updatedProposal?.lot) {
+        const lotId = updatedProposal.lot.id;
+        await queryRunner.manager.update(Lot, lotId, { status: 'Vendido' });
+        await queryRunner.manager.save(Audit, {
+          action: 'LOT_SOLD',
+          entityName: 'Lot',
+          entityId: lotId,
+          userId,
+          details: { proposalId: id, trigger: 'PROPOSAL_CONCLUDED' },
+        });
       }
-    } else if (status === 'Concluída' && updatedProposal?.lot) {
-      const lotId = updatedProposal.lot.id;
-      await this.lotRepository.update(lotId, { status: 'Vendido' });
-      await this.auditService.logAction('LOT_SOLD', 'Lot', lotId, userId, { proposalId: id, trigger: 'PROPOSAL_CONCLUDED' });
-    }
 
-    await this.auditService.logAction('UPDATE_PROPOSAL_STATUS', 'Proposal', id, userId, { status });
-    return updatedProposal;
+      await queryRunner.manager.save(Audit, {
+        action: 'UPDATE_PROPOSAL_STATUS',
+        entityName: 'Proposal',
+        entityId: id,
+        userId,
+        details: { status },
+      });
+      
+      await queryRunner.commitTransaction();
+      return updatedProposal;
+    } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

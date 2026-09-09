@@ -17,15 +17,34 @@ final matchedLotsProvider = Provider<Map<LotPolygon, Lot>>((ref) {
   final lotsAsync = ref.watch(lotsControllerProvider);
   final lots = lotsAsync.valueOrNull ?? [];
   final map = <LotPolygon, Lot>{};
+
+  // Convert list of API lots to Map for O(1) lookup
+  // We use key format: "BLOCK_NUMBER"
+  final apiLotsMap = <String, Lot>{};
+  for (var l in lots) {
+    apiLotsMap['${l.block.toUpperCase()}_${l.number}'] = l;
+  }
+
   for (var poly in MapData.lots) {
+    // poly.block is '01', '02' and API block is 'A', 'B' OR poly.block can match directly.
     final blockLetter = String.fromCharCode(64 + int.parse(poly.block));
     final numberStr = poly.number;
     final numberStrTrimmed = poly.number.replaceFirst(RegExp(r'^0+'), '');
-    for (var l in lots) {
-      if (l.block == blockLetter && (l.number == numberStr || l.number == numberStrTrimmed)) {
-        map[poly] = l;
-        break;
-      }
+
+    Lot? matchingLot;
+    // Check possible combinations in O(1)
+    if (apiLotsMap.containsKey('${blockLetter}_$numberStr')) {
+      matchingLot = apiLotsMap['${blockLetter}_$numberStr'];
+    } else if (apiLotsMap.containsKey('${blockLetter}_$numberStrTrimmed')) {
+      matchingLot = apiLotsMap['${blockLetter}_$numberStrTrimmed'];
+    } else if (apiLotsMap.containsKey('${poly.block}_$numberStr')) {
+      matchingLot = apiLotsMap['${poly.block}_$numberStr'];
+    } else if (apiLotsMap.containsKey('${poly.block}_$numberStrTrimmed')) {
+      matchingLot = apiLotsMap['${poly.block}_$numberStrTrimmed'];
+    }
+
+    if (matchingLot != null) {
+      map[poly] = matchingLot;
     }
   }
   return map;
@@ -103,37 +122,22 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> with AutomaticKeepAliveClientMixin {
   LotPolygon? _selectedPolygon;
   final TransformationController _transformationController = TransformationController();
-  double _zoom = 1.0;
   String _activeFilter = 'Todos';
 
   @override
   bool get wantKeepAlive => true;
 
   @override
-  void initState() {
-    super.initState();
-    _transformationController.addListener(_onTransformChanged);
-  }
-
-  @override
   void dispose() {
-    _transformationController.removeListener(_onTransformChanged);
     _transformationController.dispose();
     super.dispose();
   }
 
-  void _onTransformChanged() {
-    final scale = _transformationController.value.getMaxScaleOnAxis();
-    if ((scale - _zoom).abs() > 0.001) {
-      setState(() => _zoom = scale);
-    }
-  }
-
   void _zoomBy(double factor) {
     final matrix = _transformationController.value.clone();
-    final double newScale = (_zoom * factor).clamp(0.1, 4.0);
-    final double currentScale = _zoom == 0 ? 1.0 : _zoom;
-    final double ratio = newScale / currentScale;
+    final double currentScale = matrix.getMaxScaleOnAxis();
+    final double newScale = (currentScale * factor).clamp(0.1, 4.0);
+    final double ratio = currentScale == 0 ? 1.0 : newScale / currentScale;
     matrix.scaleByDouble(ratio, ratio, ratio, 1.0);
     _transformationController.value = matrix;
   }
@@ -144,20 +148,30 @@ class _HomePageState extends ConsumerState<HomePage> with AutomaticKeepAliveClie
 
   Lot? _lotForPolygon(LotPolygon? poly, List<Lot> lots) {
     if (poly == null) return null;
+    // O MapData usa blocos numéricos ('01','02'...) e a API usa letras ('A','B'...).
+    // Converte o bloco numérico para letra para comparar com lot.block da API.
     final blockLetter = String.fromCharCode(64 + int.parse(poly.block));
-    final numberStr = poly.number;
+    // Número sem zeros à esquerda (ex: '01' → '1').
+    final numberTrimmed = poly.number.replaceFirst(RegExp(r'^0+'), '');
     try {
-      return lots.firstWhere((l) =>
-          l.block == blockLetter &&
-          (l.number == numberStr ||
-              l.number == poly.number.replaceFirst(RegExp(r'^0+'), '')));
+      return lots.firstWhere((l) {
+        // Aceita o block como letra (A, B...) ou como o próprio número zerado (01, 02...)
+        final blockMatch = l.block == blockLetter ||
+            l.block.toUpperCase() == poly.block;
+        // Aceita o number com ou sem zero à esquerda
+        final numberMatch = l.number == poly.number || l.number == numberTrimmed;
+        return blockMatch && numberMatch;
+      });
     } catch (_) {
       return null;
     }
   }
 
   void _handleTapDown(TapDownDetails details, List<Lot> lots, bool isWide) {
-    final Offset localPosition = _transformationController.toScene(details.localPosition);
+    // details.localPosition já está nas coordenadas do SizedBox(1200×860)
+    // porque o GestureDetector envolve o conteúdo DENTRO do InteractiveViewer.
+    // Chamar toScene() aqui aplicaria uma dupla transformação e quebraria o hit-test.
+    final Offset localPosition = details.localPosition;
 
     for (var poly in MapData.lots) {
       final path = Path();
@@ -256,7 +270,6 @@ class _HomePageState extends ConsumerState<HomePage> with AutomaticKeepAliveClie
                         Expanded(
                           flex: 3,
                           child: _MapCard(
-                            zoom: _zoom,
                             lotCount: lots.length,
                             transformationController: _transformationController,
                             selectedPolygon: _selectedPolygon,
@@ -290,7 +303,6 @@ class _HomePageState extends ConsumerState<HomePage> with AutomaticKeepAliveClie
                       children: [
                         Expanded(
                           child: _MapCard(
-                            zoom: _zoom,
                             lotCount: lots.length,
                             transformationController: _transformationController,
                             selectedPolygon: _selectedPolygon,
@@ -509,7 +521,6 @@ class _OverviewCard extends StatelessWidget {
 // ─── Map Card ──────────────────────────────────────────────────────────────
 
 class _MapCard extends ConsumerWidget {
-  final double zoom;
   final int lotCount;
   final TransformationController transformationController;
   final LotPolygon? selectedPolygon;
@@ -521,7 +532,6 @@ class _MapCard extends ConsumerWidget {
   final VoidCallback onReset;
 
   const _MapCard({
-    required this.zoom,
     required this.lotCount,
     required this.transformationController,
     required this.selectedPolygon,
@@ -644,9 +654,15 @@ class _MapCard extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.border),
                     ),
-                    child: Text(
-                      'Arraste para mover · role para dar zoom · ${(zoom * 100).round()}%',
-                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                    child: ValueListenableBuilder<Matrix4>(
+                      valueListenable: transformationController,
+                      builder: (context, matrix, child) {
+                        final zoomScale = matrix.getMaxScaleOnAxis();
+                        return Text(
+                          'Arraste para mover · role para dar zoom · ${(zoomScale * 100).round()}%',
+                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -777,7 +793,11 @@ class _SelectedLotPanel extends ConsumerWidget {
             )
           else ...[
             Text(
-              'Lote ${poly!.number} · Quadra ${poly!.block}',
+              // Usa os dados da API quando disponíveis (lot.block = 'A', lot.number = '01')
+              // para garantir que o texto exibido bate exatamente com os IDs do backend.
+              lot != null
+                  ? 'Lote ${lot!.number} · Quadra ${lot!.block}'
+                  : 'Lote ${poly!.number} · Quadra ${String.fromCharCode(64 + int.parse(poly!.block))}',
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textPrimary, height: 1.1),
             ),
             const SizedBox(height: 2),
@@ -810,9 +830,10 @@ class _SelectedLotPanel extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
 
-              // Botões e Cliente (Apenas se logado)
+              // ── Botões de Ação (com trava de status) ──────────────────
               if (isAuthenticated) ...[
-                if (lot!.status == 'Disponível')
+                if (lot!.status == 'Disponível') ...[
+                  // ✅ Disponível: corretor pode fazer reserva
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -826,8 +847,9 @@ class _SelectedLotPanel extends ConsumerWidget {
                       onPressed: () => showReservationDialog(context, lot!),
                       child: const Text('Fazer Reserva', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
-                  )
-                else ...[
+                  ),
+                ] else if (lot!.status == 'Reservado') ...[
+                  // 🔶 Reservado: exibe cliente (se houver) e botão de contrato
                   if (lot!.clientName != null && lot!.clientName!.isNotEmpty) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -866,9 +888,55 @@ class _SelectedLotPanel extends ConsumerWidget {
                       child: const Text('Ver Contrato/Proposta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
+                ] else ...[
+                  // 🔴 Vendido (ou qualquer outro status bloqueado):
+                  // Remove todos os botões de ação e exibe badge informativo.
+                  if (lot!.clientName != null && lot!.clientName!.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.muted.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Cliente', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                          const SizedBox(height: 2),
+                          Text(lot!.clientName!, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        ],
+                      ),
+                    ),
+                  ],
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.muted.withValues(alpha: 0.15),
+                        foregroundColor: AppColors.textMuted,
+                        side: const BorderSide(color: AppColors.border),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      onPressed: null, // 🔒 Desabilitado — lote indisponível
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.lock_outline_rounded, size: 16),
+                          SizedBox(width: 8),
+                          Text('Lote Indisponível', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ] else ...[
-                if (lot!.status == 'Disponível')
+                // Não autenticado
+                if (lot!.status == 'Disponível') ...[
+                  // ✅ Disponível: convida para falar com comercial
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -888,6 +956,31 @@ class _SelectedLotPanel extends ConsumerWidget {
                       label: const Text('Falar com o Comercial', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
+                ] else ...[
+                  // 🔴 Reservado/Vendido: não autenticado vê badge informativo
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.muted.withValues(alpha: 0.15),
+                        foregroundColor: AppColors.textMuted,
+                        side: const BorderSide(color: AppColors.border),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      onPressed: null, // 🔒 Desabilitado — lote indisponível
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.lock_outline_rounded, size: 16),
+                          SizedBox(width: 8),
+                          Text('Lote Indisponível', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ],
           ],
