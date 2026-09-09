@@ -48,26 +48,21 @@ export class ProposalsService {
   }
 
   async updateStatus(id: string, status: string, userId?: string): Promise<Proposal> {
-    const queryRunner = this.proposalRepository.manager.connection.createQueryRunner();
-    
-    try {
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-      
-      await queryRunner.manager.update(Proposal, id, { status });
-      const updatedProposal = await queryRunner.manager.findOne(Proposal, { where: { id }, relations: ['lot'] });
+    return await this.proposalRepository.manager.transaction(async (manager) => {
+      await manager.update(Proposal, id, { status });
+      const updatedProposal = await manager.findOne(Proposal, { where: { id }, relations: ['lot'] });
 
       if (status === 'Rejeitada' && updatedProposal?.lot) {
         const lotId = updatedProposal.lot.id;
 
-        const otherActiveProposal = await queryRunner.manager.findOne(Proposal, {
+        const otherActiveProposal = await manager.findOne(Proposal, {
           where: [
             { lot: { id: lotId }, status: 'Nova', id: Not(id) },
             { lot: { id: lotId }, status: 'Em Análise', id: Not(id) },
           ],
         });
 
-        const activeReservation = await queryRunner.manager.findOne(Reservation, {
+        const activeReservation = await manager.findOne(Reservation, {
           where: [
             { lot: { id: lotId }, status: 'PENDING' },
             { lot: { id: lotId }, status: 'APPROVED' },
@@ -75,37 +70,31 @@ export class ProposalsService {
         });
 
         if (!otherActiveProposal && !activeReservation) {
-          await queryRunner.manager.update(Lot, lotId, { status: 'Disponível' });
+          await manager.update(Lot, lotId, { status: 'Disponível' });
         }
       } else if (status === 'Concluída' && updatedProposal?.lot) {
         const lotId = updatedProposal.lot.id;
-        await queryRunner.manager.update(Lot, lotId, { status: 'Vendido' });
-        await queryRunner.manager.save(Audit, {
+        await manager.update(Lot, lotId, { status: 'Vendido' });
+        const lotSoldAudit = manager.create(Audit, {
           action: 'LOT_SOLD',
           entityName: 'Lot',
           entityId: lotId,
           userId,
           details: { proposalId: id, trigger: 'PROPOSAL_CONCLUDED' },
         });
+        await manager.save(lotSoldAudit);
       }
 
-      await queryRunner.manager.save(Audit, {
+      const statusAudit = manager.create(Audit, {
         action: 'UPDATE_PROPOSAL_STATUS',
         entityName: 'Proposal',
         entityId: id,
         userId,
         details: { status },
       });
-      
-      await queryRunner.commitTransaction();
+      await manager.save(statusAudit);
+
       return updatedProposal;
-    } catch (error) {
-      if (queryRunner.isTransactionActive) {
-        await queryRunner.rollbackTransaction();
-      }
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    });
   }
 }

@@ -51,45 +51,36 @@ export class LotsService {
   }
 
   async updateStatus(id: string, status: string, userId?: string, justification?: string): Promise<Lot> {
-    const queryRunner = this.lotRepository.manager.connection.createQueryRunner();
-    
-    try {
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-
-      const currentLot = await queryRunner.manager.findOne(Lot, { where: { id } });
+    const updatedLot = await this.lotRepository.manager.transaction(async (manager) => {
+      const currentLot = await manager.findOne(Lot, { where: { id } });
       const oldStatus = currentLot?.status;
-      
-      await queryRunner.manager.update(Lot, id, { status });
-      const updatedLot = await queryRunner.manager.findOne(Lot, { where: { id } });
-      
-      await queryRunner.manager.save(Audit, {
+
+      await manager.update(Lot, id, { status });
+      const lot = await manager.findOne(Lot, { where: { id } });
+
+      const audit = manager.create(Audit, {
         action: 'UPDATE_LOT_STATUS',
         entityName: 'Lot',
         entityId: id,
         userId,
-        details: { 
-          oldStatus, 
+        details: {
+          oldStatus,
           newStatus: status,
-          lotNumber: updatedLot?.number,
-          lotBlock: updatedLot?.block,
-          landName: updatedLot?.landName,
+          lotNumber: lot?.number,
+          lotBlock: lot?.block,
+          landName: lot?.landName,
           justification,
         },
       });
-      
-      this.eventsGateway.notifyLotStatusUpdated(id, status);
-      
-      await queryRunner.commitTransaction();
-      return updatedLot;
-    } catch (error) {
-      if (queryRunner.isTransactionActive) {
-        await queryRunner.rollbackTransaction();
-      }
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+      await manager.save(audit);
+
+      return lot;
+    });
+
+    // Notificação WebSocket fora da transação (não acessa o banco)
+    this.eventsGateway.notifyLotStatusUpdated(id, status);
+
+    return updatedLot;
   }
 
   async uploadDocument(id: string, file: Express.Multer.File, userId?: string): Promise<Lot> {
