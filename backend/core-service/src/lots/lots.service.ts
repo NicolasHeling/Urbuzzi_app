@@ -83,6 +83,45 @@ export class LotsService {
     return updatedLot;
   }
 
+  async updateBulkStatus(ids: string[], status: string, userId?: string, justification?: string): Promise<Lot[]> {
+    if (!ids || ids.length === 0) return [];
+
+    const updatedLots = await this.lotRepository.manager.transaction(async (manager) => {
+      const currentLots = await manager.createQueryBuilder(Lot, 'lot').whereInIds(ids).getMany();
+      if (currentLots.length === 0) return [];
+
+      await manager.createQueryBuilder()
+        .update(Lot)
+        .set({ status })
+        .whereInIds(ids)
+        .execute();
+
+      const audits = currentLots.map(lot => manager.create(Audit, {
+        action: 'UPDATE_LOT_STATUS_BULK',
+        entityName: 'Lot',
+        entityId: lot.id,
+        userId,
+        details: {
+          oldStatus: lot.status,
+          newStatus: status,
+          lotNumber: lot.number,
+          lotBlock: lot.block,
+          landName: lot.landName,
+          justification,
+        },
+      }));
+      await manager.save(audits);
+
+      return manager.createQueryBuilder(Lot, 'lot').whereInIds(ids).getMany();
+    });
+
+    updatedLots.forEach(lot => {
+      this.eventsGateway.notifyLotStatusUpdated(lot.id, status);
+    });
+
+    return updatedLots;
+  }
+
   async uploadDocument(id: string, file: Express.Multer.File, userId?: string): Promise<Lot> {
     const lot = await this.findOne(id);
     if (!lot) throw new NotFoundException('Lote não encontrado');

@@ -7,7 +7,7 @@ class StatusBadge extends StatelessWidget {
   final String status;
   final bool dense;
 
-  const StatusBadge({super.key, required this.status, this.dense = false});
+  const StatusBadge({required this.status, super.key, this.dense = false});
 
   @override
   Widget build(BuildContext context) {

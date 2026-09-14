@@ -4,7 +4,7 @@ import '../models/client.dart';
 
 final clientsRepositoryProvider = Provider<ClientsRepository>((ref) => ClientsRepository());
 
-final clientsProvider = StateNotifierProvider<ClientsNotifier, AsyncValue<List<Client>>>((ref) {
+final clientsProvider = StateNotifierProvider.autoDispose<ClientsNotifier, AsyncValue<List<Client>>>((ref) {
   return ClientsNotifier(ref.watch(clientsRepositoryProvider));
 });
 

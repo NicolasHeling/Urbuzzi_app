@@ -544,17 +544,17 @@ class _ClientProfileDialog extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Agendar Visita"),
+        title: const Text('Agendar Visita'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: "Descrição (Ex: Visita ao Lote 12)")),
-            TextField(controller: dateCtrl, decoration: const InputDecoration(labelText: "Data (YYYY-MM-DD)")),
-            TextField(controller: timeCtrl, decoration: const InputDecoration(labelText: "Hora (HH:MM)")),
+            TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Descrição (Ex: Visita ao Lote 12)')),
+            TextField(controller: dateCtrl, decoration: const InputDecoration(labelText: 'Data (YYYY-MM-DD)')),
+            TextField(controller: timeCtrl, decoration: const InputDecoration(labelText: 'Hora (HH:MM)')),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
               try {
@@ -566,13 +566,13 @@ class _ClientProfileDialog extends ConsumerWidget {
                 );
                 if (ctx.mounted) {
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Visita agendada com sucesso!")));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Visita agendada com sucesso!')));
                 }
               } catch (e) {
                 if (ctx.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
               }
             },
-            child: const Text("Agendar"),
+            child: const Text('Agendar'),
           ),
         ],
       ),

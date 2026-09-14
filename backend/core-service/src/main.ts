@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import * as express from 'express';
 import { join } from 'path';
@@ -19,7 +19,7 @@ async function bootstrap() {
   const dataSource = app.get(DataSource);
   const count = await dataSource.query(`SELECT COUNT(*) FROM lots`);
   if (parseInt(count[0].count) === 0) {
-    console.log('Populando banco de dados com dados iniciais (Seed)...');
+    Logger.log('Populando banco de dados com dados iniciais (Seed)...');
     await dataSource.query(`
       INSERT INTO lots (id, block, number, area, price, status, "landName", "createdAt", "updatedAt") VALUES
       ('11111111-1111-1111-1111-111111111111', 'A', '12', 300.00, 150000.00, 'Disponível', 'Loteamento Biopark', NOW(), NOW()),
@@ -52,6 +52,6 @@ async function bootstrap() {
 
   // Core service listens on 3002
   await app.listen(3002);
-  console.log(`Core-Service is running on: ${await app.getUrl()}`);
+  Logger.log(`Core-Service is running on: ${await app.getUrl()}`);
 }
 bootstrap();

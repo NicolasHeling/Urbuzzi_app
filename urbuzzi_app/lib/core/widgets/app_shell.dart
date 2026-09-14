@@ -12,6 +12,7 @@ import '../../features/agenda/visits_agenda_page.dart';
 import '../../features/auth/presentation/auth_provider.dart';
 import '../../features/projects/presentation/projects_provider.dart';
 import '../../features/projects/presentation/projects_page.dart';
+import '../../features/commissions/presentation/commissions_page.dart';
 import '../../features/notifications/presentation/notifications_provider.dart';
 import '../routing/app_routes.dart';
 import '../theme/app_colors.dart';
@@ -35,6 +36,7 @@ const _navItems = [
   _NavItem(icon: Icons.history_outlined, label: 'Histórico/Auditoria'),
   _NavItem(icon: Icons.public_outlined, label: 'Vitrine Pública'),
   _NavItem(icon: Icons.event, label: 'Agenda de Visitas'),
+  _NavItem(icon: Icons.attach_money, label: 'Comissões'),
   _NavItem(icon: Icons.settings, label: 'Empreendimentos'),
 ];
 
@@ -48,6 +50,7 @@ const _pageTitles = [
   ('Histórico / Auditoria', 'Registro completo de eventos'),
   ('Vitrine Pública', 'Página pública do loteamento'),
   ('Agenda de Visitas', 'Compromissos e tarefas agendadas'),
+  ('Comissões', 'Gestão de comissões de corretores'),
   ('Empreendimentos', 'Gestão de múltiplos loteamentos'),
 ];
 
@@ -74,6 +77,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     AuditPage(),
     VitrinePage(),
     VisitsAgendaPage(),
+    CommissionsPage(),
     ProjectsPage(),
   ];
 
@@ -435,8 +439,7 @@ class _AppHeader extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.isAuthenticated,
-    this.onMenuTap,
-    required this.onLogout,
+    required this.onLogout, this.onMenuTap,
   });
 
   @override
@@ -533,9 +536,7 @@ class _HeaderIconBtn extends StatelessWidget {
 
   const _HeaderIconBtn({
     required this.icon,
-    this.hasDot = false,
-    required this.tooltip,
-    required this.onTap,
+    required this.tooltip, required this.onTap, this.hasDot = false,
   });
 
   @override
@@ -657,10 +658,10 @@ class _UserMenu extends ConsumerWidget {
         ),
       ),
       itemBuilder: (context) => [
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'logout',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.logout_rounded, size: 16, color: AppColors.textSecondary),
               SizedBox(width: 8),
               Text('Sair', style: TextStyle(fontSize: 13)),
@@ -716,10 +717,8 @@ class _NotificationMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Força a inicialização do provider de notificações
-    ref.watch(notificationsProvider);
     final notifications = ref.watch(notificationsProvider);
-    final unreadCount = ref.watch(unreadCountProvider);
+    final unreadCount = ref.watch(notificationsProvider.select((list) => list.where((n) => !n.read).length));
 
     return PopupMenuButton<String>(
       tooltip: 'Notificações',
@@ -801,7 +800,7 @@ class _NotificationMenu extends ConsumerWidget {
                         children: [
                           Text(n.title, style: TextStyle(fontSize: 13, fontWeight: n.read ? FontWeight.w500 : FontWeight.bold, color: AppColors.textPrimary)),
                           const SizedBox(height: 4),
-                          Text(n.body, style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
+                          Text(n.body, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
                           const SizedBox(height: 6),
                           Text(_timeAgo(n.createdAt), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                         ],

@@ -1,10 +1,10 @@
-import { Controller, All, Req, Res, Post } from '@nestjs/common';
+import { Controller, All, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import axios from 'axios';
 
 @Controller('auth')
 export class AuthProxyController {
-  private readonly authServiceUrl = 'http://auth-service:3001';
+  private readonly authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
 
   @All('*')
   async proxyAuth(@Req() req: Request, @Res() res: Response) {

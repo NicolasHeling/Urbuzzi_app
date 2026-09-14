@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PipelineStage } from './pipeline-stage.entity';
@@ -23,7 +23,11 @@ export class PipelineService {
 
   async update(id: string, data: Partial<PipelineStage>): Promise<PipelineStage> {
     await this.stageRepository.update(id, data);
-    return this.stageRepository.findOne({ where: { id } });
+    const updated = await this.stageRepository.findOne({ where: { id } });
+    if (!updated) {
+      throw new NotFoundException(`Pipeline stage with ID ${id} not found`);
+    }
+    return updated;
   }
 
   async remove(id: string): Promise<void> {
@@ -31,9 +35,13 @@ export class PipelineService {
   }
 
   async reorder(stages: { id: string; order: number }[]): Promise<void> {
-    for (const stage of stages) {
-      await this.stageRepository.update(stage.id, { order: stage.order });
-    }
+    await this.stageRepository.manager.transaction(async (manager) => {
+      await Promise.all(
+        stages.map((stage) =>
+          manager.update(PipelineStage, stage.id, { order: stage.order }),
+        ),
+      );
+    });
   }
 
   async seedDefaults(projectId: string): Promise<PipelineStage[]> {

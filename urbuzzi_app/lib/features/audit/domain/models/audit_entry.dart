@@ -13,8 +13,7 @@ class AuditEntry {
     required this.entityName,
     required this.entityId,
     required this.userId,
-    this.details,
-    required this.createdAt,
+    required this.createdAt, this.details,
   });
 
   factory AuditEntry.fromJson(Map<String, dynamic> json) {

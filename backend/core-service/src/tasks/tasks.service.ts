@@ -15,12 +15,15 @@ export class TasksService {
     return this.taskRepository.save(task);
   }
 
-  async findAll(): Promise<Task[]> {
-    return this.taskRepository.find({
+  async findAll(limit = 50, offset = 0): Promise<{ data: Task[]; total: number }> {
+    const [data, total] = await this.taskRepository.findAndCount({
       order: {
         date: 'ASC',
         time: 'ASC',
       },
+      take: limit,
+      skip: offset,
     });
+    return { data, total };
   }
 }

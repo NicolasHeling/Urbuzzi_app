@@ -102,7 +102,7 @@ void main() {
 
     testWidgets('modo dense reduz a fonte para 11', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(body: StatusBadge(status: 'Disponível', dense: true)),
         ),
       );

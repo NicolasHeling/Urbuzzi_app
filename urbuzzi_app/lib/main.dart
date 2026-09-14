@@ -28,7 +28,7 @@ void main() async {
   }
 
   runApp(
-    ProviderScope(
+    const ProviderScope(
       child: UrbuzziApp(initialRoute: AppRoutes.app),
     ),
   );

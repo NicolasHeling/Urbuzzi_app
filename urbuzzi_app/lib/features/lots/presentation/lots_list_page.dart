@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:data_table_2/data_table_2.dart';
 import 'lots_provider.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -29,6 +30,9 @@ class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepA
 
   /// Indica se uma operação em massa está em andamento.
   bool _isBulkUpdating = false;
+
+  /// Indica se está buscando mais lotes (paginação).
+  bool _isPaginating = false;
 
   // ─── Seleção ────────────────────────────────────────────────────────────
 
@@ -89,7 +93,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepA
 
   /// Exibe um diálogo para o administrador escolher o novo status em massa.
   void _showBulkStatusDialog() {
-    final statuses = AppColors.statusOrder;
+    const statuses = AppColors.statusOrder;
     showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -277,9 +281,9 @@ class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepA
                           child: Container(
                             height: 400,
                             alignment: Alignment.center,
-                            child: Column(
+                            child: const Column(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
+                              children: [
                                 Icon(Icons.inbox_outlined,
                                     size: 72, color: AppColors.border),
                                 SizedBox(height: 16),
@@ -310,23 +314,82 @@ class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepA
                         return RefreshIndicator(
                           onRefresh: () =>
                               ref.read(lotsControllerProvider.notifier).fetchLots(),
-                          child: SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            scrollDirection: Axis.vertical,
-                            child: Column(
-                              children: [
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                        minWidth: constraints.maxWidth),
-                                    child: DataTable(
-                                      headingRowColor:
-                                          WidgetStateProperty.all(AppColors.muted
-                                              .withValues(alpha: 0.6)),
-                                      dataRowColor: WidgetStateProperty
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: DataTable2(
+                                  minWidth: 900,
+                                  headingRowColor:
+                                      WidgetStateProperty.all(AppColors.muted
+                                          .withValues(alpha: 0.6)),
+                                  dataRowColor: WidgetStateProperty
+                                      .resolveWith<Color?>(
+                                    (Set<WidgetState> states) {
+                                      if (states.contains(
+                                          WidgetState.hovered)) {
+                                        return AppColors.muted
+                                            .withValues(alpha: 0.3);
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  dividerThickness: 1,
+                                  horizontalMargin: 24,
+                                  columnSpacing: 24,
+                                  headingTextStyle: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 1.2,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  columns: [
+                                    // Coluna de checkbox "selecionar tudo"
+                                    if (canWrite)
+                                      DataColumn2(
+                                        fixedWidth: 50,
+                                        label: Checkbox(
+                                          tristate: true,
+                                          value: allSelected
+                                              ? true
+                                              : (_selectedIds.isEmpty
+                                                  ? false
+                                                  : null),
+                                          activeColor: AppColors.primary,
+                                          onChanged: (_) =>
+                                              _toggleSelectAll(lots),
+                                        ),
+                                      ),
+                                    const DataColumn2(
+                                        size: ColumnSize.L,
+                                        label: Text('LOTEAMENTO')),
+                                    const DataColumn2(
+                                        size: ColumnSize.S,
+                                        label: Text('QUADRA')),
+                                    const DataColumn2(
+                                        size: ColumnSize.M,
+                                        label: Text('LOTE')),
+                                    const DataColumn2(
+                                        size: ColumnSize.S,
+                                        label: Text('ÁREA')),
+                                    const DataColumn2(
+                                        size: ColumnSize.M,
+                                        label: Text('VALOR')),
+                                    const DataColumn2(
+                                        size: ColumnSize.L,
+                                        label: Text('STATUS')),
+                                  ],
+                                  rows: lots.map((lot) {
+                                    final isSelected =
+                                        _selectedIds.contains(lot.id);
+                                    return DataRow(
+                                      selected: isSelected,
+                                      color: WidgetStateProperty
                                           .resolveWith<Color?>(
-                                        (Set<WidgetState> states) {
+                                        (states) {
+                                          if (isSelected) {
+                                            return AppColors.primary
+                                                .withValues(alpha: 0.07);
+                                          }
                                           if (states.contains(
                                               WidgetState.hovered)) {
                                             return AppColors.muted
@@ -335,113 +398,54 @@ class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepA
                                           return null;
                                         },
                                       ),
-                                      dividerThickness: 1,
-                                      horizontalMargin: 24,
-                                      columnSpacing: 24,
-                                      headingTextStyle: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 1.2,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                      columns: [
-                                        // Coluna de checkbox "selecionar tudo"
+                                      cells: [
+                                        // Checkbox individual do lote
                                         if (canWrite)
-                                          DataColumn(
-                                            label: Checkbox(
-                                              tristate: true,
-                                              value: allSelected
-                                                  ? true
-                                                  : (_selectedIds.isEmpty
-                                                      ? false
-                                                      : null),
+                                          DataCell(
+                                            Checkbox(
+                                              value: isSelected,
                                               activeColor: AppColors.primary,
                                               onChanged: (_) =>
-                                                  _toggleSelectAll(lots),
+                                                  _toggleSelect(lot.id),
                                             ),
                                           ),
-                                        const DataColumn(
-                                            label: Text('LOTEAMENTO')),
-                                        const DataColumn(
-                                            label: Text('QUADRA')),
-                                        const DataColumn(
-                                            label: Text('LOTE')),
-                                        const DataColumn(
-                                            label: Text('ÁREA')),
-                                        const DataColumn(
-                                            label: Text('VALOR')),
-                                        const DataColumn(
-                                            label: Text('STATUS')),
-                                      ],
-                                      rows: lots.map((lot) {
-                                        final isSelected =
-                                            _selectedIds.contains(lot.id);
-                                        return DataRow(
-                                          selected: isSelected,
-                                          color: WidgetStateProperty
-                                              .resolveWith<Color?>(
-                                            (states) {
-                                              if (isSelected) {
-                                                return AppColors.primary
-                                                    .withValues(alpha: 0.07);
-                                              }
-                                              if (states.contains(
-                                                  WidgetState.hovered)) {
-                                                return AppColors.muted
-                                                    .withValues(alpha: 0.3);
-                                              }
-                                              return null;
-                                            },
-                                          ),
-                                          cells: [
-                                            // Checkbox individual do lote
-                                            if (canWrite)
-                                              DataCell(
-                                                Checkbox(
-                                                  value: isSelected,
-                                                  activeColor: AppColors.primary,
-                                                  onChanged: (_) =>
-                                                      _toggleSelect(lot.id),
+                                        DataCell(Text(lot.landName ?? '-',
+                                            style: const TextStyle(
+                                                fontWeight:
+                                                    FontWeight.w500))),
+                                        DataCell(Text(lot.block)),
+                                        DataCell(
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(lot.number),
+                                              Text(
+                                                'Matrícula: ${lot.registration ?? '—'}',
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: AppColors
+                                                      .textSecondary,
                                                 ),
                                               ),
-                                            DataCell(Text(lot.landName ?? '-',
-                                                style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.w500))),
-                                            DataCell(Text(lot.block)),
-                                            DataCell(
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Text(lot.number),
-                                                  Text(
-                                                    'Matrícula: ${lot.registration ?? '—'}',
-                                                    style: const TextStyle(
-                                                      fontSize: 11,
-                                                      color: AppColors
-                                                          .textSecondary,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            DataCell(Text(
-                                                '${NumberFormat.decimalPattern('pt_BR').format(lot.area)} m²')),
-                                            DataCell(Text(
-                                                currencyFormatter
-                                                    .format(lot.price))),
-                                            DataCell(
-                                              _StatusDropdown(lot: lot),
-                                            ),
-                                          ],
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ),
+                                            ],
+                                          ),
+                                        ),
+                                        DataCell(Text(
+                                            '${NumberFormat.decimalPattern('pt_BR').format(lot.area)} m²')),
+                                        DataCell(Text(
+                                            currencyFormatter
+                                                .format(lot.price))),
+                                        DataCell(
+                                          _StatusDropdown(lot: lot),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
                                 ),
+                              ),
                                 // Botão "Carregar mais" para paginação
                                 if (notifier.hasMore)
                                   Padding(
@@ -450,10 +454,14 @@ class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepA
                                     child: SizedBox(
                                       width: 200,
                                       child: OutlinedButton.icon(
-                                        onPressed: notifier.isLoadingMore
+                                        onPressed: _isPaginating
                                             ? null
-                                            : () => notifier.loadMore(),
-                                        icon: notifier.isLoadingMore
+                                            : () async {
+                                                setState(() => _isPaginating = true);
+                                                await notifier.loadMore();
+                                                if (mounted) setState(() => _isPaginating = false);
+                                              },
+                                        icon: _isPaginating
                                             ? const SizedBox(
                                                 width: 16,
                                                 height: 16,
@@ -465,7 +473,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepA
                                               )
                                             : const Icon(Icons.expand_more),
                                         label: Text(
-                                          notifier.isLoadingMore
+                                          _isPaginating
                                               ? 'Carregando...'
                                               : 'Carregar mais',
                                           style: const TextStyle(
@@ -487,8 +495,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepA
                                   ),
                               ],
                             ),
-                          ),
-                        );
+                          );
                       },
                     );
                   },
@@ -519,11 +526,7 @@ class _BulkActionBar extends StatelessWidget {
   final VoidCallback onClear;
 
   const _BulkActionBar({
-    super.key,
-    required this.selectedCount,
-    required this.isBusy,
-    required this.onChangeStatus,
-    required this.onClear,
+    required this.selectedCount, required this.isBusy, required this.onChangeStatus, required this.onClear, super.key,
   });
 
   @override

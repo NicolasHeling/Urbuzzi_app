@@ -82,6 +82,18 @@ class LotsRepository {
     }
   }
 
+  Future<void> updateLotsStatusBulk(List<String> ids, String newStatus, {String? justification}) async {
+    try {
+      final payload = <String, dynamic>{'ids': ids, 'status': newStatus};
+      if (justification != null) {
+        payload['justification'] = justification;
+      }
+      await _dio.patch('/lots/bulk-status', data: payload);
+    } catch (e) {
+      throw Exception('Falha ao atualizar o status dos lotes em massa: $e');
+    }
+  }
+
   Future<Lot> uploadDocument(String id, List<int> bytes, String filename) async {
     try {
       final formData = FormData.fromMap({

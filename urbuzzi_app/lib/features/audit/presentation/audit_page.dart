@@ -64,12 +64,12 @@ class _AuditPageState extends ConsumerState<AuditPage> {
       body: auditState.when(
         data: (entries) {
           if (entries.isEmpty) {
-            return Center(
+            return const Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.history_rounded, size: 64, color: AppColors.border),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text('Nenhum registro encontrado.', style: TextStyle(color: AppColors.textSecondary)),
                 ],
               ),
@@ -315,12 +315,12 @@ class _AuditPageState extends ConsumerState<AuditPage> {
                     // Nome + Cargo do responsável
                     Row(
                       children: [
-                        Icon(Icons.person_outline, size: 14, color: AppColors.textMuted),
+                        const Icon(Icons.person_outline, size: 14, color: AppColors.textMuted),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             userDisplay,
-                            style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
                           ),
                         ),
                       ],
@@ -336,11 +336,11 @@ class _AuditPageState extends ConsumerState<AuditPage> {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
+                          const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
                           const SizedBox(width: 4),
                           Text(
                             locationInfo,
-                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
                           ),
                         ],
                       ),
@@ -351,8 +351,8 @@ class _AuditPageState extends ConsumerState<AuditPage> {
                       Row(
                         children: [
                           StatusBadge(status: oldStatus.toString()),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8),
                             child: Icon(Icons.arrow_forward, size: 14, color: AppColors.textMuted),
                           ),
                           StatusBadge(status: newStatus.toString()),
@@ -371,7 +371,7 @@ class _AuditPageState extends ConsumerState<AuditPage> {
                         ),
                         child: Text(
                           priceChange,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
                             fontSize: 13,

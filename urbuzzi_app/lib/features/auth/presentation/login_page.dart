@@ -91,11 +91,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     labelText: 'E-mail',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.border),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.border),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     prefixIcon: const Icon(Icons.email_outlined),
                     filled: true,
@@ -111,11 +111,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     labelText: 'Senha',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.border),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.border),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     prefixIcon: const Icon(Icons.lock_outline),
                     filled: true,

@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/dio_client.dart';
 import '../models/task.dart';
 
-final tasksProvider = StateNotifierProvider<TasksNotifier, AsyncValue<List<Task>>>((ref) {
+final tasksProvider = StateNotifierProvider.autoDispose<TasksNotifier, AsyncValue<List<Task>>>((ref) {
   return TasksNotifier();
 });
 

@@ -1,6 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('tasks')
+@Index('IDX_tasks_date_time', ['date', 'time'])
+@Index('IDX_tasks_clientId', ['clientId'])
+@Index('IDX_tasks_status', ['status'])
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -20,6 +23,7 @@ export class Task {
   @Column()
   clientId: string;
 
+  @Index('IDX_tasks_userId')
   @Column({ nullable: true })
   userId: string;
 

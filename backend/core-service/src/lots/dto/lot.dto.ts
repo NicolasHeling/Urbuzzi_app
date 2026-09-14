@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, Min, MaxLength, IsIn } from 'class-validator';
+import { IsString, IsNumber, IsOptional, Min, MaxLength, IsIn, IsArray, ArrayNotEmpty } from 'class-validator';
 
 export class CreateLotDto {
   @IsString()
@@ -52,6 +52,21 @@ export class CreateLotDto {
 }
 
 export class UpdateLotStatusDto {
+  @IsString()
+  @IsIn(['Disponível', 'Reservado', 'Vendido', 'Em aprovação', 'Bloqueado', 'Cancelado'])
+  status: string;
+
+  @IsOptional()
+  @IsString()
+  justification?: string;
+}
+
+export class UpdateLotBulkStatusDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  ids: string[];
+
   @IsString()
   @IsIn(['Disponível', 'Reservado', 'Vendido', 'Em aprovação', 'Bloqueado', 'Cancelado'])
   status: string;

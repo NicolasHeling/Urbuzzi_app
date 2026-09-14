@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import '../../lots/data/lots_repository.dart';
 import '../../lots/domain/models/lot.dart';
+import 'dart:async';
 import '../../../core/network/socket_service.dart';
 
 // Provider para injetar o Repositório
@@ -59,9 +60,14 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
   String get searchQuery => _searchQuery;
   String get selectedStatus => _selectedStatus;
 
+  Timer? _debounce;
+
   void setSearchQuery(String query) {
-    _searchQuery = query;
-    fetchLots();
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _searchQuery = query;
+      fetchLots();
+    });
   }
 
   void setStatusFilter(String status) {
@@ -149,12 +155,24 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
     }
   }
 
-  /// Atualiza o status de múltiplos lotes em sequência (ação em massa).
-  /// Cada lote é atualizado individualmente; falhas parciais são logadas mas
-  /// não interrompem os demais itens da seleção.
   Future<void> updateLotsStatusBulk(List<String> lotIds, String newStatus) async {
-    for (final id in lotIds) {
-      await updateLotStatus(id, newStatus);
+    try {
+      await _repository.updateLotsStatusBulk(lotIds, newStatus);
+      if (state is AsyncData) {
+        final currentLots = state.value!;
+        final updatedLots = currentLots.map((lot) {
+          if (lotIds.contains(lot.id)) {
+            return lot.copyWith(status: newStatus);
+          }
+          return lot;
+        }).toList();
+        state = AsyncValue.data(updatedLots);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Erro ao atualizar status em massa: $e');
+      }
+      rethrow;
     }
   }
 

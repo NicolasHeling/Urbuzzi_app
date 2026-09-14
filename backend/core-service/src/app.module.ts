@@ -15,6 +15,9 @@ import { PipelineModule } from './pipeline/pipeline.module';
 import { KanbanModule } from './kanban/kanban.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { VisitsModule } from './visits/visits.module';
+import { CommissionsModule } from './commissions/commissions.module';
+import { LeadsModule } from './leads/leads.module';
+import { StorageModule } from './storage/storage.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { dataSourceOptions } from './data-source';
 import { RolesGuard } from './guards/roles.guard';
@@ -40,6 +43,9 @@ import { RolesGuard } from './guards/roles.guard';
     KanbanModule,
     AnalyticsModule,
     VisitsModule,
+    CommissionsModule,
+    LeadsModule,
+    StorageModule,
   ],
   providers: [
     {

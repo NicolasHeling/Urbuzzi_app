@@ -1,7 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Proposal } from '../proposals/proposal.entity';
 
 @Entity('lots')
+@Index('IDX_lots_status', ['status'])
+@Index('IDX_lots_projectId', ['projectId'])
+@Index('IDX_lots_block_number', ['block', 'number'])
 export class Lot {
   @PrimaryGeneratedColumn('uuid')
   id: string;

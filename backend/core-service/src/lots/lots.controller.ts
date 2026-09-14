@@ -5,7 +5,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { LotsService } from './lots.service';
 import { Lot } from './lot.entity';
-import { CreateLotDto, UpdateLotStatusDto } from './dto/lot.dto';
+import { CreateLotDto, UpdateLotStatusDto, UpdateLotBulkStatusDto } from './dto/lot.dto';
 import { Roles } from '../guards/roles.guard';
 import { Public } from '../decorators/public.decorator';
 
@@ -43,6 +43,15 @@ export class LotsController {
     return this.lotsService.create(createLotDto, userId);
   }
 
+  @Patch('bulk-status')
+  updateBulkStatus(
+    @Body() updateBulkStatusDto: UpdateLotBulkStatusDto,
+    @Req() req: Request,
+  ): Promise<Lot[]> {
+    const userId = req.headers['x-user-id'] as string;
+    return this.lotsService.updateBulkStatus(updateBulkStatusDto.ids, updateBulkStatusDto.status, userId, updateBulkStatusDto.justification);
+  }
+
   @Patch(':id/status')
   // @Roles('gestor', 'administrador') — removido para permitir edição por todos os usuários autenticados
   updateStatus(
@@ -66,6 +75,24 @@ export class LotsController {
         cb(null, `${name}-${uniqueSuffix}${ext}`);
       },
     }),
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB max
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedMimes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
+      if (allowedMimes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error(`Tipo de arquivo não permitido: ${file.mimetype}. Permitidos: PDF, JPEG, PNG, WEBP, DOC, DOCX`), false);
+      }
+    },
   }))
   uploadDocument(
     @Param('id', ParseUUIDPipe) id: string,

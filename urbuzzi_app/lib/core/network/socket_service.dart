@@ -18,9 +18,8 @@ class AppNotification {
     required this.type,
     required this.title,
     required this.body,
-    this.projectId,
+    required this.createdAt, this.projectId,
     this.userId,
-    required this.createdAt,
     this.read = false,
   });
 
@@ -68,7 +67,7 @@ class SocketService {
     _lotSocket!.connect();
 
     _lotSocket!.onConnect((_) {
-      if (kDebugMode) print('[Socket] Conectado ao WebSocket de Lotes');
+      if (kDebugMode) debugPrint('[Socket] Conectado ao WebSocket de Lotes');
     });
 
     _lotSocket!.on('lotStatusUpdated', (data) {
@@ -78,7 +77,7 @@ class SocketService {
     });
 
     _lotSocket!.onDisconnect((_) {
-      if (kDebugMode) print('[Socket] Desconectado do WebSocket de Lotes');
+      if (kDebugMode) debugPrint('[Socket] Desconectado do WebSocket de Lotes');
     });
   }
 
@@ -103,7 +102,7 @@ class SocketService {
     _notifSocket!.connect();
 
     _notifSocket!.onConnect((_) {
-      if (kDebugMode) print('[Socket] Conectado ao WebSocket de Notificações');
+      if (kDebugMode) debugPrint('[Socket] Conectado ao WebSocket de Notificações');
 
       // Registrar no room do projeto ativo
       if (projectId != null) {
@@ -123,7 +122,7 @@ class SocketService {
     });
 
     _notifSocket!.onDisconnect((_) {
-      if (kDebugMode) print('[Socket] Desconectado do WebSocket de Notificações');
+      if (kDebugMode) debugPrint('[Socket] Desconectado do WebSocket de Notificações');
     });
   }
 

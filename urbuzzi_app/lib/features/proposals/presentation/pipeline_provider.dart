@@ -3,7 +3,7 @@ import '../../../core/network/dio_client.dart';
 import '../domain/models/pipeline_stage.dart';
 import '../../projects/presentation/projects_provider.dart';
 
-final pipelineProvider = StateNotifierProvider<PipelineNotifier, AsyncValue<List<PipelineStage>>>((ref) {
+final pipelineProvider = StateNotifierProvider.autoDispose<PipelineNotifier, AsyncValue<List<PipelineStage>>>((ref) {
   final projectId = ref.watch(selectedProjectIdProvider);
   return PipelineNotifier(projectId);
 });

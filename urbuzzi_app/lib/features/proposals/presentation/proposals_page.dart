@@ -27,14 +27,14 @@ class ProposalsPage extends ConsumerWidget {
           return kanbanState.when(
             data: (stages) {
               if (proposals.isEmpty && stages.isEmpty) {
-                return Center(
+                return const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.insert_drive_file_outlined, size: 72, color: AppColors.border),
-                      const SizedBox(height: 16),
-                      const Text('Nenhum item encontrado', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 16),
+                      Text('Nenhum item encontrado', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
                       Text('Ainda não há propostas ou negociações.', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
                     ],
                   ),

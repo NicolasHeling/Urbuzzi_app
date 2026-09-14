@@ -1,6 +1,11 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+import '../../../core/network/dio_client.dart';
 import '../domain/models/proposal.dart';
 import 'proposal_history_provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -8,7 +13,7 @@ import '../../../core/theme/app_colors.dart';
 class ProposalDetailsModal extends ConsumerWidget {
   final Proposal proposal;
 
-  const ProposalDetailsModal({super.key, required this.proposal});
+  const ProposalDetailsModal({required this.proposal, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -69,6 +74,10 @@ class ProposalDetailsModal extends ConsumerWidget {
         _DetailRow(label: 'Preço Ofertado', value: currencyFormatter.format(proposal.offeredPrice ?? 0)),
         _DetailRow(label: 'Corretor', value: proposal.responsibleUserName ?? 'Não informado'),
         _DetailRow(label: 'Status', value: proposal.status),
+        if (proposal.status == 'Aprovada' || proposal.status == 'Concluída') ...[
+          const SizedBox(height: 24),
+          _GenerateContractButton(proposalId: proposal.id),
+        ],
       ],
     );
   }
@@ -165,6 +174,55 @@ class _DetailRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _GenerateContractButton extends StatefulWidget {
+  final String proposalId;
+
+  const _GenerateContractButton({required this.proposalId});
+
+  @override
+  State<_GenerateContractButton> createState() => _GenerateContractButtonState();
+}
+
+class _GenerateContractButtonState extends State<_GenerateContractButton> {
+  bool _isLoading = false;
+
+  Future<void> _generateContract() async {
+    setState(() => _isLoading = true);
+    try {
+      final dio = DioClient().dio;
+      final response = await dio.get(
+        '/proposals/${widget.proposalId}/contract',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/contrato_${widget.proposalId}.pdf');
+      await file.writeAsBytes(response.data);
+      
+      await OpenFilex.open(file.path);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao gerar contrato: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: _isLoading ? null : _generateContract,
+      icon: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.picture_as_pdf),
+      label: const Text('Gerar Contrato'),
     );
   }
 }

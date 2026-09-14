@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
@@ -75,8 +76,8 @@ class DioClient {
               
               if (hasAuthHeader) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Sessão expirada. Faça login novamente.'),
+                  const SnackBar(
+                    content: Text('Sessão expirada. Faça login novamente.'),
                     backgroundColor: AppColors.vendido,
                     behavior: SnackBarBehavior.floating,
                   ),
@@ -98,5 +99,60 @@ class DioClient {
         },
       ),
     );
+
+    // Retry interceptor para requests GET com backoff exponencial
+    dio.interceptors.add(_RetryInterceptor(dio: dio));
+  }
+}
+
+/// Interceptor de retry com backoff exponencial para requests idempotentes (GET).
+class _RetryInterceptor extends Interceptor {
+  final Dio dio;
+  final int maxRetries;
+  final Duration initialDelay;
+
+  _RetryInterceptor({
+    required this.dio,
+  }) : maxRetries = 3, initialDelay = const Duration(milliseconds: 500);
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    // Só faz retry em GET (idempotente) e erros de rede/timeout
+    final isRetryable = err.requestOptions.method == 'GET' &&
+        (err.type == DioExceptionType.connectionTimeout ||
+         err.type == DioExceptionType.receiveTimeout ||
+         err.type == DioExceptionType.connectionError ||
+         err.type == DioExceptionType.unknown);
+
+    if (!isRetryable) {
+      return handler.next(err);
+    }
+
+    // Busca ou inicializa o contador de tentativas
+    final retryCount = (err.requestOptions.extra['_retryCount'] as int?) ?? 0;
+
+    if (retryCount >= maxRetries) {
+      if (kDebugMode) {
+        debugPrint('[DioRetry] Max retries ($maxRetries) exceeded for ${err.requestOptions.path}');
+      }
+      return handler.next(err);
+    }
+
+    final delay = initialDelay * (1 << retryCount); // Exponential backoff: 500ms, 1s, 2s
+    if (kDebugMode) {
+      debugPrint('[DioRetry] Retry ${retryCount + 1}/$maxRetries for ${err.requestOptions.path} in ${delay.inMilliseconds}ms');
+    }
+
+    await Future.delayed(delay);
+
+    // Incrementa o contador e tenta de novo
+    err.requestOptions.extra['_retryCount'] = retryCount + 1;
+
+    try {
+      final response = await dio.fetch(err.requestOptions);
+      return handler.resolve(response);
+    } on DioException catch (e) {
+      return handler.next(e);
+    }
   }
 }

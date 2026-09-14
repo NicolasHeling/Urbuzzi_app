@@ -28,14 +28,14 @@ class ReservationsPage extends ConsumerWidget {
           child: state.when(
             data: (reservations) {
               if (reservations.isEmpty) {
-                return Center(
+                return const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.inbox_outlined, size: 72, color: AppColors.border),
-                      const SizedBox(height: 16),
-                      const Text('Nenhuma reserva pendente', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
+                      Icon(Icons.inbox_outlined, size: 72, color: AppColors.border),
+                      SizedBox(height: 16),
+                      Text('Nenhuma reserva pendente', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
                       Text('Todas as reservas já foram processadas.', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
                     ],
                   ),

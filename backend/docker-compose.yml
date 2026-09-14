@@ -5,26 +5,36 @@ services:
     build: ./gateway
     ports:
       - "3000:3000"
+    env_file: .env
     environment:
-      - CORS_ORIGIN=${CORS_ORIGIN:-*}
-      - JWT_SECRET=${JWT_SECRET}
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - CORE_SERVICE_URL=http://core-service:3002
     depends_on:
-      - auth-service
-      - core-service
+      auth-service:
+        condition: service_healthy
+      core-service:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - urbuzzi-network
 
   auth-service:
     build: ./auth-service
+    env_file: .env
     environment:
       - DB_HOST=postgres-urbuzzi
       - DB_PORT=5432
-      - DB_USER=${DB_USER:-postgres}
-      - DB_PASS=${DB_PASS}
       - DB_NAME=auth_db
-      - JWT_SECRET=${JWT_SECRET}
     depends_on:
-      - postgres-urbuzzi
+      postgres-urbuzzi:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3001/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - urbuzzi-network
 
@@ -32,27 +42,39 @@ services:
     build: ./core-service
     ports:
       - "3002:3002"
+    env_file: .env
     environment:
       - DB_HOST=postgres-urbuzzi
       - DB_PORT=5432
-      - DB_USER=${DB_USER:-postgres}
-      - DB_PASS=${DB_PASS}
       - DB_NAME=core_db
     volumes:
       - core_uploads:/usr/src/app/uploads
     depends_on:
-      - postgres-urbuzzi
+      postgres-urbuzzi:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3002/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - urbuzzi-network
 
   postgres-urbuzzi:
     image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    env_file: .env
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
     networks:
       - urbuzzi-network
 

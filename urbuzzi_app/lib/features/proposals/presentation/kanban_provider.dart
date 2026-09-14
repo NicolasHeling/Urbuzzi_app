@@ -31,7 +31,7 @@ class KanbanColumnModel {
   }
 }
 
-final kanbanProvider = StateNotifierProvider<KanbanNotifier, AsyncValue<List<KanbanColumnModel>>>((ref) {
+final kanbanProvider = StateNotifierProvider.autoDispose<KanbanNotifier, AsyncValue<List<KanbanColumnModel>>>((ref) {
   final projectId = ref.watch(selectedProjectIdProvider);
   return KanbanNotifier(projectId);
 });

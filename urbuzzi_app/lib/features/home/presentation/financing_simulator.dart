@@ -6,7 +6,7 @@ import '../../../core/theme/app_colors.dart';
 class FinancingSimulator extends StatefulWidget {
   final double lotValue;
 
-  const FinancingSimulator({super.key, required this.lotValue});
+  const FinancingSimulator({required this.lotValue, super.key});
 
   @override
   State<FinancingSimulator> createState() => _FinancingSimulatorState();

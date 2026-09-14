@@ -16,7 +16,7 @@ class LotDetailsModal extends ConsumerStatefulWidget {
   final Lot lot;
   final LotPolygon poly;
 
-  const LotDetailsModal({super.key, required this.lot, required this.poly});
+  const LotDetailsModal({required this.lot, required this.poly, super.key});
 
   @override
   ConsumerState<LotDetailsModal> createState() => _LotDetailsModalState();
@@ -211,7 +211,7 @@ class _LotDetailsModalState extends ConsumerState<LotDetailsModal> with SingleTi
           const SizedBox(height: 24),
         ],
 
-        Text('Especificações', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+        const Text('Especificações', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
         const SizedBox(height: 12),
         Row(
           children: [

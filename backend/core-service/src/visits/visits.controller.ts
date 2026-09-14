@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseUUIDPipe } from '@nestjs/common';
 import { VisitsService } from './visits.service';
 import { CreateVisitScheduleDto, UpdateVisitScheduleDto } from './dto/visit-schedule.dto';
 
@@ -7,8 +7,13 @@ export class VisitsController {
   constructor(private readonly visitsService: VisitsService) {}
 
   @Get()
-  findAll() {
-    return this.visitsService.findAll();
+  findAll(
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    const parsedLimit = limit ? parseInt(limit, 10) : 50;
+    const parsedOffset = offset ? parseInt(offset, 10) : 0;
+    return this.visitsService.findAll(parsedLimit, parsedOffset);
   }
 
   @Post()

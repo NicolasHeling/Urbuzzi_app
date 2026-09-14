@@ -19,13 +19,13 @@ class _ClientFormPageState extends ConsumerState<ClientFormPage> {
   // Formatadores de Máscara
   final _cpfCnpjFormatter = MaskTextInputFormatter(
     mask: '###.###.###-##', 
-    filter: { "#": RegExp(r'[0-9]') },
+    filter: { '#': RegExp(r'[0-9]') },
     type: MaskAutoCompletionType.lazy
   );
   
   final _phoneFormatter = MaskTextInputFormatter(
     mask: '(##) #####-####', 
-    filter: { "#": RegExp(r'[0-9]') },
+    filter: { '#': RegExp(r'[0-9]') },
     type: MaskAutoCompletionType.lazy
   );
 

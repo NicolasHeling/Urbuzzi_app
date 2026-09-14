@@ -6,7 +6,7 @@ final auditRepositoryProvider = Provider<AuditRepository>((ref) {
   return AuditRepository();
 });
 
-final auditControllerProvider = StateNotifierProvider<AuditController, AsyncValue<List<AuditEntry>>>((ref) {
+final auditControllerProvider = StateNotifierProvider.autoDispose<AuditController, AsyncValue<List<AuditEntry>>>((ref) {
   final repository = ref.watch(auditRepositoryProvider);
   return AuditController(repository);
 });
@@ -39,7 +39,7 @@ class AuditController extends StateNotifier<AsyncValue<List<AuditEntry>>> {
   }
 }
 
-final lotAuditProvider = FutureProvider.family<List<AuditEntry>, String>((ref, lotId) async {
+final lotAuditProvider = FutureProvider.family.autoDispose<List<AuditEntry>, String>((ref, lotId) async {
   final repository = ref.watch(auditRepositoryProvider);
   return repository.fetchAuditByLotId(lotId);
 });

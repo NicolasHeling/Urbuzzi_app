@@ -94,7 +94,7 @@ class DashboardPage extends ConsumerWidget {
   }
 
   Widget _buildBarChartCard(Map<String, dynamic> data) {
-    final maxY = data.values.fold(0.0, (prev, e) => (e as num).toDouble() > prev ? (e as num).toDouble() : prev) * 1.2;
+    final maxY = data.values.fold(0.0, (prev, e) => (e as num).toDouble() > prev ? (e).toDouble() : prev) * 1.2;
     
     final barGroups = <BarChartGroupData>[];
     int index = 0;
@@ -177,7 +177,7 @@ class DashboardPage extends ConsumerWidget {
             show: true,
             drawVerticalLine: false,
             horizontalInterval: maxY > 0 ? (maxY / 5).ceilToDouble().clamp(1.0, 99999.0) : 5.0,
-            getDrawingHorizontalLine: (value) => FlLine(
+            getDrawingHorizontalLine: (value) => const FlLine(
               color: AppColors.border,
               strokeWidth: 1,
               dashArray: [4, 4],

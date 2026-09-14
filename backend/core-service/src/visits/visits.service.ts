@@ -14,8 +14,14 @@ export class VisitsService {
     private readonly lotRepository: Repository<Lot>,
   ) {}
 
-  async findAll(): Promise<VisitSchedule[]> {
-    return this.visitRepository.find({ relations: ['lot'] });
+  async findAll(limit = 50, offset = 0): Promise<{ data: VisitSchedule[]; total: number }> {
+    const [data, total] = await this.visitRepository.findAndCount({
+      relations: ['lot'],
+      take: limit,
+      skip: offset,
+      order: { date: 'DESC' },
+    });
+    return { data, total };
   }
 
   async create(createDto: CreateVisitScheduleDto): Promise<VisitSchedule> {

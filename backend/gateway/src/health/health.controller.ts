@@ -3,6 +3,9 @@ import { HealthCheckService, HttpHealthIndicator, HealthCheck } from '@nestjs/te
 
 @Controller('health')
 export class HealthController {
+  private readonly authUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
+  private readonly coreUrl = process.env.CORE_SERVICE_URL || 'http://core-service:3002';
+
   constructor(
     private health: HealthCheckService,
     private http: HttpHealthIndicator,
@@ -12,8 +15,8 @@ export class HealthController {
   @HealthCheck()
   check() {
     return this.health.check([
-      () => this.http.pingCheck('auth-service', 'http://auth-service:3001/health'),
-      () => this.http.pingCheck('core-service', 'http://core-service:3002/health'),
+      () => this.http.pingCheck('auth-service', `${this.authUrl}/health`),
+      () => this.http.pingCheck('core-service', `${this.coreUrl}/health`),
     ]);
   }
 }

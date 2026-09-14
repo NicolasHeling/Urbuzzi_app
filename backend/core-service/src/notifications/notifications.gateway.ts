@@ -7,6 +7,7 @@ import {
   MessageBody,
   ConnectedSocket,
 } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 
 export interface NotificationPayload {
@@ -22,7 +23,7 @@ export interface NotificationPayload {
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   },
   namespace: '/notifications',
 })
@@ -33,12 +34,28 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   private connectedClients = new Map<string, Socket>();
 
   handleConnection(client: Socket) {
-    console.log(`[Notifications] Client connected: ${client.id}`);
-    this.connectedClients.set(client.id, client);
+    // Validate JWT token from handshake
+    const token = client.handshake?.auth?.token || client.handshake?.headers?.authorization?.split(' ')[1];
+    if (!token) {
+      Logger.log(`[Notifications] Client ${client.id} rejected: no token`);
+      client.disconnect();
+      return;
+    }
+
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+      (client as any).user = decoded;
+      Logger.log(`[Notifications] Client connected: ${client.id} (user: ${decoded.sub || decoded.id})`);
+      this.connectedClients.set(client.id, client);
+    } catch (err) {
+      Logger.warn(`[Notifications] Client ${client.id} rejected: invalid token`);
+      client.disconnect();
+    }
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`[Notifications] Client disconnected: ${client.id}`);
+    Logger.log(`[Notifications] Client disconnected: ${client.id}`);
     this.connectedClients.delete(client.id);
   }
 
@@ -49,7 +66,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   handleJoinProject(@ConnectedSocket() client: Socket, @MessageBody() data: { projectId: string }) {
     if (data?.projectId) {
       client.join(`project:${data.projectId}`);
-      console.log(`[Notifications] Client ${client.id} joined project:${data.projectId}`);
+      Logger.log(`[Notifications] Client ${client.id} joined project:${data.projectId}`);
     }
   }
 
@@ -60,7 +77,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   handleJoinUser(@ConnectedSocket() client: Socket, @MessageBody() data: { userId: string }) {
     if (data?.userId) {
       client.join(`user:${data.userId}`);
-      console.log(`[Notifications] Client ${client.id} joined user:${data.userId}`);
+      Logger.log(`[Notifications] Client ${client.id} joined user:${data.userId}`);
     }
   }
 

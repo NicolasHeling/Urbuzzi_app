@@ -8,10 +8,13 @@ import { ProposalsService } from './proposals.service';
 import { ProposalsController } from './proposals.controller';
 import { AuditModule } from '../audit/audit.module';
 import { ProposalSubscriber } from './proposal.subscriber';
+import { ContractsService } from './contracts.service';
+import { CommissionsModule } from '../commissions/commissions.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Proposal, ProposalHistory, Lot, Reservation]), AuditModule],
+  imports: [TypeOrmModule.forFeature([Proposal, ProposalHistory, Lot, Reservation]), AuditModule, CommissionsModule],
   controllers: [ProposalsController],
-  providers: [ProposalsService, ProposalSubscriber],
+  providers: [ProposalsService, ProposalSubscriber, ContractsService],
+  exports: [ProposalsService],
 })
 export class ProposalsModule {}

@@ -70,6 +70,6 @@ class VisitsController extends StateNotifier<AsyncValue<List<Visit>>> {
   }
 }
 
-final visitsProvider = StateNotifierProvider<VisitsController, AsyncValue<List<Visit>>>((ref) {
+final visitsProvider = StateNotifierProvider.autoDispose<VisitsController, AsyncValue<List<Visit>>>((ref) {
   return VisitsController();
 });

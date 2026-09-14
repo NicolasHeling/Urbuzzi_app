@@ -57,7 +57,7 @@ class MapPainter extends CustomPainter {
   final LotPolygon? selectedPolygon;
   final String activeFilter;
 
-  MapPainter({required this.matchedLots, this.selectedPolygon, required this.activeFilter});
+  MapPainter({required this.matchedLots, required this.activeFilter, this.selectedPolygon});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -571,13 +571,13 @@ class _MapCard extends ConsumerWidget {
             decoration: const BoxDecoration(
               border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
             ),
-            child: Row(
+            child: const Row(
               children: [
-                const Spacer(),
+                Spacer(),
                 // Rótulo "Planta de parcelamento"
                 Text(
                   'Planta de parcelamento · Gleba 1',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
@@ -771,10 +771,10 @@ class _SelectedLotPanel extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'LOTE SELECIONADO',
                 style: TextStyle(
                   fontSize: 10.5,
@@ -922,9 +922,9 @@ class _SelectedLotPanel extends ConsumerWidget {
                         elevation: 0,
                       ),
                       onPressed: null, // 🔒 Desabilitado — lote indisponível
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.lock_outline_rounded, size: 16),
                           SizedBox(width: 8),
                           Text('Lote Indisponível', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -970,9 +970,9 @@ class _SelectedLotPanel extends ConsumerWidget {
                         elevation: 0,
                       ),
                       onPressed: null, // 🔒 Desabilitado — lote indisponível
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.lock_outline_rounded, size: 16),
                           SizedBox(width: 8),
                           Text('Lote Indisponível', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),

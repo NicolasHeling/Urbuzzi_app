@@ -9,7 +9,7 @@ import '../../../core/theme/app_colors.dart';
 
 class ReservationDialog extends ConsumerStatefulWidget {
   final Lot lot;
-  const ReservationDialog({super.key, required this.lot});
+  const ReservationDialog({required this.lot, super.key});
 
   @override
   ConsumerState<ReservationDialog> createState() => _ReservationDialogState();

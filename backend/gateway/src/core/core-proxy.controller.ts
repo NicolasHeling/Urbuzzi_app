@@ -7,7 +7,7 @@ import { JwtVerifyGuard } from '../guards/jwt-verify.guard';
 @UseGuards(JwtVerifyGuard)  // Todas as rotas do core exigem autenticação
 export class CoreProxyController {
   private readonly proxy = createProxyMiddleware({
-    target: 'http://core-service:3002',
+    target: process.env.CORE_SERVICE_URL || 'http://core-service:3002',
     changeOrigin: true,
     on: {
       proxyReq: (proxyReq, req: any, res) => {
@@ -20,7 +20,7 @@ export class CoreProxyController {
     },
   });
 
-  @All(['lots', 'lots/*', 'proposals', 'proposals/*', 'clients', 'clients/*', 'reservations', 'reservations/*', 'audit', 'audit/*', 'dashboard', 'dashboard/*', 'tasks', 'tasks/*', 'projects', 'projects/*', 'kanban', 'kanban/*'])
+  @All(['lots', 'lots/*', 'proposals', 'proposals/*', 'clients', 'clients/*', 'reservations', 'reservations/*', 'audit', 'audit/*', 'dashboard', 'dashboard/*', 'tasks', 'tasks/*', 'projects', 'projects/*', 'kanban', 'kanban/*', 'analytics', 'analytics/*', 'visits', 'visits/*', 'pipeline', 'pipeline/*'])
   proxyCore(@Req() req: Request, @Res() res: Response, @Next() next: NextFunction) {
     // A função retorna void, e o proxy cuida de enviar a resposta
     (this.proxy as any)(req, res, next);

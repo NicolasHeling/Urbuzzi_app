@@ -7,6 +7,7 @@ import { Lot } from '../lots/lot.entity';
 import { Reservation } from '../reservations/entities/reservation.entity';
 import { AuditService } from '../audit/audit.service';
 import { Audit } from '../audit/audit.entity';
+import { Commission } from '../commissions/commission.entity';
 
 @Injectable()
 export class ProposalsService {
@@ -22,8 +23,14 @@ export class ProposalsService {
     private readonly auditService: AuditService,
   ) {}
 
-  async findAll(): Promise<Proposal[]> {
-    return this.proposalRepository.find({ relations: ['lot'] });
+  async findAll(limit = 50, offset = 0): Promise<{ data: Proposal[]; total: number }> {
+    const [data, total] = await this.proposalRepository.findAndCount({
+      relations: ['lot'],
+      take: limit,
+      skip: offset,
+      order: { createdAt: 'DESC' },
+    });
+    return { data, total };
   }
 
   async getHistory(id: string): Promise<ProposalHistory[]> {
@@ -83,6 +90,17 @@ export class ProposalsService {
           details: { proposalId: id, trigger: 'PROPOSAL_CONCLUDED' },
         });
         await manager.save(lotSoldAudit);
+
+        // Create Broker Commission
+        const commissionValue = Number(updatedProposal.offeredPrice || 0) * 0.05;
+        const commission = manager.create(Commission, {
+          brokerId: updatedProposal.responsibleUserName || 'unknown-broker',
+          proposalId: updatedProposal.id,
+          saleValue: updatedProposal.offeredPrice || 0,
+          commissionValue,
+          status: 'PENDING',
+        });
+        await manager.save(commission);
       }
 
       const statusAudit = manager.create(Audit, {

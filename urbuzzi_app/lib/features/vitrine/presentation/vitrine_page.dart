@@ -321,11 +321,11 @@ class _LeadCaptureModalState extends State<_LeadCaptureModal> {
     try {
       final dio = DioClient().dio;
       
-      await dio.post('/clients', data: {
+      await dio.post('/leads', data: {
         'name': _name,
         'email': _email,
         'phone': _phone,
-        'cpfOrCnpj': 'LEAD-${DateTime.now().millisecondsSinceEpoch}',
+        'lotId': widget.lot.id,
       });
 
       if (mounted) {

@@ -1,16 +1,25 @@
-import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req, ForbiddenException } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Get, Post, Body, Param, Patch, Query, ParseUUIDPipe, Req, ForbiddenException, Res } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { ProposalsService } from './proposals.service';
+import { ContractsService } from './contracts.service';
 import { Proposal } from './proposal.entity';
 import { CreateProposalDto, UpdateProposalStatusDto } from './dto/proposal.dto';
 
 @Controller('proposals')
 export class ProposalsController {
-  constructor(private readonly proposalsService: ProposalsService) {}
+  constructor(
+    private readonly proposalsService: ProposalsService,
+    private readonly contractsService: ContractsService,
+  ) {}
 
   @Get()
-  findAll(): Promise<Proposal[]> {
-    return this.proposalsService.findAll();
+  findAll(
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ): Promise<{ data: Proposal[]; total: number }> {
+    const parsedLimit = limit ? parseInt(limit, 10) : 50;
+    const parsedOffset = offset ? parseInt(offset, 10) : 0;
+    return this.proposalsService.findAll(parsedLimit, parsedOffset);
   }
 
   @Get(':id/history')
@@ -41,5 +50,15 @@ export class ProposalsController {
     }
 
     return this.proposalsService.updateStatus(id, updateStatusDto.status, userId);
+  }
+
+  @Get(':id/contract')
+  async getContract(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
+    const pdfDoc = await this.contractsService.generateContract(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="contract-${id}.pdf"`,
+    });
+    pdfDoc.pipe(res);
   }
 }

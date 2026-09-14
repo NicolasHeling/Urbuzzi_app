@@ -31,9 +31,11 @@ export class KanbanService {
 
   async reorder(batch: { id: string; order: number }[]): Promise<void> {
     await this.columnRepo.manager.transaction(async (manager) => {
-      for (const item of batch) {
-        await manager.update(KanbanColumn, item.id, { order: item.order });
-      }
+      await Promise.all(
+        batch.map((item) =>
+          manager.update(KanbanColumn, item.id, { order: item.order }),
+        ),
+      );
     });
   }
 

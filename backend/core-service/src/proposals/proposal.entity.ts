@@ -1,8 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Lot } from '../lots/lot.entity';
 import { KanbanColumn } from '../kanban/kanban-column.entity';
 
 @Entity('proposals')
+@Index('IDX_proposals_status', ['status'])
+@Index('IDX_proposals_createdAt', ['createdAt'])
+@Index('IDX_proposals_projectId', ['projectId'])
+@Index('IDX_proposals_slaDeadline', ['slaDeadline'])
 export class Proposal {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -19,6 +23,7 @@ export class Proposal {
   @Column('decimal', { precision: 12, scale: 2, nullable: true })
   offeredPrice: number;
 
+  @Index('IDX_proposals_lotId')
   @ManyToOne(() => Lot, lot => lot.proposals)
   @JoinColumn({ name: 'lot_id' })
   lot: Lot;
