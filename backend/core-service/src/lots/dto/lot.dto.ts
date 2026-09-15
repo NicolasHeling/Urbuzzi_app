@@ -41,6 +41,10 @@ export class CreateLotDto {
   svgCoordinates?: string;
 
   @IsOptional()
+  @IsArray()
+  mapPolygons?: number[][];
+
+  @IsOptional()
   @IsString()
   @MaxLength(200)
   landName?: string;

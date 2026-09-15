@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../features/home/presentation/home_page.dart';
 import '../../features/dashboard/presentation/dashboard_page.dart';
@@ -134,7 +135,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                   onLogout: () async {
                     await ref.read(authControllerProvider.notifier).logout();
                     if (context.mounted) {
-                      Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+                      context.go(AppRoutes.login);
                     }
                   },
                 ),
@@ -514,7 +515,7 @@ class _AppHeader extends StatelessWidget {
             _UserMenu(onLogout: onLogout),
           ] else ...[
             TextButton.icon(
-              onPressed: () => Navigator.of(context).pushNamed(AppRoutes.login),
+              onPressed: () => context.push(AppRoutes.login),
               icon: const Icon(Icons.login, size: 18),
               label: const Text('Área do Corretor/Admin', style: TextStyle(fontWeight: FontWeight.w600)),
               style: TextButton.styleFrom(
@@ -755,7 +756,7 @@ class _NotificationMenu extends ConsumerWidget {
                   if (unreadCount > 0)
                     InkWell(
                       onTap: () {
-                        Navigator.pop(context);
+                        context.pop();
                         ref.read(notificationsProvider.notifier).markAllAsRead();
                       },
                       child: const Text('Ler todas', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),

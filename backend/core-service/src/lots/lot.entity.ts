@@ -37,7 +37,10 @@ export class Lot {
   backMeasure: number; // Fundo (m)
 
   @Column({ nullable: true })
-  svgCoordinates: string; // Para renderizar no mapa interativo
+  svgCoordinates: string; // Para renderizar no mapa interativo (legacy)
+
+  @Column({ type: 'jsonb', nullable: true })
+  mapPolygons: number[][]; // Pares de coordenadas [[x1,y1],[x2,y2],...] para o mapa interativo
 
   @Column({ nullable: true })
   landName: string; // Nome do loteamento (ex: Biopark, Vista Verde)

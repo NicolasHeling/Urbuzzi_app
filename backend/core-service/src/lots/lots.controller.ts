@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -26,6 +27,21 @@ export class LotsController {
     return this.lotsService.findAll(parsedLimit, parsedOffset, search, status);
   }
 
+  /**
+   * Retorna os dados de polígonos de todos os lotes para renderizar o mapa interativo.
+   * Endpoint leve: retorna apenas id, block, number, status, mapPolygons e landName.
+   */
+  @Public()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(60000)
+  @Get('map-polygons')
+  findMapPolygons(@Query('landName') landName?: string) {
+    return this.lotsService.findMapPolygons(landName);
+  }
+
+  @Public()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(60000)
   @Get('public')
   findPublic() {
     return this.lotsService.findPublic();

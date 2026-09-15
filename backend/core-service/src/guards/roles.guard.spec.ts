@@ -1,7 +1,8 @@
-import { RolesGuard } from './roles.guard';
+import { RolesGuard, ROLES_KEY } from './roles.guard';
 import { Reflector } from '@nestjs/core';
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { HttpArgumentsHost } from '@nestjs/common/interfaces';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 describe('RolesGuard', () => {
   let guard: RolesGuard;
@@ -39,6 +40,7 @@ describe('RolesGuard', () => {
     for (const method of methods) {
       const context = createMockContext(method, 'consulta');
       jest.spyOn(reflector, 'get').mockReturnValue(undefined); // Sem @Roles
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false); // Sem @Public
 
       expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
     }
@@ -47,6 +49,7 @@ describe('RolesGuard', () => {
   it('(b) usuário com papel "consulta" fazendo GET deve passar', () => {
     const context = createMockContext('GET', 'consulta');
     jest.spyOn(reflector, 'get').mockReturnValue(undefined);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
 
     expect(guard.canActivate(context)).toBe(true);
   });
@@ -55,6 +58,7 @@ describe('RolesGuard', () => {
     // Bloquear "comercial"
     const contextComercial = createMockContext('POST', 'comercial');
     jest.spyOn(reflector, 'get').mockReturnValue(['gestor', 'administrador']);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
     
     expect(() => guard.canActivate(contextComercial)).toThrow(ForbiddenException);
 
@@ -63,10 +67,35 @@ describe('RolesGuard', () => {
     expect(guard.canActivate(contextGestor)).toBe(true);
   });
 
-  it('(d) rota sem @Roles nenhum deve permitir qualquer papel que não seja "consulta" em escrita', () => {
+  it('(d) rota sem @Roles deve permitir "comercial" em escrita', () => {
     const context = createMockContext('POST', 'comercial');
     jest.spyOn(reflector, 'get').mockReturnValue(undefined);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
 
     expect(guard.canActivate(context)).toBe(true);
+  });
+
+  it('(e) rota sem @Roles deve permitir "administrador" em escrita', () => {
+    const context = createMockContext('PATCH', 'administrador');
+    jest.spyOn(reflector, 'get').mockReturnValue(undefined);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
+
+    expect(guard.canActivate(context)).toBe(true);
+  });
+
+  it('(f) rota @Public() deve permitir qualquer role em qualquer método', () => {
+    const context = createMockContext('POST', 'consulta');
+    jest.spyOn(reflector, 'get').mockReturnValue(undefined);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(true); // @Public()
+
+    expect(guard.canActivate(context)).toBe(true);
+  });
+
+  it('(g) "consulta" é bloqueado em PUT sem @Roles', () => {
+    const context = createMockContext('PUT', 'consulta');
+    jest.spyOn(reflector, 'get').mockReturnValue(undefined);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
+
+    expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
 });

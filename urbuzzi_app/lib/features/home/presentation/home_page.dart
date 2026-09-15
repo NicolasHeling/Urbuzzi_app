@@ -13,9 +13,18 @@ import '../../auth/presentation/auth_provider.dart';
 const double _mapWidth = 1200;
 const double _mapHeight = 860;
 
+/// Provider que resolve os polígonos do mapa: tenta carregar do backend
+/// e faz fallback para os dados estáticos se o backend não tiver polígonos.
+final mapPolygonsListProvider = Provider<List<LotPolygon>>((ref) {
+  final backendPolygons = ref.watch(mapPolygonsProvider);
+  final backendLots = backendPolygons.valueOrNull ?? [];
+  return buildMapPolygons(backendLots);
+});
+
 final matchedLotsProvider = Provider<Map<LotPolygon, Lot>>((ref) {
   final lotsAsync = ref.watch(lotsControllerProvider);
   final lots = lotsAsync.valueOrNull ?? [];
+  final polygons = ref.watch(mapPolygonsListProvider);
   final map = <LotPolygon, Lot>{};
 
   // Convert list of API lots to Map for O(1) lookup
@@ -25,9 +34,14 @@ final matchedLotsProvider = Provider<Map<LotPolygon, Lot>>((ref) {
     apiLotsMap['${l.block.toUpperCase()}_${l.number}'] = l;
   }
 
-  for (var poly in MapData.lots) {
+  for (var poly in polygons) {
     // poly.block is '01', '02' and API block is 'A', 'B' OR poly.block can match directly.
-    final blockLetter = String.fromCharCode(64 + int.parse(poly.block));
+    String blockLetter;
+    try {
+      blockLetter = String.fromCharCode(64 + int.parse(poly.block));
+    } catch (_) {
+      blockLetter = poly.block;
+    }
     final numberStr = poly.number;
     final numberStrTrimmed = poly.number.replaceFirst(RegExp(r'^0+'), '');
 
@@ -54,14 +68,15 @@ final matchedLotsProvider = Provider<Map<LotPolygon, Lot>>((ref) {
 
 class MapPainter extends CustomPainter {
   final Map<LotPolygon, Lot> matchedLots;
+  final List<LotPolygon> polygons;
   final LotPolygon? selectedPolygon;
   final String activeFilter;
 
-  MapPainter({required this.matchedLots, required this.activeFilter, this.selectedPolygon});
+  MapPainter({required this.matchedLots, required this.polygons, required this.activeFilter, this.selectedPolygon});
 
   @override
   void paint(Canvas canvas, Size size) {
-    for (var poly in MapData.lots) {
+    for (var poly in polygons) {
       final path = Path();
       if (poly.points.isNotEmpty) {
         path.moveTo(poly.points.first.dx, poly.points.first.dy);
@@ -106,7 +121,8 @@ class MapPainter extends CustomPainter {
   bool shouldRepaint(covariant MapPainter oldDelegate) {
     return oldDelegate.matchedLots != matchedLots || 
            oldDelegate.selectedPolygon != selectedPolygon ||
-           oldDelegate.activeFilter != activeFilter;
+           oldDelegate.activeFilter != activeFilter ||
+           oldDelegate.polygons != polygons;
   }
 }
 
@@ -172,8 +188,9 @@ class _HomePageState extends ConsumerState<HomePage> with AutomaticKeepAliveClie
     // porque o GestureDetector envolve o conteúdo DENTRO do InteractiveViewer.
     // Chamar toScene() aqui aplicaria uma dupla transformação e quebraria o hit-test.
     final Offset localPosition = details.localPosition;
+    final polygons = ref.read(mapPolygonsListProvider);
 
-    for (var poly in MapData.lots) {
+    for (var poly in polygons) {
       final path = Path();
       if (poly.points.isNotEmpty) {
         path.moveTo(poly.points.first.dx, poly.points.first.dy);
@@ -545,7 +562,8 @@ class _MapCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final blockCenters = MapData.blockCenters;
+    final polygons = ref.watch(mapPolygonsListProvider);
+    final blockCenters = computeBlockCenters(polygons);
 
     return Container(
       constraints: BoxConstraints(
@@ -608,9 +626,11 @@ class _MapCard extends ConsumerWidget {
                         child: Stack(
                           children: [
                             Container(color: Colors.blue.withValues(alpha: 0.1)),
-                            CustomPaint(
-                              size: const Size(_mapWidth, _mapHeight),
-                              painter: MapPainter(matchedLots: ref.watch(matchedLotsProvider), selectedPolygon: selectedPolygon, activeFilter: activeFilter),
+                            RepaintBoundary(
+                              child: CustomPaint(
+                                size: const Size(_mapWidth, _mapHeight),
+                                painter: MapPainter(matchedLots: ref.watch(matchedLotsProvider), polygons: polygons, selectedPolygon: selectedPolygon, activeFilter: activeFilter),
+                              ),
                             ),
                             ...blockCenters.entries.map((entry) {
                               return Positioned(

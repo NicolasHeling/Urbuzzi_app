@@ -19,6 +19,7 @@ class Lot {
   final String? clientDocument; // documento do cliente
   final String? whatsappNumber; // WhatsApp comercial do loteamento
   final List<String>? documents; // Documentos anexados
+  final List<List<double>>? mapPolygons; // Coordenadas dos polígonos para o mapa interativo
 
   Lot({
     required this.id,
@@ -36,6 +37,7 @@ class Lot {
     this.clientDocument,
     this.whatsappNumber,
     this.documents,
+    this.mapPolygons,
   });
 
   // Factory Method para desserializar JSON
@@ -60,6 +62,11 @@ class Lot {
       clientDocument: json['clientDocument'] ?? json['client']?['document'] ?? json['customerDocument'],
       whatsappNumber: json['whatsappNumber'],
       documents: json['documents'] != null ? List<String>.from(json['documents']) : null,
+      mapPolygons: json['mapPolygons'] != null
+          ? (json['mapPolygons'] as List)
+              .map((pair) => (pair as List).map((v) => (v as num).toDouble()).toList())
+              .toList()
+          : null,
     );
   }
 
@@ -80,6 +87,7 @@ class Lot {
       'clientDocument': clientDocument,
       'whatsappNumber': whatsappNumber,
       'documents': documents,
+      'mapPolygons': mapPolygons,
     };
   }
 
@@ -100,7 +108,7 @@ class Lot {
       clientDocument: clientDocument,
       whatsappNumber: whatsappNumber,
       documents: documents ?? this.documents,
+      mapPolygons: mapPolygons,
     );
   }
 }
-

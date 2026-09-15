@@ -17,7 +17,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<Task>>> {
     try {
       state = const AsyncValue.loading();
       final response = await _dio.get('/tasks');
-      final data = (response.data as List).map((e) => Task.fromJson(e)).toList();
+      final data = (response.data['data'] as List).map((e) => Task.fromJson(e)).toList();
       state = AsyncValue.data(data);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

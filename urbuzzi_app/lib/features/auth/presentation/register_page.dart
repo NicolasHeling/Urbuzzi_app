@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'auth_provider.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -38,7 +39,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         backgroundColor: AppColors.disponivel,
       ));
-      Navigator.pushReplacementNamed(context, '/app'); // Roteia para o AppShell
+      context.go('/app'); // Roteia para o AppShell
     }
   }
 
@@ -187,7 +188,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 const Divider(color: AppColors.border),
                 const SizedBox(height: 16),
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => context.pop(),
                   style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
                   child: const Text('Já tem uma conta? Entrar'),
                 ),

@@ -4,17 +4,20 @@ import '../../lots/data/lots_repository.dart';
 import '../../lots/domain/models/lot.dart';
 import 'dart:async';
 import '../../../core/network/socket_service.dart';
+import '../../../core/network/dio_client.dart';
 
 // Provider para injetar o Repositório
 final lotsRepositoryProvider = Provider<LotsRepository>((ref) {
-  return LotsRepository();
+  final dioClient = ref.watch(dioClientProvider);
+  return LotsRepository(dioClient.dio);
 });
 
 // Provider de Estado usando AsyncValue para tratar Loading, Success e Error
 final lotsControllerProvider =
     StateNotifierProvider<LotsController, AsyncValue<List<Lot>>>((ref) {
   final repository = ref.watch(lotsRepositoryProvider);
-  return LotsController(repository);
+  final socketService = ref.watch(socketServiceProvider);
+  return LotsController(repository, socketService);
 });
 
 // Provider simples para a Vitrine (dados públicos)
@@ -23,18 +26,25 @@ final publicLotsProvider = FutureProvider<List<Lot>>((ref) async {
   return repository.fetchPublicLots();
 });
 
+// Provider para carregar polígonos dinâmicos do mapa a partir do backend.
+// Se o backend não tiver polígonos configurados, retorna lista vazia
+// e o mapa usará os dados estáticos de fallback (MapData.lots).
+final mapPolygonsProvider = FutureProvider<List<Lot>>((ref) async {
+  final repository = ref.watch(lotsRepositoryProvider);
+  return repository.fetchMapPolygons();
+});
+
 class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
   final LotsRepository _repository;
+  final SocketService _socketService;
   static const int _pageSize = 50;
   int _totalOnServer = 0;
   bool _isLoadingMore = false;
 
   String _searchQuery = '';
   String _selectedStatus = 'Todos';
-  
-  final SocketService _socketService = SocketService();
 
-  LotsController(this._repository) : super(const AsyncValue.loading()) {
+  LotsController(this._repository, this._socketService) : super(const AsyncValue.loading()) {
     fetchLots();
     _initSocket();
   }

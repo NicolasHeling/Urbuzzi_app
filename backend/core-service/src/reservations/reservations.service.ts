@@ -18,28 +18,28 @@ export class ReservationsService {
   ) {}
 
   async create(createReservationDto: any): Promise<Reservation> {
-    const lot = await this.lotRepository.findOne({ where: { id: createReservationDto.lotId } });
-    if (!lot) throw new NotFoundException('Lot not found');
+    return this.reservationRepository.manager.transaction(async (manager) => {
+      const lot = await manager.findOne(Lot, { where: { id: createReservationDto.lotId } });
+      if (!lot) throw new NotFoundException('Lot not found');
 
-    if (lot.status !== 'Disponível') {
-      throw new BadRequestException('Lot is not available for reservation');
-    }
+      if (lot.status !== 'Disponível') {
+        throw new BadRequestException('Lot is not available for reservation');
+      }
 
-    // Marca lote como RESERVED
-    lot.status = 'Reservado';
-    await this.lotRepository.save(lot);
+      await manager.update(Lot, lot.id, { status: 'Reservado' });
 
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 48); // Reserva válida por 48h
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 48);
 
-    const reservation = this.reservationRepository.create({
-      status: 'PENDING',
-      expiresAt,
-      client: { id: createReservationDto.clientId } as Client,
-      lot,
+      const reservation = manager.create(Reservation, {
+        status: 'PENDING',
+        expiresAt,
+        client: { id: createReservationDto.clientId } as Client,
+        lot,
+      });
+
+      return manager.save(reservation);
     });
-
-    return this.reservationRepository.save(reservation);
   }
 
   findAll(): Promise<Reservation[]> {
@@ -47,29 +47,27 @@ export class ReservationsService {
   }
 
   async approve(id: string): Promise<Reservation> {
-    const reservation = await this.reservationRepository.findOne({ where: { id }, relations: ['lot'] });
-    if (!reservation) throw new NotFoundException('Reservation not found');
+    return this.reservationRepository.manager.transaction(async (manager) => {
+      const reservation = await manager.findOne(Reservation, { where: { id }, relations: ['lot'] });
+      if (!reservation) throw new NotFoundException('Reservation not found');
 
-    reservation.status = 'APPROVED';
-    
-    // Atualiza status do lote
-    reservation.lot.status = 'Reservado';
-    await this.lotRepository.save(reservation.lot);
+      reservation.status = 'APPROVED';
+      await manager.update(Lot, reservation.lot.id, { status: 'Reservado' });
 
-    return this.reservationRepository.save(reservation);
+      return manager.save(reservation);
+    });
   }
 
   async cancel(id: string): Promise<Reservation> {
-    const reservation = await this.reservationRepository.findOne({ where: { id }, relations: ['lot'] });
-    if (!reservation) throw new NotFoundException('Reservation not found');
+    return this.reservationRepository.manager.transaction(async (manager) => {
+      const reservation = await manager.findOne(Reservation, { where: { id }, relations: ['lot'] });
+      if (!reservation) throw new NotFoundException('Reservation not found');
 
-    reservation.status = 'CANCELLED';
-    
-    // Libera o lote
-    reservation.lot.status = 'Disponível';
-    await this.lotRepository.save(reservation.lot);
+      reservation.status = 'CANCELLED';
+      await manager.update(Lot, reservation.lot.id, { status: 'Disponível' });
 
-    return this.reservationRepository.save(reservation);
+      return manager.save(reservation);
+    });
   }
 
   // Verifica a cada hora se há reservas expiradas
@@ -77,8 +75,7 @@ export class ReservationsService {
   async checkExpiredReservations() {
     this.logger.log('Checking for expired reservations...');
     const now = new Date();
-    
-    // Buscar reservas pendentes com expiresAt menor que o tempo atual
+
     const expiredReservations = await this.reservationRepository
       .createQueryBuilder('reservation')
       .leftJoinAndSelect('reservation.lot', 'lot')
@@ -87,14 +84,15 @@ export class ReservationsService {
       .getMany();
 
     if (expiredReservations.length > 0) {
-      for (const res of expiredReservations) {
-        res.status = 'EXPIRED';
-        res.lot.status = 'Disponível';
-        
-        await this.lotRepository.save(res.lot);
-        await this.reservationRepository.save(res);
-        this.logger.log(`Reservation ${res.id} expired. Lot ${res.lot.id} is available again.`);
-      }
+      // Processar todas as expiradas em uma única transação
+      await this.reservationRepository.manager.transaction(async (manager) => {
+        for (const res of expiredReservations) {
+          res.status = 'EXPIRED';
+          await manager.update(Lot, res.lot.id, { status: 'Disponível' });
+          await manager.save(res);
+          this.logger.log(`Reservation ${res.id} expired. Lot ${res.lot.id} is available again.`);
+        }
+      });
     }
   }
 }

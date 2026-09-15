@@ -39,6 +39,26 @@ export class LotsService {
     return this.lotRepository.find({ where: { status: 'Disponível' } });
   }
 
+  /**
+   * Retorna dados de polígonos dos lotes para o mapa interativo.
+   * Endpoint leve: seleciona apenas campos necessários para renderização.
+   */
+  async findMapPolygons(landName?: string): Promise<Partial<Lot>[]> {
+    const query = this.lotRepository.createQueryBuilder('lot')
+      .select(['lot.id', 'lot.block', 'lot.number', 'lot.status', 'lot.mapPolygons', 'lot.landName', 'lot.area', 'lot.price'])
+      .orderBy('lot.block', 'ASC')
+      .addOrderBy('lot.number', 'ASC');
+
+    if (landName) {
+      query.andWhere('lot.landName = :landName', { landName });
+    }
+
+    // Retorna apenas lotes que possuem polígonos definidos
+    query.andWhere('lot."mapPolygons" IS NOT NULL');
+
+    return query.getMany();
+  }
+
   async findOne(id: string): Promise<Lot> {
     return this.lotRepository.findOne({ where: { id } });
   }

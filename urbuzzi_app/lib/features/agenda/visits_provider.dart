@@ -37,7 +37,7 @@ class VisitsController extends StateNotifier<AsyncValue<List<Visit>>> {
       state = const AsyncValue.loading();
       final dio = DioClient().dio;
       final response = await dio.get('/visits');
-      final visits = (response.data as List).map((v) => Visit.fromJson(v)).toList();
+      final visits = (response.data['data'] as List).map((v) => Visit.fromJson(v)).toList();
       state = AsyncValue.data(visits);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import '../../../core/network/dio_client.dart';
+import 'package:flutter/foundation.dart';
 import '../domain/models/lot.dart';
 
 class LotsPage {
@@ -10,7 +10,9 @@ class LotsPage {
 }
 
 class LotsRepository {
-  final _dio = DioClient().dio;
+  final Dio _dio;
+
+  LotsRepository(this._dio);
 
   /// Busca lotes com paginação. Retorna dados + total para scroll infinito.
   Future<LotsPage> fetchLots({int limit = 50, int offset = 0, String? search, String? status}) async {
@@ -58,6 +60,24 @@ class LotsRepository {
       return data.map((json) => Lot.fromJson(json)).toList();
     } catch (e) {
       throw Exception('Falha ao buscar lotes públicos: $e');
+    }
+  }
+
+  /// Busca lotes com dados de polígonos para renderizar o mapa interativo.
+  /// Se nenhum lote tiver polígonos no backend, retorna lista vazia.
+  Future<List<Lot>> fetchMapPolygons({String? landName}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (landName != null && landName.isNotEmpty) {
+        queryParams['landName'] = landName;
+      }
+      final response = await _dio.get('/lots/map-polygons', queryParameters: queryParams);
+      final List<dynamic> data = response.data;
+      return data.map((json) => Lot.fromJson(json)).toList();
+    } catch (e) {
+      // Se o endpoint não existir (backend antigo), retorna lista vazia
+      // para que o app caia graciosamente nos polígonos locais de fallback.
+      return [];
     }
   }
 

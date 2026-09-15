@@ -40,8 +40,10 @@ services:
 
   core-service:
     build: ./core-service
-    ports:
-      - "3002:3002"
+    # SECURITY: Porta NÃO exposta ao host — acesso apenas via Gateway na rede interna Docker.
+    # Isso impede ataques de header spoofing (x-user-role) diretamente no core-service.
+    expose:
+      - "3002"
     env_file: .env
     environment:
       - DB_HOST=postgres-urbuzzi
@@ -74,6 +76,14 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+    restart: unless-stopped
+    networks:
+      - urbuzzi-network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
     restart: unless-stopped
     networks:
       - urbuzzi-network

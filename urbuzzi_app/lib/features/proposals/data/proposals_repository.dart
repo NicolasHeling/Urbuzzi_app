@@ -7,7 +7,7 @@ class ProposalsRepository {
   Future<List<Proposal>> fetchProposals() async {
     try {
       final response = await _dio.get('/proposals');
-      final List<dynamic> data = response.data;
+      final List<dynamic> data = response.data['data'] ?? [];
       return data.map((json) => Proposal.fromJson(json)).toList();
     } catch (e) {
       throw Exception('Falha ao buscar propostas: $e');

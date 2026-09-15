@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'auth_provider.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -35,7 +36,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         backgroundColor: Colors.green.shade800,
       ));
-      Navigator.pushReplacementNamed(context, '/app'); // Roteia para o AppShell
+      context.go('/app'); // Roteia para o AppShell
     }
   }
 
@@ -166,7 +167,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     TextButton(
-                      onPressed: () => Navigator.pushNamed(context, '/register'),
+                      onPressed: () => context.push('/register'),
                       child: const Text('Criar conta', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
                     ),
 
@@ -179,7 +180,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   width: double.infinity,
                   height: 48,
                   child: OutlinedButton.icon(
-                    onPressed: () => Navigator.pushReplacementNamed(context, '/app'),
+                    onPressed: () => context.go('/app'),
                     icon: const Icon(Icons.map_outlined),
                     label: const Text('Voltar para o Mapa Público'),
                     style: OutlinedButton.styleFrom(

@@ -1,45 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'core/network/dio_client.dart';
 import 'core/routing/app_routes.dart';
 import 'core/theme/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Tenta restaurar a sessão anterior
-  const storage = FlutterSecureStorage();
-  String? savedToken;
-  try {
-    savedToken = await storage.read(key: 'jwt_token');
-    if (savedToken != null && savedToken.isNotEmpty) {
-      DioClient().currentToken = savedToken;
-      if (kDebugMode) {
-        debugPrint('Sessão restaurada no boot. Token carregado em memória.');
-      }
-    }
-  } catch (e) {
-    if (kDebugMode) {
-      debugPrint('Nenhuma sessão anterior válida ou erro ao ler storage: $e');
-    }
-  }
+  
+  // Carrega as variáveis de ambiente
+  await dotenv.load(fileName: ".env");
 
   runApp(
     const ProviderScope(
-      child: UrbuzziApp(initialRoute: AppRoutes.app),
+      child: UrbuzziApp(),
     ),
   );
 }
 
 class UrbuzziApp extends ConsumerWidget {
-  final String initialRoute;
-  const UrbuzziApp({super.key, this.initialRoute = AppRoutes.app});
+  const UrbuzziApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(goRouterProvider);
     // Inter como fonte base, Plus Jakarta Sans como fonte de display
     final baseTextTheme = GoogleFonts.interTextTheme(Theme.of(context).textTheme);
     final displayTextTheme = GoogleFonts.plusJakartaSansTextTheme(baseTextTheme).copyWith(
@@ -53,9 +37,9 @@ class UrbuzziApp extends ConsumerWidget {
       titleMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
     );
 
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Urbizzi',
-      navigatorKey: AppRoutes.navigatorKey,
+      routerConfig: router,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         textTheme: displayTextTheme,
@@ -74,8 +58,6 @@ class UrbuzziApp extends ConsumerWidget {
           scrolledUnderElevation: 0,
         ),
       ),
-      initialRoute: initialRoute,
-      onGenerateRoute: AppRoutes.onGenerateRoute,
     );
   }
 }

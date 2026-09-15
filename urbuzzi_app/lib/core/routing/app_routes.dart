@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/auth_provider.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/crm/presentation/client_form_page.dart';
 import '../../features/vitrine/presentation/vitrine_page.dart';
-import '../network/dio_client.dart';
 import '../widgets/app_shell.dart';
 
 class AppRoutes {
   AppRoutes._();
-
+  
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   static const String login = '/login';
@@ -18,33 +20,67 @@ class AppRoutes {
   static const String clientForm = '/clients/new';
   static const String vitrine = '/vitrine';
   static const String agenda = '/agenda';
-
-  static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
-    final isAuthenticated = DioClient().currentToken != null && DioClient().currentToken!.isNotEmpty;
-
-    if (!isAuthenticated && (settings.name == clientForm)) {
-      return _build(settings, const LoginPage());
-    }
-
-    switch (settings.name) {
-      case login:
-        return _build(settings, const LoginPage());
-      case register:
-        return _build(settings, const RegisterPage());
-      case app:
-        return _build(settings, const AppShell());
-      case clientForm:
-        return _build(settings, const ClientFormPage());
-      case vitrine:
-        return _build(settings, const VitrinePage());
-      case agenda:
-        return _build(settings, const AppShell());
-      default:
-        return _build(settings, const AppShell());
-    }
-  }
-
-  static MaterialPageRoute<dynamic> _build(RouteSettings settings, Widget page) {
-    return MaterialPageRoute(builder: (_) => page, settings: settings);
-  }
 }
+
+final goRouterProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authControllerProvider);
+
+  return GoRouter(
+    navigatorKey: AppRoutes.navigatorKey,
+    initialLocation: AppRoutes.app,
+    redirect: (BuildContext context, GoRouterState state) {
+      final isAuthenticated = authState.value != null;
+      final isLoginRoute = state.matchedLocation == '/login';
+      final isRegisterRoute = state.matchedLocation == '/register';
+      final isUnauthenticatedRoute = isLoginRoute || isRegisterRoute;
+
+      if (!isAuthenticated && !isUnauthenticatedRoute) {
+        return '/login';
+      }
+
+      if (isAuthenticated && isUnauthenticatedRoute) {
+        return '/app';
+      }
+
+      return null;
+    },
+    routes: <RouteBase>[
+      GoRoute(
+        path: '/login',
+        builder: (BuildContext context, GoRouterState state) {
+          return const LoginPage();
+        },
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (BuildContext context, GoRouterState state) {
+          return const RegisterPage();
+        },
+      ),
+      GoRoute(
+        path: '/app',
+        builder: (BuildContext context, GoRouterState state) {
+          return const AppShell();
+        },
+      ),
+      GoRoute(
+        path: '/clients/new',
+        builder: (BuildContext context, GoRouterState state) {
+          return const ClientFormPage();
+        },
+      ),
+      GoRoute(
+        path: '/vitrine',
+        builder: (BuildContext context, GoRouterState state) {
+          return const VitrinePage();
+        },
+      ),
+      GoRoute(
+        path: '/agenda',
+        builder: (BuildContext context, GoRouterState state) {
+          return const AppShell();
+        },
+      ),
+    ],
+  );
+});

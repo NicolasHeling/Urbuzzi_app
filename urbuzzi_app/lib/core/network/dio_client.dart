@@ -3,30 +3,31 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../routing/app_routes.dart';
 import '../theme/app_colors.dart';
 
 String getBaseUrl() {
-  if (kIsWeb) return 'http://localhost:3000';
-  if (Platform.isAndroid) return 'http://10.0.2.2:3000';
-  return 'http://localhost:3000';
+  if (kIsWeb) return dotenv.env['API_URL_WEB'] ?? 'http://localhost:3000';
+  if (Platform.isAndroid) return dotenv.env['API_URL_ANDROID'] ?? 'http://10.0.2.2:3000';
+  return dotenv.env['API_URL_IOS'] ?? 'http://localhost:3000';
 }
 
+final dioClientProvider = Provider<DioClient>((ref) {
+  return DioClient();
+});
+
 class DioClient {
-  static final DioClient _instance = DioClient._internal();
   late final Dio dio;
+  final String? token;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  String? currentToken;
 
-  factory DioClient() {
-    return _instance;
-  }
-
-  DioClient._internal() {
+  DioClient({this.token}) {
     dio = Dio(
       BaseOptions(
-        // URL do API Gateway adaptada para emulador e web
         baseUrl: getBaseUrl(),
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
@@ -39,14 +40,13 @@ class DioClient {
         onRequest: (options, handler) async {
           if (options.path.contains('/auth/login') || options.path.contains('/auth/register')) return handler.next(options);
 
-          // Tenta ler da memória primeiro
-          String? token = currentToken;
+          // Usa o token injetado via Provider primeiro
+          String? jwt = token;
 
-          // Se não estiver na memória, tenta do storage seguro com try-catch
-          if (token == null || token.isEmpty) {
+          // Se não houver no provider, tenta do storage seguro
+          if (jwt == null || jwt.isEmpty) {
             try {
-              token = await _storage.read(key: 'jwt_token');
-              if (token != null) currentToken = token; // Sincroniza
+              jwt = await _storage.read(key: 'jwt_token');
             } catch (e) {
               if (kDebugMode) {
                 debugPrint('Erro ao ler token do SecureStorage: $e');
@@ -54,8 +54,8 @@ class DioClient {
             }
           }
 
-          if (token != null && token.isNotEmpty) {
-            options.headers['authorization'] = 'Bearer $token';
+          if (jwt != null && jwt.isNotEmpty) {
+            options.headers['authorization'] = 'Bearer $jwt';
           }
 
           return handler.next(options);
@@ -66,13 +66,12 @@ class DioClient {
           if (error.response?.statusCode == 401) {
             final hasAuthHeader = error.requestOptions.headers.containsKey('authorization');
             
-            // Limpa o token expirado
-            currentToken = null;
+            // Limpa o token expirado do storage (o auth provider será atualizado via logout)
             _storage.delete(key: 'jwt_token');
             
             // Redireciona para a página de login
             if (context != null) {
-              Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+              context.go(AppRoutes.login);
               
               if (hasAuthHeader) {
                 ScaffoldMessenger.of(context).showSnackBar(

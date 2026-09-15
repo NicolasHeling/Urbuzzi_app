@@ -54,9 +54,16 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    // Sem @Roles() específico: qualquer usuário autenticado pode prosseguir.
-    // (o bloqueio genérico de escrita para 'consulta' foi removido para
-    // permitir que todas as roles editem status de lotes diretamente na tabela)
+    // Sem @Roles() específico: bloquear escrita para role 'consulta' (somente leitura).
+    // Se uma rota de escrita precisa ser acessível por todos os roles autenticados,
+    // use @Roles('administrador', 'gestor', 'comercial', 'consulta') explicitamente.
+    const writeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+    if (writeMethods.includes(method) && role === 'consulta') {
+      throw new ForbiddenException(
+        'O papel "consulta" possui acesso somente leitura. Contate um administrador.',
+      );
+    }
+
     return true;
   }
 }

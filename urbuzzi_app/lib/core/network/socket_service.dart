@@ -1,5 +1,7 @@
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/presentation/auth_provider.dart';
 import 'dio_client.dart';
 
 /// Modelo de uma notificação recebida via WebSocket.
@@ -38,11 +40,17 @@ class AppNotification {
   }
 }
 
-/// Serviço singleton de WebSocket para notificações em tempo real e eventos de lotes.
+final socketServiceProvider = Provider<SocketService>((ref) {
+  // Passamos o token atual para o serviço
+  final authState = ref.watch(authControllerProvider);
+  return SocketService(token: authState.value?.token);
+});
+
+/// Serviço de WebSocket para notificações em tempo real e eventos de lotes.
 class SocketService {
-  static final SocketService _instance = SocketService._internal();
-  factory SocketService() => _instance;
-  SocketService._internal();
+  final String? token;
+  
+  SocketService({this.token});
 
   io.Socket? _lotSocket;
   io.Socket? _notifSocket;
@@ -62,6 +70,9 @@ class SocketService {
     _lotSocket = io.io(url, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
+      'extraHeaders': {
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
     });
 
     _lotSocket!.connect();
@@ -97,6 +108,9 @@ class SocketService {
       'transports': ['websocket'],
       'autoConnect': false,
       'forceNew': true,
+      'extraHeaders': {
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
     });
 
     _notifSocket!.connect();
@@ -138,8 +152,7 @@ class SocketService {
   }
 
   String _getSocketUrl() {
-    // Usa a porta do core-service diretamente (3002)
-    final baseUrl = getBaseUrl();
-    return baseUrl.replaceFirst(':3000', ':3002');
+    // Usa o Gateway (porta 3000), pois ele agora atua como proxy WS para o core-service
+    return getBaseUrl();
   }
 }

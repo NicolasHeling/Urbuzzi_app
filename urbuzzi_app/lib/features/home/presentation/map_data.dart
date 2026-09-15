@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../lots/domain/models/lot.dart';
 
+/// Polígono local para renderização no mapa interativo.
+/// Usado tanto para dados vindos do backend (dinâmico) quanto como fallback (estático).
 class LotPolygon {
   final String block;
   final String number;
@@ -10,8 +13,50 @@ class LotPolygon {
     required this.number,
     required this.points,
   });
+
+  /// Cria um LotPolygon a partir dos dados do backend (mapPolygons: [[x,y],[x,y]...]).
+  factory LotPolygon.fromLot(Lot lot) {
+    final points = (lot.mapPolygons ?? [])
+        .map((pair) => Offset(pair[0], pair[1]))
+        .toList();
+    return LotPolygon(
+      block: lot.block,
+      number: lot.number,
+      points: points,
+    );
+  }
 }
 
+/// Converte uma lista de Lots (vindos do backend com mapPolygons) em LotPolygons.
+/// Se a lista estiver vazia, retorna os polígonos estáticos de fallback.
+List<LotPolygon> buildMapPolygons(List<Lot> backendLots) {
+  if (backendLots.isEmpty || backendLots.every((l) => l.mapPolygons == null || l.mapPolygons!.isEmpty)) {
+    return MapData.lots;
+  }
+  return backendLots
+      .where((l) => l.mapPolygons != null && l.mapPolygons!.isNotEmpty)
+      .map((l) => LotPolygon.fromLot(l))
+      .toList();
+}
+
+/// Calcula os centros de cada quadra a partir de uma lista de polígonos.
+Map<String, Offset> computeBlockCenters(List<LotPolygon> polygons) {
+  final Map<String, List<Offset>> grouped = {};
+  for (final poly in polygons) {
+    grouped.putIfAbsent(poly.block, () => []).addAll(poly.points);
+  }
+  return grouped.map((block, points) {
+    final minX = points.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
+    final maxX = points.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
+    final minY = points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
+    return MapEntry(block, Offset((minX + maxX) / 2, minY - 14));
+  });
+}
+
+/// Dados estáticos do mapa — usados como fallback quando o backend
+/// não possui polígonos configurados (mapPolygons IS NULL).
+/// À medida que os lotes são configurados no backend com seus polígonos,
+/// os dados dinâmicos serão priorizados automaticamente.
 class MapData {
   static const List<LotPolygon> lots = [
     LotPolygon(block: '01', number: '01', points: [Offset(70.0, 70.0), Offset(107.5, 70.0), Offset(107.5, 135.0), Offset(70.0, 135.0)]),
@@ -210,16 +255,6 @@ class MapData {
 
   /// Centro aproximado (bounding box) de cada quadra, usado para
   /// posicionar os rótulos "Q01".."Q15" sobre a planta.
-  static final Map<String, Offset> blockCenters = () {
-    final Map<String, List<Offset>> grouped = {};
-    for (final poly in lots) {
-      grouped.putIfAbsent(poly.block, () => []).addAll(poly.points);
-    }
-    return grouped.map((block, points) {
-      final minX = points.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
-      final maxX = points.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
-      final minY = points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
-      return MapEntry(block, Offset((minX + maxX) / 2, minY - 14));
-    });
-  }();
+  /// Agora calculado pela função computeBlockCenters() que aceita dados dinâmicos.
+  static final Map<String, Offset> blockCenters = computeBlockCenters(lots);
 }

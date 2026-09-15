@@ -1,12 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
-import '../../../core/network/dio_client.dart';
 import '../domain/models/user.dart';
 
 class AuthRepository {
-  final _dio = DioClient().dio;
+  final Dio _dio;
   final _storage = const FlutterSecureStorage();
+
+  AuthRepository(this._dio);
 
   Future<User> login(String email, String password) async {
     try {
@@ -22,16 +23,10 @@ class AuthRepository {
         debugPrint('DEBUG LOGIN: Token recebido do backend: $token');
       }
 
-      // Armazena o token de forma segura e na memória
-      DioClient().currentToken = token;
+      // Armazena o token de forma segura
       await _storage.write(key: 'jwt_token', value: token);
 
-      final tokenSalvo = await _storage.read(key: 'jwt_token');
-      if (kDebugMode) {
-        debugPrint('DEBUG LOGIN: Token salvo no SecureStorage e lido com sucesso? ${tokenSalvo == token}');
-      }
-
-      return User.fromJson(userData);
+      return User.fromJson(userData).copyWithToken(token);
     } catch (e) {
       if (e is DioException) {
         if (e.type == DioExceptionType.connectionError || 
@@ -57,9 +52,8 @@ class AuthRepository {
       final String token = response.data['accessToken'];
       final Map<String, dynamic> userData = response.data['user'];
 
-      DioClient().currentToken = token;
       await _storage.write(key: 'jwt_token', value: token);
-      return User.fromJson(userData);
+      return User.fromJson(userData).copyWithToken(token);
     } catch (e) {
       if (e is DioException) {
         if (e.type == DioExceptionType.connectionError || 
@@ -111,7 +105,6 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
-    DioClient().currentToken = null;
     await _storage.delete(key: 'jwt_token');
   }
 }
