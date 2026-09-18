@@ -91,7 +91,7 @@ void main() {
     });
 
     test('toJson serializa todos os campos', () {
-      final lot = Lot(
+      const lot = Lot(
         id: 'x', block: 'A', number: '1',
         area: 100, price: 50000, status: 'Disponível',
         landName: 'Test',
@@ -105,7 +105,7 @@ void main() {
     });
 
     test('copyWith altera apenas os campos especificados', () {
-      final lot = Lot(
+      const lot = Lot(
         id: 'x', block: 'A', number: '1',
         area: 100, price: 50000, status: 'Disponível',
         documents: ['doc.pdf'],

@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/socket_service.dart';
 import '../../projects/presentation/projects_provider.dart';
 import '../../auth/presentation/auth_provider.dart';

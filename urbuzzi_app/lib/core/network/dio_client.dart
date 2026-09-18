@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../routing/app_routes.dart';
 import '../theme/app_colors.dart';
+import '../../features/auth/presentation/auth_provider.dart';
 
 String getBaseUrl() {
   if (kIsWeb) return const String.fromEnvironment('API_URL_WEB', defaultValue: 'http://localhost:3000');
@@ -16,7 +17,8 @@ String getBaseUrl() {
 }
 
 final dioClientProvider = Provider<DioClient>((ref) {
-  return DioClient();
+  final authState = ref.watch(authControllerProvider);
+  return DioClient(token: authState.valueOrNull?.token);
 });
 
 class DioClient {

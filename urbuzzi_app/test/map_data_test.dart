@@ -17,7 +17,7 @@ void main() {
     });
 
     test('LotPolygon.fromLot cria polígono a partir de dados do backend', () {
-      final lot = Lot(
+      const lot = Lot(
         id: 'lot-1',
         block: 'A',
         number: '01',
@@ -37,7 +37,7 @@ void main() {
     });
 
     test('LotPolygon.fromLot lida com mapPolygons nulo', () {
-      final lot = Lot(
+      const lot = Lot(
         id: 'lot-2',
         block: 'B',
         number: '05',
@@ -54,12 +54,12 @@ void main() {
   group('buildMapPolygons', () {
     test('retorna polígonos do backend quando disponíveis', () {
       final lots = [
-        Lot(
+        const Lot(
           id: '1', block: 'A', number: '1', area: 100, price: 50000,
           status: 'Disponível',
           mapPolygons: [[0, 0], [10, 0], [10, 10], [0, 10]],
         ),
-        Lot(
+        const Lot(
           id: '2', block: 'A', number: '2', area: 100, price: 50000,
           status: 'Disponível',
           mapPolygons: [[10, 0], [20, 0], [20, 10], [10, 10]],
@@ -80,8 +80,8 @@ void main() {
 
     test('faz fallback quando todos os lotes têm mapPolygons nulo', () {
       final lots = [
-        Lot(id: '1', block: 'A', number: '1', area: 100, price: 50000, status: 'Disponível'),
-        Lot(id: '2', block: 'A', number: '2', area: 100, price: 50000, status: 'Disponível'),
+        const Lot(id: '1', block: 'A', number: '1', area: 100, price: 50000, status: 'Disponível'),
+        const Lot(id: '2', block: 'A', number: '2', area: 100, price: 50000, status: 'Disponível'),
       ];
 
       final polygons = buildMapPolygons(lots);
@@ -90,12 +90,12 @@ void main() {
 
     test('ignora lotes sem polígonos na lista do backend', () {
       final lots = [
-        Lot(
+        const Lot(
           id: '1', block: 'A', number: '1', area: 100, price: 50000,
           status: 'Disponível',
           mapPolygons: [[0, 0], [10, 0], [10, 10], [0, 10]],
         ),
-        Lot(id: '2', block: 'A', number: '2', area: 100, price: 50000, status: 'Disponível'),
+        const Lot(id: '2', block: 'A', number: '2', area: 100, price: 50000, status: 'Disponível'),
       ];
 
       final polygons = buildMapPolygons(lots);
