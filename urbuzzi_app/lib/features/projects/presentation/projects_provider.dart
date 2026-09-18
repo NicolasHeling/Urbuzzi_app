@@ -1,19 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import '../../../core/network/dio_client.dart';
 import '../models/project.dart';
 
 final selectedProjectIdProvider = StateProvider<String?>((ref) => null);
 
 final projectsProvider = StateNotifierProvider<ProjectsNotifier, AsyncValue<List<Project>>>((ref) {
-  return ProjectsNotifier(ref);
+  final dio = ref.watch(dioClientProvider).dio;
+  return ProjectsNotifier(ref, dio);
 });
 
 class ProjectsNotifier extends StateNotifier<AsyncValue<List<Project>>> {
-  final _dio = DioClient().dio;
+  final Dio _dio;
   final Ref ref;
 
-  ProjectsNotifier(this.ref) : super(const AsyncValue.loading()) {
+  ProjectsNotifier(this.ref, this._dio) : super(const AsyncValue.loading()) {
     fetchProjects();
   }
 
