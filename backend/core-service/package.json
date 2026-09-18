@@ -43,6 +43,8 @@
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@nestjs/testing": "^10.4.22",
+    "@swc/cli": "^0.5.2",
+    "@swc/core": "^1.16.2",
     "@types/cache-manager": "^4.0.6",
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.2.0",
