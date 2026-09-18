@@ -54,9 +54,13 @@ export class ProposalsService {
     return savedProposal;
   }
 
-  async updateStatus(id: string, status: string, userId?: string): Promise<Proposal> {
+  async updateStatus(id: string, status: string, userId?: string, rejectionReason?: string): Promise<Proposal> {
     return await this.proposalRepository.manager.transaction(async (manager) => {
-      await manager.update(Proposal, id, { status });
+      const updateData: any = { status };
+      if (status === 'Rejeitada' && rejectionReason) {
+        updateData.rejectionReason = rejectionReason;
+      }
+      await manager.update(Proposal, id, updateData);
       const updatedProposal = await manager.findOne(Proposal, { where: { id }, relations: ['lot'] });
 
       if (status === 'Rejeitada' && updatedProposal?.lot) {
@@ -82,14 +86,14 @@ export class ProposalsService {
       } else if (status === 'Concluída' && updatedProposal?.lot) {
         const lotId = updatedProposal.lot.id;
         await manager.update(Lot, lotId, { status: 'Vendido' });
-        const lotSoldAudit = manager.create(Audit, {
-          action: 'LOT_SOLD',
-          entityName: 'Lot',
-          entityId: lotId,
+        await this.auditService.logAction(
+          'LOT_SOLD',
+          'Lot',
+          lotId,
           userId,
-          details: { proposalId: id, trigger: 'PROPOSAL_CONCLUDED' },
-        });
-        await manager.save(lotSoldAudit);
+          { proposalId: id, trigger: 'PROPOSAL_CONCLUDED' },
+          manager
+        );
 
         // Create Broker Commission
         const commissionValue = Number(updatedProposal.offeredPrice || 0) * 0.05;
@@ -103,14 +107,14 @@ export class ProposalsService {
         await manager.save(commission);
       }
 
-      const statusAudit = manager.create(Audit, {
-        action: 'UPDATE_PROPOSAL_STATUS',
-        entityName: 'Proposal',
-        entityId: id,
+      await this.auditService.logAction(
+        'UPDATE_PROPOSAL_STATUS',
+        'Proposal',
+        id,
         userId,
-        details: { status },
-      });
-      await manager.save(statusAudit);
+        { status },
+        manager
+      );
 
       return updatedProposal;
     });

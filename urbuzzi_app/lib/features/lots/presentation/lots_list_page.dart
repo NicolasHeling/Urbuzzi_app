@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'lots_provider.dart';
-
+import 'widgets/bulk_action_bar.dart';
+import 'widgets/status_dropdown.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../domain/models/lot.dart';
@@ -171,7 +172,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepA
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: (canWrite && _selectedIds.isNotEmpty)
-                    ? _BulkActionBar(
+                    ? BulkActionBar(
                         key: const ValueKey('bulk_bar'),
                         selectedCount: _selectedIds.length,
                         isBusy: _isBulkUpdating,
@@ -439,7 +440,9 @@ class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepA
                                             currencyFormatter
                                                 .format(lot.price))),
                                         DataCell(
-                                          _StatusDropdown(lot: lot),
+                                          canWrite
+                                              ? StatusDropdown(lot: lot)
+                                              : StatusBadge(status: lot.status, dense: true),
                                         ),
                                       ],
                                     );
@@ -517,245 +520,7 @@ class _LotsListPageState extends ConsumerState<LotsListPage> with AutomaticKeepA
 
 // ─── Barra de Ações em Massa ──────────────────────────────────────────────
 
-/// Aparece no topo da tabela quando há lotes selecionados.
-/// Exibe a contagem e permite alterar o status de todos de uma vez.
-class _BulkActionBar extends StatelessWidget {
-  final int selectedCount;
-  final bool isBusy;
-  final VoidCallback onChangeStatus;
-  final VoidCallback onClear;
-
-  const _BulkActionBar({
-    required this.selectedCount, required this.isBusy, required this.onChangeStatus, required this.onClear, super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.08),
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border),
-        ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: Row(
-        children: [
-          // Ícone de seleção
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.checklist_rounded,
-                size: 16, color: AppColors.primary),
-          ),
-          const SizedBox(width: 12),
-
-          // Contagem
-          Text(
-            '$selectedCount lote(s) selecionado(s)',
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const Spacer(),
-
-          // Botão "Alterar status"
-          if (isBusy)
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: AppColors.primary),
-            )
-          else
-            FilledButton.icon(
-              onPressed: onChangeStatus,
-              icon: const Icon(Icons.edit_outlined, size: 16),
-              label: const Text(
-                'Alterar Status',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          const SizedBox(width: 8),
-
-          // Botão "Limpar seleção"
-          IconButton(
-            onPressed: onClear,
-            icon: const Icon(Icons.close_rounded, size: 18),
-            tooltip: 'Limpar seleção',
-            color: AppColors.textSecondary,
-            padding: const EdgeInsets.all(6),
-            constraints: const BoxConstraints(),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 
-// ─── Dropdown de Status Inline ─────────────────────────────────────────────
 
-/// Célula interativa da coluna STATUS na tabela de lotes.
-///
-/// Exibe o [StatusBadge] atual com um chevron sutil. Ao tocar, abre um
-/// [PopupMenuButton] com todos os status disponíveis. A transição é feita
-/// via PATCH /lots/:id/status e o estado local é atualizado imediatamente
-/// (sem refetch da lista inteira). Um [CircularProgressIndicator] leve é
-/// exibido inline durante o carregamento.
-class _StatusDropdown extends ConsumerStatefulWidget {
-  final Lot lot;
-  const _StatusDropdown({required this.lot});
 
-  @override
-  ConsumerState<_StatusDropdown> createState() => _StatusDropdownState();
-}
-
-class _StatusDropdownState extends ConsumerState<_StatusDropdown> {
-  bool _isLoading = false;
-
-  Future<void> _changeStatus(String newStatus) async {
-    if (newStatus == widget.lot.status) return;
-    setState(() => _isLoading = true);
-    try {
-      await ref
-          .read(lotsControllerProvider.notifier)
-          .updateLotStatus(widget.lot.id, newStatus);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Status do Lote ${widget.lot.number} alterado para "$newStatus".',
-            ),
-            backgroundColor: AppColors.statusColor(newStatus),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Falha ao alterar status: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Enquanto aguarda resposta do servidor, exibe um spinner compacto inline.
-    if (_isLoading) {
-      return SizedBox(
-        width: 110,
-        child: Row(
-          children: [
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: AppColors.statusColor(widget.lot.status),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                widget.lot.status,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.statusColor(widget.lot.status),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return PopupMenuButton<String>(
-      tooltip: 'Alterar status',
-      offset: const Offset(0, 32),
-      onSelected: _changeStatus,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          StatusBadge(status: widget.lot.status, dense: true),
-          const SizedBox(width: 2),
-          Icon(
-            Icons.expand_more_rounded,
-            size: 14,
-            color: AppColors.statusColor(widget.lot.status)
-                .withValues(alpha: 0.7),
-          ),
-        ],
-      ),
-      itemBuilder: (context) => AppColors.statusOrder.map((status) {
-        final isCurrent = status == widget.lot.status;
-        final color = AppColors.statusColor(status);
-        final bg = AppColors.statusBgColor(status);
-        return PopupMenuItem<String>(
-          value: status,
-          enabled: !isCurrent,
-          padding: EdgeInsets.zero,
-          child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: isCurrent
-                ? BoxDecoration(color: bg.withValues(alpha: 0.45))
-                : null,
-            child: Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight:
-                          isCurrent ? FontWeight.w700 : FontWeight.w500,
-                      color: isCurrent ? color : AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                if (isCurrent)
-                  Icon(Icons.check_rounded, size: 14, color: color),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}

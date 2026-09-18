@@ -49,7 +49,7 @@ export class ProposalsController {
       }
     }
 
-    return this.proposalsService.updateStatus(id, updateStatusDto.status, userId);
+    return this.proposalsService.updateStatus(id, updateStatusDto.status, userId, updateStatusDto.rejectionReason);
   }
 
   @Get(':id/contract')

@@ -1,40 +1,40 @@
-class Proposal {
-  final String id;
-  final String customerName;
-  final String customerDocument;
-  final String status;
-  final double? offeredPrice;
-  final DateTime createdAt;
-  final Map<String, dynamic>? lot; // Relacionamento com Lote
-  final String? responsibleUserName; // Corretor responsável
-  final DateTime? slaDeadline; // Prazo SLA (7 dias)
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  Proposal({
-    required this.id,
-    required this.customerName,
-    required this.customerDocument,
-    required this.status,
-    required this.createdAt, this.offeredPrice,
-    this.lot,
-    this.responsibleUserName,
-    this.slaDeadline,
-  });
+part 'proposal.freezed.dart';
 
+/// Modelo imutável de Proposta, gerado com Freezed.
+@freezed
+abstract class Proposal with _$Proposal {
+  const factory Proposal({
+    required String id,
+    required String customerName,
+    required String customerDocument,
+    required String status,
+    required DateTime createdAt,
+    double? offeredPrice,
+    Map<String, dynamic>? lot, // Relacionamento com Lote
+    String? responsibleUserName, // Corretor responsável
+    DateTime? slaDeadline, // Prazo SLA (7 dias)
+    String? rejectionReason,
+  }) = _Proposal;
+
+  /// Factory customizado para manter parsing robusto de campos numéricos e datas.
   factory Proposal.fromJson(Map<String, dynamic> json) {
     return Proposal(
-      id: json['id'],
-      customerName: json['customerName'],
-      customerDocument: json['customerDocument'],
-      status: json['status'],
-      offeredPrice: json['offeredPrice'] != null 
-          ? double.tryParse(json['offeredPrice'].toString()) 
+      id: json['id'] as String,
+      customerName: json['customerName'] as String,
+      customerDocument: json['customerDocument'] as String,
+      status: json['status'] as String,
+      offeredPrice: json['offeredPrice'] != null
+          ? double.tryParse(json['offeredPrice'].toString())
           : null,
-      createdAt: DateTime.parse(json['createdAt']),
-      lot: json['lot'],
-      responsibleUserName: json['responsibleUserName'],
-      slaDeadline: json['slaDeadline'] != null 
-          ? DateTime.tryParse(json['slaDeadline'].toString()) 
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      lot: json['lot'] as Map<String, dynamic>?,
+      responsibleUserName: json['responsibleUserName'] as String?,
+      slaDeadline: json['slaDeadline'] != null
+          ? DateTime.tryParse(json['slaDeadline'].toString())
           : null,
+      rejectionReason: json['rejectionReason'] as String?,
     );
   }
 }

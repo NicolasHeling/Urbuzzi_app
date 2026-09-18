@@ -29,6 +29,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     navigatorKey: AppRoutes.navigatorKey,
     initialLocation: AppRoutes.app,
     redirect: (BuildContext context, GoRouterState state) {
+      // Se ainda estiver carregando (restaurando sessão), não faz nada (fica na tela atual/splash)
+      if (authState.isLoading) {
+        return null; // idealmente aqui poderia ir para uma tela de Splash
+      }
+
       final isAuthenticated = authState.value != null;
       final isLoginRoute = state.matchedLocation == '/login';
       final isRegisterRoute = state.matchedLocation == '/register';

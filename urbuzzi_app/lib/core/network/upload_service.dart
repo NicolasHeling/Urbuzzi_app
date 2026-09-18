@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 
 class UploadService {
   final Dio _dio;
@@ -25,7 +26,9 @@ class UploadService {
         return response.data['url']; // Retorna a URL pública gerada no S3/R2
       }
     } catch (e) {
-      print('Erro no upload: $e');
+      if (kDebugMode) {
+        debugPrint('Erro no upload: $e');
+      }
     }
     return null;
   }

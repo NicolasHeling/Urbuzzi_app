@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../projects/presentation/projects_provider.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import '../../lots/data/lots_repository.dart';
 import '../../lots/domain/models/lot.dart';
@@ -17,7 +18,11 @@ final lotsControllerProvider =
     StateNotifierProvider<LotsController, AsyncValue<List<Lot>>>((ref) {
   final repository = ref.watch(lotsRepositoryProvider);
   final socketService = ref.watch(socketServiceProvider);
-  return LotsController(repository, socketService);
+  final selectedProjectId = ref.watch(selectedProjectIdProvider);
+  final projects = ref.watch(projectsProvider).valueOrNull ?? [];
+  final selectedProject = projects.where((p) => p.id == selectedProjectId).firstOrNull;
+  
+  return LotsController(repository, socketService, selectedProject?.name);
 });
 
 // Provider simples para a Vitrine (dados públicos)
@@ -37,6 +42,7 @@ final mapPolygonsProvider = FutureProvider<List<Lot>>((ref) async {
 class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
   final LotsRepository _repository;
   final SocketService _socketService;
+  final String? _landName;
   static const int _pageSize = 50;
   int _totalOnServer = 0;
   bool _isLoadingMore = false;
@@ -44,7 +50,7 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
   String _searchQuery = '';
   String _selectedStatus = 'Todos';
 
-  LotsController(this._repository, this._socketService) : super(const AsyncValue.loading()) {
+  LotsController(this._repository, this._socketService, this._landName) : super(const AsyncValue.loading()) {
     fetchLots();
     _initSocket();
   }
@@ -118,6 +124,7 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
         offset: 0,
         search: _searchQuery,
         status: _selectedStatus,
+        landName: _landName,
       );
       _totalOnServer = page.total;
       state = AsyncValue.data(page.data);
@@ -141,6 +148,7 @@ class LotsController extends StateNotifier<AsyncValue<List<Lot>>> {
         offset: currentLots.length,
         search: _searchQuery,
         status: _selectedStatus,
+        landName: _landName,
       );
       _totalOnServer = page.total;
       state = AsyncValue.data([...currentLots, ...page.data]);

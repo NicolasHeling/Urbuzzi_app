@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, Req, Query, U
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { extname } from 'path';
 import { LotsService } from './lots.service';
 import { Lot } from './lot.entity';
@@ -21,10 +21,11 @@ export class LotsController {
     @Query('offset') offset?: string,
     @Query('search') search?: string,
     @Query('status') status?: string,
+    @Query('landName') landName?: string,
   ) {
     const parsedLimit = limit ? parseInt(limit, 10) : 50;
     const parsedOffset = offset ? parseInt(offset, 10) : 0;
-    return this.lotsService.findAll(parsedLimit, parsedOffset, search, status);
+    return this.lotsService.findAll(parsedLimit, parsedOffset, search, status, landName);
   }
 
   /**
@@ -60,6 +61,7 @@ export class LotsController {
   }
 
   @Patch('bulk-status')
+  @Roles('gestor', 'administrador')
   updateBulkStatus(
     @Body() updateBulkStatusDto: UpdateLotBulkStatusDto,
     @Req() req: Request,
@@ -69,7 +71,7 @@ export class LotsController {
   }
 
   @Patch(':id/status')
-  // @Roles('gestor', 'administrador') — removido para permitir edição por todos os usuários autenticados
+  @Roles('gestor', 'administrador')
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusDto: UpdateLotStatusDto,
@@ -82,15 +84,7 @@ export class LotsController {
   @Post(':id/documents')
   @Roles('gestor', 'administrador')
   @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        const name = file.originalname.split('.')[0].replace(/\s+/g, '-');
-        cb(null, `${name}-${uniqueSuffix}${ext}`);
-      },
-    }),
+    storage: memoryStorage(),
     limits: {
       fileSize: 10 * 1024 * 1024, // 10MB max
     },

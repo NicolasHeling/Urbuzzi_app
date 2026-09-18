@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import '../domain/models/lot.dart';
 
 class LotsPage {
@@ -15,7 +14,7 @@ class LotsRepository {
   LotsRepository(this._dio);
 
   /// Busca lotes com paginação. Retorna dados + total para scroll infinito.
-  Future<LotsPage> fetchLots({int limit = 50, int offset = 0, String? search, String? status}) async {
+  Future<LotsPage> fetchLots({int limit = 50, int offset = 0, String? search, String? status, String? landName}) async {
     try {
       final queryParams = <String, dynamic>{
         'limit': limit,
@@ -28,6 +27,10 @@ class LotsRepository {
       
       if (status != null && status != 'Todos') {
         queryParams['status'] = status;
+      }
+
+      if (landName != null && landName != 'Todos') {
+        queryParams['landName'] = landName;
       }
 
       final response = await _dio.get('/lots', queryParameters: queryParams);

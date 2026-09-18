@@ -22,9 +22,13 @@ class ProposalsRepository {
     }
   }
 
-  Future<void> updateProposalStatus(String id, String newStatus) async {
+  Future<void> updateProposalStatus(String id, String newStatus, {String? rejectionReason}) async {
     try {
-      await _dio.patch('/proposals/$id/status', data: {'status': newStatus});
+      final data = <String, dynamic>{'status': newStatus};
+      if (rejectionReason != null) {
+        data['rejectionReason'] = rejectionReason;
+      }
+      await _dio.patch('/proposals/$id/status', data: data);
     } catch (e) {
       throw Exception('Falha ao atualizar status da proposta: $e');
     }

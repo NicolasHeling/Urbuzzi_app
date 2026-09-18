@@ -28,8 +28,7 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Create Dummy .env
-        run: cp .env.example .env || echo "API_URL_WEB=http://localhost:3000" > .env
+
 
       - name: Verify Formatting
         run: flutter format --set-exit-if-changed .

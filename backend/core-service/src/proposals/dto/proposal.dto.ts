@@ -27,4 +27,8 @@ export class UpdateProposalStatusDto {
   @IsString()
   @IsIn(['Nova', 'Em Análise', 'Aprovada', 'Rejeitada', 'Concluída'])
   status: string;
+
+  @IsOptional()
+  @IsString()
+  rejectionReason?: string;
 }

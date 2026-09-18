@@ -26,7 +26,7 @@ class AuthRepository {
       // Armazena o token de forma segura
       await _storage.write(key: 'jwt_token', value: token);
 
-      return User.fromJson(userData).copyWithToken(token);
+      return User.fromJson(userData).copyWith(token: token);
     } catch (e) {
       if (e is DioException) {
         if (e.type == DioExceptionType.connectionError || 
@@ -53,7 +53,7 @@ class AuthRepository {
       final Map<String, dynamic> userData = response.data['user'];
 
       await _storage.write(key: 'jwt_token', value: token);
-      return User.fromJson(userData).copyWithToken(token);
+      return User.fromJson(userData).copyWith(token: token);
     } catch (e) {
       if (e is DioException) {
         if (e.type == DioExceptionType.connectionError || 

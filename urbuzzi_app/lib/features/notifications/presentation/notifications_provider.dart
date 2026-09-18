@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/socket_service.dart';
@@ -144,3 +145,4 @@ class NotificationsNotifier extends StateNotifier<List<AppNotification>> {
     super.dispose();
   }
 }
+

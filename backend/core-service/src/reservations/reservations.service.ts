@@ -38,7 +38,7 @@ export class ReservationsService {
         lot,
       });
 
-      return manager.save(reservation);
+      return await manager.save(reservation);
     });
   }
 
@@ -54,7 +54,7 @@ export class ReservationsService {
       reservation.status = 'APPROVED';
       await manager.update(Lot, reservation.lot.id, { status: 'Reservado' });
 
-      return manager.save(reservation);
+      return await manager.save(reservation);
     });
   }
 
@@ -66,7 +66,7 @@ export class ReservationsService {
       reservation.status = 'CANCELLED';
       await manager.update(Lot, reservation.lot.id, { status: 'Disponível' });
 
-      return manager.save(reservation);
+      return await manager.save(reservation);
     });
   }
 

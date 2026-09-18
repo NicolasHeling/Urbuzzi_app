@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'core/routing/app_routes.dart';
 import 'core/theme/app_colors.dart';
@@ -8,9 +7,6 @@ import 'core/theme/app_colors.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Carrega as variáveis de ambiente
-  await dotenv.load(fileName: ".env");
-
   runApp(
     const ProviderScope(
       child: UrbuzziApp(),
@@ -38,7 +34,7 @@ class UrbuzziApp extends ConsumerWidget {
     );
 
     return MaterialApp.router(
-      title: 'Urbizzi',
+      title: 'Urbuzzi',
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

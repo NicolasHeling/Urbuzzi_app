@@ -1,6 +1,6 @@
-import { Controller, All, Req, Res, Next, UseGuards } from '@nestjs/common';
+import { Controller, All, Req, Res, Next, UseGuards, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import { JwtVerifyGuard } from '../guards/jwt-verify.guard';
 
 @Controller()
@@ -11,11 +11,14 @@ export class CoreProxyController {
     changeOrigin: true,
     on: {
       proxyReq: (proxyReq, req: any, res) => {
+        Logger.log(`[Proxy] Forwarding ${req.method} ${req.url}`, 'CoreProxyController');
         if (req.user) {
           proxyReq.setHeader('x-user-id', req.user.sub);
           proxyReq.setHeader('x-user-email', req.user.email);
           proxyReq.setHeader('x-user-role', req.user.role);
         }
+        // Fix for parsed body streams
+        fixRequestBody(proxyReq, req);
       },
     },
   });

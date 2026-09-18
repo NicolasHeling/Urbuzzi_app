@@ -74,6 +74,8 @@ class ProposalDetailsModal extends ConsumerWidget {
         _DetailRow(label: 'Preço Ofertado', value: currencyFormatter.format(proposal.offeredPrice ?? 0)),
         _DetailRow(label: 'Corretor', value: proposal.responsibleUserName ?? 'Não informado'),
         _DetailRow(label: 'Status', value: proposal.status),
+        if (proposal.status == 'Rejeitada' && proposal.rejectionReason != null)
+          _DetailRow(label: 'Motivo Rejeição', value: proposal.rejectionReason!),
         if (proposal.status == 'Aprovada' || proposal.status == 'Concluída') ...[
           const SizedBox(height: 24),
           _GenerateContractButton(proposalId: proposal.id),

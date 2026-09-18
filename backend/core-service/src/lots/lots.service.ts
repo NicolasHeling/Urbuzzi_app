@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lot } from './lot.entity';
 import { AuditService } from '../audit/audit.service';
 import { Audit } from '../audit/audit.entity';
 import { EventsGateway } from './events.gateway';
+import { StorageService } from '../storage/storage.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class LotsService {
@@ -13,9 +16,11 @@ export class LotsService {
     private readonly lotRepository: Repository<Lot>,
     private readonly auditService: AuditService,
     private readonly eventsGateway: EventsGateway,
+    private readonly storageService: StorageService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
-  async findAll(limit: number = 50, offset: number = 0, search?: string, status?: string): Promise<{ data: Lot[]; total: number }> {
+  async findAll(limit: number = 50, offset: number = 0, search?: string, status?: string, landName?: string): Promise<{ data: Lot[]; total: number }> {
     const query = this.lotRepository.createQueryBuilder('lot')
       .orderBy('lot.block', 'ASC')
       .addOrderBy('lot.number', 'ASC')
@@ -24,6 +29,10 @@ export class LotsService {
 
     if (status && status !== 'Todos') {
       query.andWhere('lot.status = :status', { status });
+    }
+
+    if (landName && landName !== 'Todos') {
+      query.andWhere('lot.landName = :landName', { landName });
     }
 
     if (search) {
@@ -75,30 +84,20 @@ export class LotsService {
       const currentLot = await manager.findOne(Lot, { where: { id } });
       const oldStatus = currentLot?.status;
 
-      await manager.update(Lot, id, { status });
-      const lot = await manager.findOne(Lot, { where: { id } });
+      currentLot.status = status;
+      const lot = await manager.save(currentLot);
 
-      const audit = manager.create(Audit, {
-        action: 'UPDATE_LOT_STATUS',
-        entityName: 'Lot',
-        entityId: id,
-        userId,
-        details: {
-          oldStatus,
-          newStatus: status,
-          lotNumber: lot?.number,
-          lotBlock: lot?.block,
-          landName: lot?.landName,
-          justification,
-        },
-      });
-      await manager.save(audit);
+      await this.auditService.logAction('UPDATE_LOT_STATUS', 'Lot', id, userId, { oldStatus, newStatus: status, lotNumber: lot?.number, lotBlock: lot?.block, landName: lot?.landName, justification }, manager);
 
       return lot;
     });
 
     // Notificação WebSocket fora da transação (não acessa o banco)
     this.eventsGateway.notifyLotStatusUpdated(id, status);
+
+    // Invalida cache do mapa e lista pública para refletir mudança imediatamente
+    // @ts-ignore
+    await this.cacheManager.clear();
 
     return updatedLot;
   }
@@ -116,28 +115,20 @@ export class LotsService {
         .whereInIds(ids)
         .execute();
 
-      const audits = currentLots.map(lot => manager.create(Audit, {
-        action: 'UPDATE_LOT_STATUS_BULK',
-        entityName: 'Lot',
-        entityId: lot.id,
-        userId,
-        details: {
-          oldStatus: lot.status,
-          newStatus: status,
-          lotNumber: lot.number,
-          lotBlock: lot.block,
-          landName: lot.landName,
-          justification,
-        },
-      }));
-      await manager.save(audits);
+      for (const lot of currentLots) {
+        await this.auditService.logAction('UPDATE_LOT_STATUS_BULK', 'Lot', lot.id, userId, { oldStatus: lot.status, newStatus: status, lotNumber: lot.number, lotBlock: lot.block, landName: lot.landName, justification }, manager);
+      }
 
-      return manager.createQueryBuilder(Lot, 'lot').whereInIds(ids).getMany();
+      return await manager.createQueryBuilder(Lot, 'lot').whereInIds(ids).getMany();
     });
 
     updatedLots.forEach(lot => {
       this.eventsGateway.notifyLotStatusUpdated(lot.id, status);
     });
+
+    // Invalida cache do mapa e lista pública para refletir mudanças imediatamente
+    // @ts-ignore
+    await this.cacheManager.clear();
 
     return updatedLots;
   }
@@ -146,8 +137,8 @@ export class LotsService {
     const lot = await this.findOne(id);
     if (!lot) throw new NotFoundException('Lote não encontrado');
     
-    // Armazenamento local
-    const publicUrl = `http://localhost:3002/uploads/${file.filename}`;
+    // Armazenamento em nuvem (S3 / R2)
+    const publicUrl = await this.storageService.uploadFile(file);
 
     const documents = lot.documents || [];
     documents.push(publicUrl);

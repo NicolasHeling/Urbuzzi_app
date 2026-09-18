@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import '../../proposals/data/proposals_repository.dart';
 import '../../proposals/domain/models/proposal.dart';
@@ -35,9 +36,9 @@ class ProposalsController extends StateNotifier<AsyncValue<List<Proposal>>> {
     }
   }
 
-  Future<void> updateProposalStatus(String proposalId, String newStatus, {String? lotId}) async {
+  Future<void> updateProposalStatus(String proposalId, String newStatus, {String? lotId, String? rejectionReason}) async {
     try {
-      await _repository.updateProposalStatus(proposalId, newStatus);
+      await _repository.updateProposalStatus(proposalId, newStatus, rejectionReason: rejectionReason);
       // Atualiza a lista localmente
       state = state.whenData((proposals) {
         return proposals.map((p) {
@@ -50,6 +51,9 @@ class ProposalsController extends StateNotifier<AsyncValue<List<Proposal>>> {
               offeredPrice: p.offeredPrice,
               createdAt: p.createdAt,
               lot: p.lot, // mantém os dados do lote
+              responsibleUserName: p.responsibleUserName,
+              slaDeadline: p.slaDeadline,
+              rejectionReason: rejectionReason ?? p.rejectionReason,
             );
           }
           return p;
@@ -70,3 +74,4 @@ class ProposalsController extends StateNotifier<AsyncValue<List<Proposal>>> {
     }
   }
 }
+

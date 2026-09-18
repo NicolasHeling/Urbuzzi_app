@@ -1,49 +1,22 @@
-class Client {
-  final String id;
-  final String name;
-  final String cpfOrCnpj;
-  final String email;
-  final String phone;
-  final String? address;
-  final DateTime? createdAt;
-  final String? funnelStage;
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:json_annotation/json_annotation.dart';
 
-  Client({
-    required this.id,
-    required this.name,
-    required this.cpfOrCnpj,
-    required this.email,
-    required this.phone,
-    this.address,
-    this.createdAt,
-    this.funnelStage,
-  });
+part 'client.freezed.dart';
+part 'client.g.dart';
 
-  factory Client.fromJson(Map<String, dynamic> json) {
-    return Client(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      cpfOrCnpj: json['cpfOrCnpj'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'] ?? '',
-      address: json['address'],
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
-          : null,
-      funnelStage: json['funnelStage'] ?? 'Novo',
-    );
-  }
+/// Modelo imutável de Cliente, gerado com Freezed + JsonSerializable.
+@freezed
+abstract class Client with _$Client {
+  const factory Client({
+    @Default('') String id,
+    @Default('') String name,
+    @Default('') String cpfOrCnpj,
+    @Default('') String email,
+    @Default('') String phone,
+    String? address,
+    DateTime? createdAt,
+    @Default('Novo') String? funnelStage,
+  }) = _Client;
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'cpfOrCnpj': cpfOrCnpj,
-      'email': email,
-      'phone': phone,
-      'address': address,
-      'createdAt': createdAt?.toIso8601String(),
-      'funnelStage': funnelStage,
-    };
-  }
+  factory Client.fromJson(Map<String, dynamic> json) => _$ClientFromJson(json);
 }

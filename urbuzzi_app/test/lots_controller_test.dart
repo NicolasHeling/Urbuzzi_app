@@ -101,7 +101,6 @@ void main() {
     });
 
     test('carrega lotes ao inicializar', () async {
-      final controller = container.read(lotsControllerProvider.notifier);
 
       // Espera o fetchLots inicial completar
       await Future.delayed(const Duration(milliseconds: 100));

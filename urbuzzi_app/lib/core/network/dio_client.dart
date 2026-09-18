@@ -5,15 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../routing/app_routes.dart';
 import '../theme/app_colors.dart';
 
 String getBaseUrl() {
-  if (kIsWeb) return dotenv.env['API_URL_WEB'] ?? 'http://localhost:3000';
-  if (Platform.isAndroid) return dotenv.env['API_URL_ANDROID'] ?? 'http://10.0.2.2:3000';
-  return dotenv.env['API_URL_IOS'] ?? 'http://localhost:3000';
+  if (kIsWeb) return const String.fromEnvironment('API_URL_WEB', defaultValue: 'http://localhost:3000');
+  if (Platform.isAndroid) return const String.fromEnvironment('API_URL_ANDROID', defaultValue: 'http://10.0.2.2:3000');
+  return const String.fromEnvironment('API_URL_IOS', defaultValue: 'http://localhost:3000');
 }
 
 final dioClientProvider = Provider<DioClient>((ref) {

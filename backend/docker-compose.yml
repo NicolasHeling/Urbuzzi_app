@@ -49,8 +49,6 @@ services:
       - DB_HOST=postgres-urbuzzi
       - DB_PORT=5432
       - DB_NAME=core_db
-    volumes:
-      - core_uploads:/usr/src/app/uploads
     depends_on:
       postgres-urbuzzi:
         condition: service_healthy
@@ -67,6 +65,8 @@ services:
   postgres-urbuzzi:
     image: postgres:15-alpine
     env_file: .env
+    expose:
+      - "5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d
@@ -82,15 +82,14 @@ services:
 
   redis:
     image: redis:alpine
-    ports:
-      - "6379:6379"
+    expose:
+      - "6379"
     restart: unless-stopped
     networks:
       - urbuzzi-network
 
 volumes:
   pgdata:
-  core_uploads:
 
 networks:
   urbuzzi-network:

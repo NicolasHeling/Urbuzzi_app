@@ -365,7 +365,11 @@ class ProposalsPage extends ConsumerWidget {
                     onPressed: () async {
                       final justification = await showJustificationDialog(context, 'Cancelar Proposta');
                       if (justification != null) {
-                        ref.read(proposalsControllerProvider.notifier).updateProposalStatus(proposal.id, 'Rejeitada', lotId: proposal.lot?['id']);
+                        ref.read(proposalsControllerProvider.notifier).updateProposalStatus(
+                          proposal.id, 'Rejeitada', 
+                          lotId: proposal.lot?['id'],
+                          rejectionReason: justification,
+                        );
                       }
                     },
                     style: OutlinedButton.styleFrom(

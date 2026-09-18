@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:urbuzzi_app/features/home/presentation/map_data.dart';
 import 'package:urbuzzi_app/features/lots/domain/models/lot.dart';
