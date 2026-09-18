@@ -25,10 +25,13 @@ final lotsControllerProvider =
   return LotsController(repository, socketService, selectedProject?.name);
 });
 
-// Provider simples para a Vitrine (dados públicos)
 final publicLotsProvider = FutureProvider<List<Lot>>((ref) async {
   final repository = ref.watch(lotsRepositoryProvider);
-  return repository.fetchPublicLots();
+  final selectedProjectId = ref.watch(selectedProjectIdProvider);
+  final projects = ref.watch(projectsProvider).valueOrNull ?? [];
+  final selectedProject = projects.where((p) => p.id == selectedProjectId).firstOrNull;
+  
+  return repository.fetchPublicLots(landName: selectedProject?.name);
 });
 
 // Provider para carregar polígonos dinâmicos do mapa a partir do backend.

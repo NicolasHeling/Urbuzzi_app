@@ -44,8 +44,8 @@ export class LotsController {
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(60000)
   @Get('public')
-  findPublic() {
-    return this.lotsService.findPublic();
+  findPublic(@Query('landName') landName?: string) {
+    return this.lotsService.findPublic(landName);
   }
 
   @Get(':id')

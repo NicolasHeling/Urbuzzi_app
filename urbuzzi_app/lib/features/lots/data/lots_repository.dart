@@ -56,9 +56,13 @@ class LotsRepository {
     }
   }
 
-  Future<List<Lot>> fetchPublicLots() async {
+  Future<List<Lot>> fetchPublicLots({String? landName}) async {
     try {
-      final response = await _dio.get('/lots/public'); 
+      final queryParams = <String, dynamic>{};
+      if (landName != null && landName != 'Todos') {
+        queryParams['landName'] = landName;
+      }
+      final response = await _dio.get('/lots/public', queryParameters: queryParams); 
       final List<dynamic> data = response.data;
       return data.map((json) => Lot.fromJson(json)).toList();
     } catch (e) {

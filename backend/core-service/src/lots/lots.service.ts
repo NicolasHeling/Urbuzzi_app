@@ -44,8 +44,12 @@ export class LotsService {
     return { data, total };
   }
 
-  async findPublic(): Promise<Lot[]> {
-    return this.lotRepository.find({ where: { status: 'Disponível' } });
+  async findPublic(landName?: string): Promise<Lot[]> {
+    const whereClause: any = { status: 'Disponível' };
+    if (landName && landName !== 'Todos') {
+      whereClause.landName = landName;
+    }
+    return this.lotRepository.find({ where: whereClause });
   }
 
   /**
