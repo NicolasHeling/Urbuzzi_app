@@ -19,7 +19,13 @@ class FakeLotsRepository extends LotsRepository {
   }
 
   @override
-  Future<LotsPage> fetchLots({int limit = 50, int offset = 0, String? search, String? status}) async {
+  Future<LotsPage> fetchLots({
+    String? landName,
+    int limit = 50,
+    int offset = 0,
+    String? search,
+    String? status,
+  }) async {
     fetchCallCount++;
     var filtered = _fakeLots;
     if (status != null && status != 'Todos') {

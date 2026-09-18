@@ -6,12 +6,12 @@ import '../../../core/network/dio_client.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/models/user.dart';
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
+final Provider<AuthRepository> authRepositoryProvider = Provider<AuthRepository>((ref) {
   final dioClient = ref.watch(dioClientProvider);
   return AuthRepository(dioClient.dio);
 });
 
-final authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<User?>>((ref) {
+final StateNotifierProvider<AuthController, AsyncValue<User?>> authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<User?>>((ref) {
   return AuthController(ref.watch(authRepositoryProvider));
 });
 
